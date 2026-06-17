@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "OKWLDbdcF/g=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Api\\LearnCSharp.Api.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\kashchei94\\.nuget\\packages\\microsoft.aspnetcore.openapi\\10.0.9\\microsoft.aspnetcore.openapi.10.0.9.nupkg.sha512",
+    "C:\\Users\\kashchei94\\.nuget\\packages\\microsoft.openapi\\2.0.0\\microsoft.openapi.2.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

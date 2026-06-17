@@ -1,0 +1,225 @@
+/* Strict dark corporate design */
+
+:root {
+    --bg: #0e1419;
+    --bg-alt: rgba(255, 255, 255, 0.06);
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --muted2: #64748b;
+    --line: rgba(255, 255, 255, 0.1);
+    --line-dark: rgba(0, 0, 0, 0.2);
+
+    --primary: #3b9eff;
+    --primary-hover: #5aafff;
+    --primary2: #1e3a5f;
+    --accent: #10b981;
+    --accent2: #34d399;
+    --accent-warm: #f59e0b;
+
+    --primary-rgb: 59, 158, 255;
+    --accent-rgb: 16, 185, 129;
+    --mint-rgb: 52, 211, 153;
+
+    --primary-glow: rgba(var(--primary-rgb), 0.35);
+    --accent-glow: rgba(var(--accent-rgb), 0.25);
+
+    --gradient-brand: var(--primary);
+    --gradient-brand-soft: var(--primary2);
+    --gradient-hero-text: var(--primary);
+    --gradient-cta: var(--primary);
+
+    --primary-soft: rgba(var(--primary-rgb), 0.14);
+    --accent-soft: rgba(var(--accent-rgb), 0.12);
+    --mint-soft: rgba(var(--accent-rgb), 0.1);
+
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-bg-strong: rgba(255, 255, 255, 0.09);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.3),
+        0 8px 32px rgba(0, 0, 0, 0.35);
+    --glass-blur: blur(20px) saturate(140%);
+
+    --btn-secondary: #232a31;
+    --btn-secondary-hover: #2e363f;
+
+    --header-surface: rgba(255, 255, 255, 0.12);
+    --header-blur: blur(8px);
+    --header-border: rgba(255, 255, 255, 0.12);
+    --header-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+    --footer-surface: rgba(255, 255, 255, 0.15);
+    --footer-text: #94a3b8;
+    --footer-heading: #ffffff;
+
+    --chrome-border: rgba(255, 255, 255, 0.55);
+    --chrome-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.05),
+        0 8px 28px rgba(15, 23, 42, 0.1);
+
+    --radius-xl: clamp(1rem, 2vw, 1.25rem);
+    --radius-lg: clamp(0.75rem, 1.5vw, 1rem);
+    --radius-pill: 999px;
+
+    --header-h: clamp(2.75rem, 3vw + 1.5rem, 3.5rem);
+    --tab-bar-h: 3.75rem;
+    --header-max: 52rem;
+    --header-pad-inline: clamp(1rem, 4vw, 2.5rem);
+    --content-max: 100%;
+    --pad-inline: clamp(0.875rem, 1.25vw + 0.5rem, 1.25rem);
+    --pad-block: clamp(2rem, 4vw + 0.5rem, 4rem);
+    --gap: clamp(0.75rem, 1.5vw, 1.125rem);
+    --gap-lg: clamp(1.5rem, 3vw + 0.5rem, 3.5rem);
+
+    --text-hero: clamp(2.25rem, 5vw + 1rem, 4.25rem);
+    --text-h2: clamp(1.75rem, 2.5vw + 0.75rem, 2.5rem);
+    --text-h3: clamp(1.0625rem, 1vw + 0.8rem, 1.3125rem);
+    --text-body: clamp(1rem, 0.35vw + 0.9rem, 1.125rem);
+    --text-small: clamp(0.8125rem, 0.2vw + 0.75rem, 0.875rem);
+    --text-label: 0.6875rem;
+}
+
+.glass {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+}
+
+.glass-strong {
+    background: var(--glass-bg-strong);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: var(--radius-pill);
+    font-size: var(--text-label);
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--primary);
+    background: var(--primary-soft);
+    border: 1px solid rgba(var(--primary-rgb), 0.25);
+}
+
+.primary-button,
+.secondary-button {
+    padding: 0.85rem 1.4rem;
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+    font-size: var(--text-small);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: background 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+    min-height: 2.75rem;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.primary-button {
+    background: var(--primary);
+    color: #fff;
+    box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+.primary-button:hover {
+    background: var(--primary-hover);
+    box-shadow: 0 4px 14px rgba(var(--primary-rgb), 0.3);
+}
+
+.secondary-button {
+    background: var(--btn-secondary);
+    color: var(--text);
+    box-shadow: none;
+}
+
+.secondary-button:hover {
+    background: var(--btn-secondary-hover);
+}
+
+.primary-button.compact,
+.secondary-button.compact {
+    padding: 0.6rem 1rem;
+    min-height: 2.4rem;
+}
+
+.section {
+    width: 100%;
+    padding: var(--pad-block) var(--pad-inline);
+    padding-left: max(var(--pad-inline), env(safe-area-inset-left));
+    padding-right: max(var(--pad-inline), env(safe-area-inset-right));
+}
+
+.section-head {
+    margin-bottom: clamp(1.5rem, 3vw, 2rem);
+    max-width: 40rem;
+}
+
+.section-head.row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--gap);
+    flex-wrap: wrap;
+    max-width: none;
+}
+
+.section-head-actions {
+    display: flex;
+    gap: var(--gap);
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.section h2 {
+    margin: 0.5rem 0 0;
+    font-size: var(--text-h2);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: var(--text);
+}
+
+.section-head p {
+    margin: 0.75rem 0 0;
+    color: var(--muted);
+    line-height: 1.65;
+    font-size: var(--text-body);
+}
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: var(--gap);
+}
+
+.glass-card {
+    padding: clamp(1.25rem, 2.5vw, 1.5rem);
+    border-radius: var(--radius-xl);
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+@media (hover: hover) {
+    .glass-card:hover {
+        transform: translateY(-2px);
+        box-shadow:
+            0 4px 12px rgba(0, 0, 0, 0.35),
+            0 12px 32px rgba(0, 0, 0, 0.4);
+    }
+}

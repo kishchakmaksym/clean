@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="LearnCSharp.Api/LearnCSharp.Api.csproj" />
+  <Project Path="LearnCSharp.Application/LearnCSharp.Application.csproj" />
+  <Project Path="LearnCSharp.Domain/LearnCSharp.Domain.csproj" />
+  <Project Path="LearnCSharp.Infrastructure/LearnCSharp.Infrastructure.csproj" />
+</Solution>

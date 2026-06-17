@@ -50,14 +50,34 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
             <footer className="footer">
                 <div className="footer-inner">
-                    <div>
-                        <strong>CleanPro</strong>
+                    <div className="footer-brand">
+                        <NavLink to="/" className="footer-logo">
+                            CleanPro
+                        </NavLink>
                         <p>Професійне прибирання квартир, будинків та офісів.</p>
                     </div>
-                    <div>
-                        <p>Телефон: +380 XX XXX XX XX</p>
-                        <p>Email: cleanpro@gmail.com</p>
+
+                    <nav className="footer-nav" aria-label="Навігація в футері">
+                        {navItems.map((item) => (
+                            <NavLink key={item.to} to={item.to} className="footer-link">
+                                {item.label}
+                            </NavLink>
+                        ))}
+                    </nav>
+
+                    <div className="footer-contact">
+                        <p className="footer-contact-label">Контакти</p>
+                        <a href="tel:+380000000000" className="footer-link">
+                            +380 XX XXX XX XX
+                        </a>
+                        <a href="mailto:cleanpro@gmail.com" className="footer-link">
+                            cleanpro@gmail.com
+                        </a>
                     </div>
+                </div>
+
+                <div className="footer-bottom">
+                    <p>© {new Date().getFullYear()} CleanPro. Усі права захищені.</p>
                 </div>
             </footer>
         </div>

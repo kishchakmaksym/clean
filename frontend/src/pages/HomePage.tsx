@@ -19,6 +19,29 @@ const highlights = [
     },
 ];
 
+const guarantees = [
+    {
+        icon: "🛡️",
+        title: "Гарантія результату",
+        text: "Приймаєте роботу разом із менеджером — фіксуємо якість на місці.",
+    },
+    {
+        icon: "↩️",
+        title: "Безкоштовне доопрацювання",
+        text: "Якщо щось пропустили — повернемось і виправимо без додаткової оплати.",
+    },
+    {
+        icon: "📋",
+        title: "Чек-лист 50+ пунктів",
+        text: "Працюємо за стандартом, щоб нічого важливого не залишилось поза увагою.",
+    },
+    {
+        icon: "💬",
+        title: "Підтримка після візиту",
+        text: "Залишаємось на зв'язку — відповімо на питання і підкажемо по догляду.",
+    },
+];
+
 const steps = [
     { title: "Заявка", text: "Залишаєте заявку — уточнюємо деталі за 2 хвилини." },
     { title: "Виїзд", text: "Приїжджаємо у зручний час із усім необхідним." },
@@ -97,35 +120,59 @@ export default function HomePage() {
                 </div>
             </section>
 
-            <section className="section">
-                <div className="section-head">
-                    <span className="badge">Переваги</span>
-                    <h2>Чому нас обирають</h2>
-                    <p>Акуратність, пунктуальність і стабільна якість — без компромісів.</p>
-                </div>
+            <section className="home-bottom">
+                <div className="hero-grid home-bottom-grid">
+                    <div className="hero-panel hero-benefits">
+                        <div className="hero-intro">
+                            <span className="badge hero-badge">Переваги</span>
+                            <h2 className="hero-process-title">Чому нас обирають</h2>
+                            <p className="hero-text">
+                                Акуратність, пунктуальність і стабільна якість — без компромісів.
+                            </p>
+                        </div>
 
-                <div className="grid-3">
-                    {highlights.map((item) => (
-                        <article key={item.title} className="glass-card info-card">
-                            <div className="info-icon" aria-hidden="true">
-                                {item.icon}
-                            </div>
-                            <h3>{item.title}</h3>
-                            <p>{item.text}</p>
-                        </article>
-                    ))}
-                </div>
-            </section>
-
-            <section className="section">
-                <div className="cta">
-                    <div>
-                        <h2>Готові до чистоти вже сьогодні?</h2>
-                        <p>Напишіть нам — підкажемо послугу, зорієнтуємо по часу та вартості.</p>
+                        <div className="panel-list">
+                            {highlights.map((item) => (
+                                <article key={item.title} className="panel-item">
+                                    <div className="panel-item-icon" aria-hidden="true">
+                                        {item.icon}
+                                    </div>
+                                    <div className="panel-item-body">
+                                        <h3>{item.title}</h3>
+                                        <p>{item.text}</p>
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
                     </div>
-                    <Link to="/contacts" className="primary-button">
-                        Залишити заявку
-                    </Link>
+
+                    <div className="hero-panel hero-guarantee">
+                        <div className="hero-intro">
+                            <span className="badge hero-badge">Надійність</span>
+                            <h2 className="hero-process-title">Гарантія якості</h2>
+                            <p className="hero-text">
+                                Ви платите за результат — ми відповідаємо за кожен етап прибирання.
+                            </p>
+                        </div>
+
+                        <div className="panel-list">
+                            {guarantees.map((item) => (
+                                <article key={item.title} className="panel-item">
+                                    <div className="panel-item-icon" aria-hidden="true">
+                                        {item.icon}
+                                    </div>
+                                    <div className="panel-item-body">
+                                        <h3>{item.title}</h3>
+                                        <p>{item.text}</p>
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
+
+                        <Link to="/reviews" className="secondary-button compact panel-cta">
+                            Читати відгуки
+                        </Link>
+                    </div>
                 </div>
             </section>
         </div>

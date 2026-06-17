@@ -236,6 +236,90 @@
     font-size: var(--text-small);
 }
 
+/* ── Bottom panels ── */
+.home-bottom {
+    width: 100%;
+    max-width: var(--content-max);
+    padding: 0 var(--pad-inline) var(--pad-block);
+    padding-left: max(var(--pad-inline), env(safe-area-inset-left));
+    padding-right: max(var(--pad-inline), env(safe-area-inset-right));
+    display: flex;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.home-bottom-grid {
+    max-width: 72rem;
+}
+
+.hero-benefits .hero-text,
+.hero-guarantee .hero-text {
+    margin-top: 0.85rem;
+}
+
+.panel-list {
+    margin-top: 1.75rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.panel-item:first-child {
+    padding-top: 0;
+}
+
+.panel-item:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.panel-item-icon {
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 0.95rem;
+    background: var(--accent-soft);
+    border: 1px solid rgba(var(--accent-rgb), 0.2);
+}
+
+.hero-guarantee .panel-item-icon {
+    background: var(--primary-soft);
+    border-color: rgba(var(--primary-rgb), 0.25);
+}
+
+.panel-item-body h3 {
+    margin: 0 0 0.3rem;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+}
+
+.panel-item-body p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.55;
+    font-size: var(--text-small);
+}
+
+.panel-cta {
+    margin-top: 1.5rem;
+    width: 100%;
+    justify-content: center;
+}
+
 /* ── Feature cards ── */
 .info-card {
     display: flex;
@@ -588,6 +672,10 @@
 
 @media (min-width: 56rem) {
     .hero-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .home-bottom-grid {
         grid-template-columns: 1fr 1fr;
     }
 }

@@ -1,4 +1,4 @@
-﻿import { useMemo, useState, type CSSProperties } from "react";
+﻿import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import "./ServicesPage.css";
 
@@ -6,68 +6,38 @@ const services = [
     {
         icon: "🏠",
         title: "Прибирання квартири",
-        text: "Кухня, санвузол, кімнати",
+        text: "Кухня, санвузол, кімнати — акуратно і без поспіху.",
         badge: "Хіт",
-        size: "lg",
-        x: 6,
-        y: 8,
-        delay: 0,
-        duration: 5.2,
     },
     {
         icon: "✨",
-        title: "Генеральне",
-        text: "Глибоке прибирання",
+        title: "Генеральне прибирання",
+        text: "Глибоке прибирання важкодоступних зон і накопиченого бруду.",
         badge: "Pro",
-        size: "xl",
-        x: 38,
-        y: 2,
-        delay: 0.8,
-        duration: 6.1,
     },
     {
         icon: "🏢",
         title: "Офіси",
-        text: "Для команд і клієнтів",
+        text: "Чистий простір для команди та гідне враження для клієнтів.",
         badge: "B2B",
-        size: "md",
-        x: 72,
-        y: 18,
-        delay: 1.4,
-        duration: 4.8,
     },
     {
         icon: "🧱",
         title: "Після ремонту",
-        text: "Пил і будівельні залишки",
+        text: "Прибираємо пил, сліди будматеріалів і дрібні залишки.",
         badge: "Після",
-        size: "md",
-        x: 10,
-        y: 48,
-        delay: 0.3,
-        duration: 5.6,
     },
     {
         icon: "🪟",
         title: "Миття вікон",
-        text: "Скло без розводів",
+        text: "Скло, рами та підвіконня — без розводів і плям.",
         badge: "Сезон",
-        size: "sm",
-        x: 46,
-        y: 52,
-        delay: 1.1,
-        duration: 4.4,
     },
     {
         icon: "🧼",
         title: "Підтримуюче",
-        text: "Щотижня або раз на 2 тижні",
+        text: "Регулярний догляд щотижня або раз на два тижні.",
         badge: "Регулярно",
-        size: "lg",
-        x: 68,
-        y: 58,
-        delay: 1.9,
-        duration: 5.9,
     },
 ] as const;
 
@@ -84,89 +54,73 @@ export default function ServicesPage() {
     };
 
     return (
-        <section className="section services-page">
-            <div className="section-head row">
-                <div>
-                    <span className="badge">Послуги</span>
-                    <h2>Оберіть бульбашки</h2>
-                    <p>
-                        Натисни на бульбашку, щоб <strong>обрати послугу</strong>. Потім перейди до
-                        розрахунку.
-                    </p>
+        <div className="services-page">
+            <header className="services-intro panel">
+                <div className="services-intro-top">
+                    <div>
+                        <span className="badge services-badge">Послуги</span>
+                        <h1>Оберіть послуги</h1>
+                        <p>
+                            Відмітьте потрібні пункти — ми підкажемо орієнтовний час і вартість
+                            після заявки.
+                        </p>
+                    </div>
+                    <div className="services-intro-actions">
+                        <Link to="/contacts" className="primary-button">
+                            Залишити заявку
+                        </Link>
+                        <Link to="/contacts" className="secondary-button">
+                            Написати нам
+                        </Link>
+                    </div>
                 </div>
-                <div className="section-head-actions">
-                    <Link to="/prices" className="primary-button">
-                        Розрахувати
-                    </Link>
-                    <Link to="/contacts" className="secondary-button">
-                        Написати нам
-                    </Link>
-                </div>
-            </div>
+            </header>
 
-            <div className="bubble-field" aria-label="Список послуг у вигляді бульбашок">
-                <div className="bubble-decor bubble-decor--1" aria-hidden="true" />
-                <div className="bubble-decor bubble-decor--2" aria-hidden="true" />
-                <div className="bubble-decor bubble-decor--3" aria-hidden="true" />
-                <div className="bubble-decor bubble-decor--4" aria-hidden="true" />
-
+            <div className="services-grid" role="group" aria-label="Список послуг">
                 {services.map((card) => {
                     const isSelected = Boolean(selected[card.title]);
-                    const style = {
-                        "--bx": `${card.x}%`,
-                        "--by": `${card.y}%`,
-                        "--float-delay": `${card.delay}s`,
-                        "--float-duration": `${card.duration}s`,
-                    } as CSSProperties;
 
                     return (
                         <button
                             key={card.title}
                             type="button"
-                            className={`soap-bubble soap-bubble--${card.size} ${isSelected ? "is-selected" : ""}`}
-                            style={style}
+                            className={`service-card ${isSelected ? "is-selected" : ""}`}
                             aria-pressed={isSelected}
                             aria-label={`${card.title}. ${isSelected ? "Обрано" : "Не обрано"}`}
                             onClick={() => toggle(card.title)}
                         >
-                            <span className="soap-bubble__rim" aria-hidden="true" />
-                            <span className="soap-bubble__shine soap-bubble__shine--main" aria-hidden="true" />
-                            <span className="soap-bubble__shine soap-bubble__shine--sub" aria-hidden="true" />
-
-                            <span className="soap-bubble__badge">{card.badge}</span>
-
-                            <span className="soap-bubble__content">
-                                <span className="soap-bubble__icon" aria-hidden="true">
-                                    {card.icon}
-                                </span>
-                                <span className="soap-bubble__title">{card.title}</span>
-                                <span className="soap-bubble__text">{card.text}</span>
+                            <span className="service-card-badge">{card.badge}</span>
+                            <span className="service-card-icon" aria-hidden="true">
+                                {card.icon}
                             </span>
-
-                            <span className="soap-bubble__check" aria-hidden="true">
-                                {isSelected ? "✓" : "+"}
+                            <span className="service-card-title">{card.title}</span>
+                            <span className="service-card-text">{card.text}</span>
+                            <span className="service-card-check" aria-hidden="true">
+                                {isSelected ? "✓" : ""}
                             </span>
                         </button>
                     );
                 })}
             </div>
 
-            <div className="selection-bar glass-strong" aria-label="Обрані послуги">
-                <div>
-                    <div className="selection-title">Обрано</div>
-                    <div className="selection-text">
-                        {selectedTitles.length ? selectedTitles.join(" · ") : "Торкнись бульбашки, щоб обрати"}
-                    </div>
+            <footer className="services-selection panel" aria-label="Обрані послуги">
+                <div className="services-selection-info">
+                    <p className="services-selection-label">Обрано</p>
+                    <p className="services-selection-text">
+                        {selectedTitles.length
+                            ? selectedTitles.join(" · ")
+                            : "Натисніть на картку, щоб обрати послугу"}
+                    </p>
                 </div>
-                <div className="selection-actions">
+                <div className="services-selection-actions">
                     <Link to="/contacts" className="secondary-button compact">
                         Замовити
                     </Link>
-                    <Link to="/prices" className="primary-button compact">
+                    <Link to="/contacts" className="primary-button compact">
                         Розрахувати
                     </Link>
                 </div>
-            </div>
-        </section>
+            </footer>
+        </div>
     );
 }

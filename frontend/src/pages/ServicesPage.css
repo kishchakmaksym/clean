@@ -2,371 +2,260 @@
 
 .services-page {
     width: 100%;
-    max-width: var(--content-max);
+    max-width: 56rem;
     margin: 0 auto;
+    padding: 0 var(--pad-inline) var(--pad-block);
+    padding-left: max(var(--pad-inline), env(safe-area-inset-left));
+    padding-right: max(var(--pad-inline), env(safe-area-inset-right));
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1rem, 2.5vw, 1.35rem);
 }
 
-/* ── Bubble field ── */
-.bubble-field {
+.panel {
     position: relative;
-    width: 100%;
-    min-height: clamp(36rem, 70vh, 44rem);
-    margin: 1.5rem 0 2rem;
-    border-radius: var(--radius-xl);
-    background: rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(12px) saturate(140%);
-    -webkit-backdrop-filter: blur(12px) saturate(140%);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
-    overflow: hidden;
+    border-radius: 1.35rem;
+    background: #141b23;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.04) inset,
+        0 24px 64px rgba(0, 0, 0, 0.28);
 }
 
-/* tiny decorative bubbles */
-.bubble-decor {
+.panel::before {
+    content: "";
     position: absolute;
-    border-radius: 50%;
-    pointer-events: none;
-    background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.15) 55%, transparent 70%);
-    border: 1px solid rgba(255, 255, 255, 0.55);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-    animation: bubble-drift 8s ease-in-out infinite;
+    top: 0;
+    left: 1.5rem;
+    right: 1.5rem;
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(59, 158, 255, 0.5) 35%,
+        rgba(52, 211, 153, 0.4) 65%,
+        transparent
+    );
 }
 
-.bubble-decor--1 {
-    width: 3.5rem;
-    height: 3.5rem;
-    top: 12%;
-    left: 28%;
-    opacity: 0.55;
-    animation-delay: 0s;
+/* ── Intro ── */
+.services-intro {
+    padding: clamp(1.75rem, 4vw, 2.5rem);
 }
 
-.bubble-decor--2 {
-    width: 2rem;
-    height: 2rem;
-    top: 70%;
-    left: 32%;
-    opacity: 0.45;
-    animation-delay: -2s;
+.services-intro-top {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--gap-lg);
+    flex-wrap: wrap;
 }
 
-.bubble-decor--3 {
-    width: 2.75rem;
-    height: 2.75rem;
-    top: 35%;
-    left: 82%;
-    opacity: 0.5;
-    animation-delay: -4s;
+.services-badge {
+    display: inline-flex;
+    margin-bottom: 1rem;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.625rem;
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.88);
+    background: rgba(59, 158, 255, 0.1);
+    border: 1px solid rgba(59, 158, 255, 0.28);
+    border-radius: var(--radius-pill);
+    font-weight: 700;
+    text-transform: uppercase;
 }
 
-.bubble-decor--4 {
-    width: 1.5rem;
-    height: 1.5rem;
-    top: 82%;
-    left: 52%;
-    opacity: 0.4;
-    animation-delay: -1s;
+.services-intro h1 {
+    margin: 0;
+    font-size: clamp(1.75rem, 3vw + 0.5rem, 2.5rem);
+    line-height: 1.1;
+    letter-spacing: -0.035em;
+    font-weight: 800;
+    color: var(--text);
+    text-wrap: balance;
 }
 
-/* ── Soap bubble ── */
-.soap-bubble {
-    position: absolute;
-    left: var(--bx);
-    top: var(--by);
-    transform: translate(-50%, -50%);
-    border-radius: 50%;
-    border: none;
-    padding: 0;
+.services-intro p {
+    margin: 0.85rem 0 0;
+    max-width: 32rem;
+    font-size: var(--text-body);
+    line-height: 1.7;
+    color: var(--muted);
+}
+
+.services-intro-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+}
+
+/* ── Grid ── */
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15.5rem), 1fr));
+    gap: clamp(0.75rem, 2vw, 1rem);
+}
+
+.service-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    padding: 1.35rem 1.25rem 1.25rem;
+    border-radius: 1.15rem;
+    background: #141b23;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
     cursor: pointer;
     font-family: inherit;
-    color: var(--text);
-    background: transparent;
-    animation: bubble-float var(--float-duration, 5s) ease-in-out infinite;
-    animation-delay: var(--float-delay, 0s);
-    transition: transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1), filter 0.3s ease;
+    color: inherit;
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
     -webkit-tap-highlight-color: transparent;
 }
 
-.soap-bubble::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background:
-        radial-gradient(circle at 38% 32%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.5) 30%, rgba(239, 246, 255, 0.3) 60%, rgba(236, 253, 245, 0.15) 100%);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+.service-card:hover {
+    border-color: rgba(255, 255, 255, 0.14);
+    background: #171f28;
+}
+
+.service-card.is-selected {
+    border-color: rgba(var(--primary-rgb), 0.45);
+    background: #182230;
     box-shadow:
-        0 8px 24px rgba(15, 23, 42, 0.06),
-        inset 0 2px 6px rgba(255, 255, 255, 0.9),
-        inset 0 -2px 8px rgba(var(--primary-rgb), 0.04);
+        0 0 0 1px rgba(var(--primary-rgb), 0.2) inset,
+        0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
-.soap-bubble__rim {
+.service-card-badge {
     position: absolute;
-    inset: -2px;
-    border-radius: 50%;
-    background: conic-gradient(
-        from 210deg,
-        rgba(0, 113, 227, 0.35),
-        rgba(5, 150, 105, 0.3),
-        rgba(0, 113, 227, 0.25),
-        rgba(5, 150, 105, 0.35),
-        rgba(0, 113, 227, 0.35)
-    );
-    opacity: 0.6;
-    filter: blur(0.5px);
-    z-index: 0;
-    mask: radial-gradient(circle, transparent 62%, #000 64%, #000 100%);
-    -webkit-mask: radial-gradient(circle, transparent 62%, #000 64%, #000 100%);
-    pointer-events: none;
-}
-
-.soap-bubble__shine {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.75);
-    filter: blur(0.15rem);
-    pointer-events: none;
-    z-index: 2;
-}
-
-.soap-bubble__shine--main {
-    top: 14%;
-    left: 20%;
-    width: 38%;
-    height: 22%;
-    transform: rotate(-28deg);
-    opacity: 0.85;
-}
-
-.soap-bubble__shine--sub {
-    top: 58%;
-    right: 18%;
-    width: 14%;
-    height: 10%;
-    opacity: 0.45;
-}
-
-.soap-bubble__content {
-    position: relative;
-    z-index: 3;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    height: 100%;
-    padding: 1.25rem;
-    gap: 0.35rem;
-}
-
-.soap-bubble__icon {
-    font-size: clamp(1.5rem, 3vw, 2rem);
-    line-height: 1;
-    filter: drop-shadow(0 2px 4px rgba(var(--accent-rgb), 0.2));
-}
-
-.soap-bubble__title {
-    font-weight: 800;
-    font-size: clamp(0.8rem, 1.2vw, 0.95rem);
-    letter-spacing: -0.02em;
-    line-height: 1.2;
-    max-width: 90%;
-}
-
-.soap-bubble__text {
-    font-size: clamp(0.68rem, 1vw, 0.78rem);
-    color: var(--muted);
-    line-height: 1.35;
-    max-width: 85%;
-}
-
-.soap-bubble__badge {
-    position: absolute;
-    top: 8%;
-    right: 10%;
-    z-index: 4;
-    padding: 0.25rem 0.55rem;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.2rem 0.5rem;
     border-radius: var(--radius-pill);
-    font-size: 0.6rem;
+    font-size: 0.5625rem;
     font-weight: 800;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--primary);
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.98);
-    box-shadow: 0 0.25rem 0.75rem rgba(var(--accent-rgb), 0.15);
+    background: rgba(var(--primary-rgb), 0.12);
+    border: 1px solid rgba(var(--primary-rgb), 0.25);
 }
 
-.soap-bubble__check {
-    position: absolute;
-    bottom: 10%;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 4;
-    width: 1.75rem;
-    height: 1.75rem;
+.service-card-icon {
+    width: 2.5rem;
+    height: 2.5rem;
     border-radius: 50%;
     display: grid;
     place-items: center;
-    font-size: 0.85rem;
+    font-size: 1.2rem;
+    background: var(--accent-soft);
+    border: 1px solid rgba(var(--accent-rgb), 0.2);
+    margin-bottom: 1rem;
+}
+
+.service-card.is-selected .service-card-icon {
+    background: var(--primary-soft);
+    border-color: rgba(var(--primary-rgb), 0.3);
+}
+
+.service-card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    line-height: 1.3;
+    padding-right: 3rem;
+}
+
+.service-card-text {
+    margin-top: 0.45rem;
+    font-size: var(--text-small);
+    line-height: 1.55;
+    color: var(--muted);
+}
+
+.service-card-check {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 0.75rem;
     font-weight: 800;
-    color: var(--primary);
-    background: rgba(255, 255, 255, 0.92);
-    border: 1px solid rgba(255, 255, 255, 1);
-    box-shadow: 0 0.35rem 1rem rgba(var(--primary-rgb), 0.12);
-    transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease;
+    color: transparent;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
 }
 
-/* sizes */
-.soap-bubble--sm {
-    width: clamp(9.5rem, 18vw, 11.5rem);
-    height: clamp(9.5rem, 18vw, 11.5rem);
-}
-
-.soap-bubble--md {
-    width: clamp(11rem, 20vw, 13.5rem);
-    height: clamp(11rem, 20vw, 13.5rem);
-}
-
-.soap-bubble--lg {
-    width: clamp(12.5rem, 22vw, 15rem);
-    height: clamp(12.5rem, 22vw, 15rem);
-}
-
-.soap-bubble--xl {
-    width: clamp(14rem, 26vw, 17rem);
-    height: clamp(14rem, 26vw, 17rem);
-}
-
-.soap-bubble:hover {
-    animation-play-state: paused;
-    transform: translate(-50%, -52%) scale(1.04);
-    filter: brightness(1.05);
-}
-
-.soap-bubble.is-selected::before {
-    box-shadow:
-        0 0 0 3px rgba(var(--accent-rgb), 0.4),
-        0 1.5rem 3.5rem rgba(var(--primary-rgb), 0.2),
-        0 1rem 2.5rem rgba(var(--accent-rgb), 0.18),
-        inset 0 2px 8px rgba(255, 255, 255, 0.9);
-}
-
-.soap-bubble.is-selected .soap-bubble__check {
-    background: var(--gradient-brand);
+.service-card.is-selected .service-card-check {
     color: #fff;
-    transform: translateX(-50%) scale(1.1);
+    background: var(--primary);
+    border-color: transparent;
 }
 
-.soap-bubble.is-selected .soap-bubble__rim {
-    opacity: 1;
-}
-
-@keyframes bubble-float {
-    0%,
-    100% {
-        transform: translate(-50%, -50%) translateY(0) rotate(0deg);
-    }
-    33% {
-        transform: translate(-50%, -50%) translateY(-0.65rem) translateX(0.35rem) rotate(1deg);
-    }
-    66% {
-        transform: translate(-50%, -50%) translateY(0.45rem) translateX(-0.25rem) rotate(-1deg);
-    }
-}
-
-@keyframes bubble-drift {
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-0.75rem);
-    }
-}
-
-/* selection bar */
-.selection-bar {
+/* ── Selection bar ── */
+.services-selection {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--gap);
+    gap: var(--gap-lg);
     flex-wrap: wrap;
-    padding: 1.1rem 1.25rem;
-    border-radius: var(--radius-xl);
+    padding: 1.35rem 1.5rem;
 }
 
-.selection-title {
-    font-weight: 800;
-    font-size: var(--text-body);
+.services-selection-label {
+    margin: 0;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted2);
 }
 
-.selection-text {
-    margin-top: 0.25rem;
-    color: var(--muted);
+.services-selection-text {
+    margin: 0.35rem 0 0;
     font-size: var(--text-small);
-    line-height: 1.5;
+    line-height: 1.55;
+    color: var(--text);
+    font-weight: 600;
 }
 
-.selection-actions {
+.services-selection-actions {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
 }
 
-/* ── Mobile: stack bubbles ── */
-@media (max-width: 56rem) {
-    .bubble-field {
-        min-height: auto;
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1.25rem;
-        padding: 1.25rem;
+@media (max-width: 40rem) {
+    .services-intro-top {
+        flex-direction: column;
+        align-items: stretch;
     }
 
-    .bubble-decor {
-        display: none;
+    .services-intro-actions .primary-button,
+    .services-intro-actions .secondary-button {
+        flex: 1;
+        justify-content: center;
     }
 
-    .soap-bubble {
-        position: relative;
-        left: auto !important;
-        top: auto !important;
-        transform: none !important;
-        width: 100% !important;
-        height: auto !important;
-        aspect-ratio: 1;
-        max-width: 11.5rem;
-        margin: 0 auto;
-        animation: bubble-float-mobile var(--float-duration, 5s) ease-in-out infinite;
+    .services-selection-actions {
+        width: 100%;
     }
 
-    .soap-bubble:hover {
-        transform: scale(1.03) !important;
-    }
-
-    @keyframes bubble-float-mobile {
-        0%,
-        100% {
-            transform: translateY(0);
-        }
-        50% {
-            transform: translateY(-0.5rem);
-        }
-    }
-}
-
-@media (max-width: 24rem) {
-    .bubble-field {
-        grid-template-columns: 1fr;
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .soap-bubble,
-    .bubble-decor {
-        animation: none !important;
+    .services-selection-actions .primary-button,
+    .services-selection-actions .secondary-button {
+        flex: 1;
+        justify-content: center;
     }
 }

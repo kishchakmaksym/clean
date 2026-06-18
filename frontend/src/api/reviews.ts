@@ -1,5 +1,18 @@
 import type { CreateReviewResponse, DeleteReviewResponse, ReviewDto } from "./types";
 
+function sortReviewsByNewest(reviews: ReviewDto[]) {
+    return [...reviews].sort((left, right) => {
+        const dateDiff =
+            new Date(right.createdAtUtc).getTime() - new Date(left.createdAtUtc).getTime();
+
+        if (dateDiff !== 0) {
+            return dateDiff;
+        }
+
+        return right.id.localeCompare(left.id);
+    });
+}
+
 export async function fetchReviews(): Promise<ReviewDto[]> {
     const response = await fetch("/api/reviews");
 
@@ -7,7 +20,8 @@ export async function fetchReviews(): Promise<ReviewDto[]> {
         throw new Error("Не вдалося завантажити відгуки.");
     }
 
-    return (await response.json()) as ReviewDto[];
+    const reviews = (await response.json()) as ReviewDto[];
+    return sortReviewsByNewest(reviews);
 }
 
 export async function createReview(payload: {

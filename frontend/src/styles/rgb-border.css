@@ -1,15 +1,3 @@
-@property --rgb-angle {
-    syntax: "<angle>";
-    initial-value: 0deg;
-    inherits: false;
-}
-
-@keyframes rgb-border-spin {
-    to {
-        --rgb-angle: 360deg;
-    }
-}
-
 .hero-panel,
 .glass-card,
 .review-form-card,
@@ -17,24 +5,11 @@
 .contact-form,
 .auth-card,
 .step {
-    border: 1px solid transparent;
-    background-clip: padding-box, border-box;
-    background-origin: padding-box, border-box;
-    animation: rgb-border-spin 6s linear infinite;
+    border: 1px solid rgba(var(--primary-rgb), 0.42);
 }
 
 .hero-panel {
-    background:
-        linear-gradient(var(--panel-bg), var(--panel-bg)) padding-box,
-        conic-gradient(
-            from var(--rgb-angle),
-            #ff3b5c,
-            #ff9f1a,
-            #2ee59d,
-            #3b9eff,
-            #a855f7,
-            #ff3b5c
-        ) border-box;
+    background: var(--panel-bg);
 }
 
 .glass-card,
@@ -43,41 +18,5 @@
 .contact-form,
 .auth-card,
 .step {
-    background:
-        linear-gradient(var(--glass-bg), var(--glass-bg)) padding-box,
-        conic-gradient(
-            from var(--rgb-angle),
-            #ff3b5c,
-            #ff9f1a,
-            #2ee59d,
-            #3b9eff,
-            #a855f7,
-            #ff3b5c
-        ) border-box;
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .hero-panel,
-    .glass-card,
-    .review-form-card,
-    .contact-copy,
-    .contact-form,
-    .auth-card,
-    .step {
-        animation: none;
-        border-color: var(--glass-border);
-    }
-
-    .hero-panel {
-        background: var(--panel-bg);
-    }
-
-    .glass-card,
-    .review-form-card,
-    .contact-copy,
-    .contact-form,
-    .auth-card,
-    .step {
-        background: var(--glass-bg);
-    }
+    background: var(--glass-bg);
 }

@@ -126,6 +126,61 @@
 .review-card {
     display: grid;
     gap: 0.5rem;
+    min-width: 0;
+}
+
+.reviews-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--gap);
+}
+
+.review-text-block {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.review-text {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.65;
+    font-size: var(--text-body);
+}
+
+.review-toggle {
+    justify-self: start;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--primary);
+    font: inherit;
+    font-size: var(--text-small);
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+}
+
+.review-toggle:hover {
+    color: var(--primary-hover);
+}
+
+.review-toggle:focus-visible {
+    outline: 2px solid rgba(var(--primary-rgb), 0.45);
+    outline-offset: 2px;
+    border-radius: 0.2rem;
+}
+
+@media (max-width: 56rem) {
+    .reviews-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 36rem) {
+    .reviews-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .review-delete-button {

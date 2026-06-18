@@ -18,6 +18,44 @@ function todayInputValue() {
     return new Date().toISOString().slice(0, 10);
 }
 
+const REVIEW_PREVIEW_WORDS = 36;
+
+function countWords(text: string) {
+    return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function truncateWords(text: string, maxWords: number) {
+    const words = text.trim().split(/\s+/).filter(Boolean);
+    if (words.length <= maxWords) {
+        return text;
+    }
+
+    return `${words.slice(0, maxWords).join(" ")}…`;
+}
+
+function ReviewText({ text }: { text: string }) {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const isLong = countWords(text) > REVIEW_PREVIEW_WORDS;
+
+    if (!isLong) {
+        return <p className="review-text">{text}</p>;
+    }
+
+    return (
+        <div className="review-text-block">
+            <p className="review-text">{isExpanded ? text : truncateWords(text, REVIEW_PREVIEW_WORDS)}</p>
+            <button
+                type="button"
+                className="review-toggle"
+                onClick={() => setIsExpanded((value) => !value)}
+                aria-expanded={isExpanded}
+            >
+                {isExpanded ? "Читати менше" : "Читати більше"}
+            </button>
+        </div>
+    );
+}
+
 export default function ReviewsPage() {
     const { user } = useAuth();
     const isAdmin = user?.role === "Admin";
@@ -353,14 +391,14 @@ export default function ReviewsPage() {
             )}
 
             {!isLoading && !loadError && reviews.length > 0 && (
-                <div className="grid-3">
+                <div className="reviews-grid">
                     {reviews.map((review) => (
                         <article key={review.id} className="glass-card info-card review-card">
                             <div className="review-stars-display" aria-label={`Оцінка ${review.rating} з 5`}>
                                 {renderStars(review.rating)}
                             </div>
                             <h3>{review.authorName}</h3>
-                            <p>{review.text}</p>
+                            <ReviewText text={review.text} />
                             <p className="review-meta">{formatReviewDate(review.createdAtUtc)}</p>
                             {isAdmin && (
                                 <button

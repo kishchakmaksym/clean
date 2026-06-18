@@ -1,8 +1,11 @@
+export type UserRole = "User" | "Employee" | "Admin";
+
 export type UserDto = {
     id: string;
     name: string;
     email: string;
     phone: string;
+    role: UserRole;
 };
 
 export type AuthResponse = {
@@ -23,4 +26,19 @@ export type RegisterRequest = {
 export type LoginRequest = {
     login: string;
     password: string;
+};
+
+export type ReviewDto = {
+    id: string;
+    authorName: string;
+    rating: number;
+    text: string;
+    createdAtUtc: string;
+};
+
+export type CreateReviewResponse = {
+    success: boolean;
+    message?: string;
+    review?: ReviewDto;
+    errors?: string[];
 };

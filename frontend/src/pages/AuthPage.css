@@ -79,12 +79,54 @@
     text-align: center;
 }
 
-.auth-footer a {
+.auth-footer a,
+.auth-toggle {
     color: var(--primary);
     font-weight: 700;
     text-decoration: none;
 }
 
-.auth-footer a:hover {
+.auth-footer a:hover,
+.auth-toggle:hover {
     text-decoration: underline;
+}
+
+.auth-toggle {
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    cursor: pointer;
+}
+
+.profile-card {
+    gap: 1.25rem;
+}
+
+.profile-fields {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.profile-field {
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--glass-border);
+    display: grid;
+    gap: 0.25rem;
+}
+
+.profile-label {
+    font-size: var(--text-label);
+    color: var(--muted2);
+    font-weight: 600;
+}
+
+.profile-value {
+    font-weight: 700;
+}
+
+.profile-logout {
+    width: 100%;
 }

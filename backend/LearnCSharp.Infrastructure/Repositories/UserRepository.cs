@@ -1,5 +1,6 @@
 using LearnCSharp.Application.Interfaces;
 using LearnCSharp.Domain.Entities;
+using LearnCSharp.Domain.Enums;
 using LearnCSharp.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,11 +14,17 @@ public sealed class UserRepository(AppDbContext dbContext) : IUserRepository
     public Task<bool> PhoneExistsAsync(string normalizedPhone, CancellationToken cancellationToken = default) =>
         dbContext.Users.AnyAsync(user => user.Phone == normalizedPhone, cancellationToken);
 
+    public Task<bool> AnyAdminExistsAsync(CancellationToken cancellationToken = default) =>
+        dbContext.Users.AnyAsync(user => user.Role == UserRole.Admin, cancellationToken);
+
     public Task<User?> FindByEmailAsync(string normalizedEmail, CancellationToken cancellationToken = default) =>
         dbContext.Users.FirstOrDefaultAsync(user => user.Email == normalizedEmail, cancellationToken);
 
     public Task<User?> FindByPhoneAsync(string normalizedPhone, CancellationToken cancellationToken = default) =>
         dbContext.Users.FirstOrDefaultAsync(user => user.Phone == normalizedPhone, cancellationToken);
+
+    public Task<User?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+        dbContext.Users.FirstOrDefaultAsync(user => user.Id == id, cancellationToken);
 
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
     {

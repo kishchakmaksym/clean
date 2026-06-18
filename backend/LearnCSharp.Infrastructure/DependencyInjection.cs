@@ -1,4 +1,6 @@
 using LearnCSharp.Application.Interfaces;
+using LearnCSharp.Application.Seeding;
+using LearnCSharp.Application.Services;
 using LearnCSharp.Infrastructure.Persistence;
 using LearnCSharp.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +22,7 @@ public static class DependencyInjection
             options.UseSqlite(connectionString));
 
         services.AddScoped<IUserRepository, UserRepository>();
+        services.AddScoped<IReviewRepository, ReviewRepository>();
 
         return services;
     }
@@ -29,5 +32,8 @@ public static class DependencyInjection
         await using var scope = services.CreateAsyncScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         await dbContext.Database.MigrateAsync();
+
+        var adminSeeder = scope.ServiceProvider.GetRequiredService<AdminSeeder>();
+        await adminSeeder.SeedAsync();
     }
 }

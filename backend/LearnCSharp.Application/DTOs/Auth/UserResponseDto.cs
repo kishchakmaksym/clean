@@ -1,3 +1,5 @@
+using LearnCSharp.Domain.Enums;
+
 namespace LearnCSharp.Application.DTOs.Auth;
 
 public sealed class UserResponseDto
@@ -9,4 +11,6 @@ public sealed class UserResponseDto
     public required string Email { get; init; }
 
     public required string Phone { get; init; }
+
+    public required UserRole Role { get; init; }
 }

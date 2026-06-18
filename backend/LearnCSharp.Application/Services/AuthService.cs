@@ -2,6 +2,7 @@ using LearnCSharp.Application.DTOs.Auth;
 using LearnCSharp.Application.Interfaces;
 using LearnCSharp.Application.Validation;
 using LearnCSharp.Domain.Entities;
+using LearnCSharp.Domain.Enums;
 
 namespace LearnCSharp.Application.Services;
 
@@ -54,6 +55,7 @@ public sealed class AuthService(IUserRepository userRepository) : IAuthService
             Email = normalizedEmail,
             Phone = normalizedPhone,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password, BcryptWorkFactor),
+            Role = UserRole.User,
             CreatedAtUtc = DateTime.UtcNow
         };
 
@@ -120,6 +122,7 @@ public sealed class AuthService(IUserRepository userRepository) : IAuthService
             Id = user.Id,
             Name = user.Name,
             Email = user.Email,
-            Phone = user.Phone
+            Phone = user.Phone,
+            Role = user.Role
         };
 }

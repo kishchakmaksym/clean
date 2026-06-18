@@ -1,5 +1,7 @@
-﻿import { type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
+
+import { useAuth } from "../auth/AuthContext";
 import "./AppLayout.css";
 
 type AppLayoutProps = {
@@ -11,11 +13,11 @@ const navItems = [
     { to: "/services", label: "Послуги" },
     { to: "/reviews", label: "Відгуки" },
     { to: "/contacts", label: "Контакти" },
-    { to: "/login", label: "Увійти" },
-    { to: "/register", label: "Реєстрація" },
 ];
 
 export default function AppLayout({ children }: AppLayoutProps) {
+    const { user } = useAuth();
+
     return (
         <div className="app-layout">
             <div className="ambient" aria-hidden="true">
@@ -41,6 +43,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
                                     {item.label}
                                 </NavLink>
                             ))}
+                            {user ? (
+                                <NavLink to="/profile" className="header-link">
+                                    Профіль
+                                </NavLink>
+                            ) : (
+                                <NavLink to="/login" className="header-link">
+                                    Вхід/Реєстрація
+                                </NavLink>
+                            )}
                         </nav>
                     </div>
                 </div>

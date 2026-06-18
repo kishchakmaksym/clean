@@ -1,3 +1,5 @@
+using LearnCSharp.Domain.Enums;
+
 namespace LearnCSharp.Domain.Entities;
 
 public class User
@@ -11,6 +13,8 @@ public class User
     public required string Phone { get; set; }
 
     public required string PasswordHash { get; set; }
+
+    public UserRole Role { get; set; } = UserRole.User;
 
     public DateTime CreatedAtUtc { get; set; }
 }

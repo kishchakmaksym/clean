@@ -1,4 +1,4 @@
-import type { AuthResponse, LoginRequest, RegisterRequest } from "./types";
+import type { AuthResponse, LoginRequest, RegisterRequest, UserDto } from "./types";
 
 async function parseAuthResponse(response: Response): Promise<AuthResponse> {
     const data = (await response.json()) as AuthResponse;
@@ -45,7 +45,14 @@ export function getAuthUser() {
     if (!raw) return null;
 
     try {
-        return JSON.parse(raw) as NonNullable<AuthResponse["user"]>;
+        const parsed = JSON.parse(raw) as Partial<UserDto>;
+        return {
+            id: parsed.id ?? "",
+            name: parsed.name ?? "",
+            email: parsed.email ?? "",
+            phone: parsed.phone ?? "",
+            role: parsed.role ?? "User",
+        };
     } catch {
         localStorage.removeItem(AUTH_USER_STORAGE_KEY);
         return null;

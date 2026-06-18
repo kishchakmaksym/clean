@@ -1,8 +1,11 @@
 {
   "version": 2,
-  "dgSpecHash": "HDKwK8EatgQ=",
+  "dgSpecHash": "vz7E1OWjxzc=",
   "success": true,
   "projectFilePath": "C:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\kashchei94\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
+    "C:\\Users\\kashchei94\\.nuget\\packages\\microsoft.extensions.dependencyinjection.abstractions\\10.0.0\\microsoft.extensions.dependencyinjection.abstractions.10.0.0.nupkg.sha512"
+  ],
   "logs": []
 }

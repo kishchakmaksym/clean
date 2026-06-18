@@ -1,0 +1,12 @@
+C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Domain\bin\Debug\net10.0\LearnCSharp.Domain.deps.json
+C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Domain\bin\Debug\net10.0\LearnCSharp.Domain.dll
+C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Domain\bin\Debug\net10.0\LearnCSharp.Domain.pdb
+C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Domain\obj\Debug\net10.0\LearnCSharp.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Domain\obj\Debug\net10.0\LearnCSharp.Domain.AssemblyInfoInputs.cache
+C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Domain\obj\Debug\net10.0\LearnCSharp.Domain.AssemblyInfo.cs
+C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Domain\obj\Debug\net10.0\LearnCSharp.Domain.csproj.CoreCompileInputs.cache
+C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Domain\obj\Debug\net10.0\LearnCSharp.Domain.sourcelink.json
+C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Domain\obj\Debug\net10.0\LearnCSharp.Domain.dll
+C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Domain\obj\Debug\net10.0\refint\LearnCSharp.Domain.dll
+C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Domain\obj\Debug\net10.0\LearnCSharp.Domain.pdb
+C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Domain\obj\Debug\net10.0\ref\LearnCSharp.Domain.dll

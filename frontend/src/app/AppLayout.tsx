@@ -11,6 +11,8 @@ const navItems = [
     { to: "/services", label: "Послуги" },
     { to: "/reviews", label: "Відгуки" },
     { to: "/contacts", label: "Контакти" },
+    { to: "/login", label: "Увійти" },
+    { to: "/register", label: "Реєстрація" },
 ];
 
 export default function AppLayout({ children }: AppLayoutProps) {
@@ -29,8 +31,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <div className="header-shell">
                     <div className="header-glass" aria-hidden="true" />
                     <div className="header-inner">
-                        <NavLink to="/" className="header-logo">
-                            CleanPro
+                        <NavLink to="/" className="header-logo" aria-label="Smart Clean — головна">
+                            <img src="/logo.png" alt="Smart Clean" className="header-logo-img" />
                         </NavLink>
 
                         <nav className="header-nav" aria-label="Головна навігація">
@@ -40,10 +42,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
                                 </NavLink>
                             ))}
                         </nav>
-
-                        <NavLink to="/contacts" className="header-cta">
-                            Замовити
-                        </NavLink>
                     </div>
                 </div>
             </header>

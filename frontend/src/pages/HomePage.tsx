@@ -87,12 +87,12 @@ export default function HomePage() {
                                     Професійний клінінг
                                 </span>
 
-                                <h1>
+                                <p className="hero-headline">
                                     Чистий дім без стресу
                                     <span className="hero-title-accent">
                                         <TypewriterText text="і зайвих турбот" />
                                     </span>
-                                </h1>
+                                </p>
 
                                 <p className="hero-text">
                                     Прибираємо квартири, будинки та офіси. Приїжджаємо в зручний час,
@@ -118,13 +118,15 @@ export default function HomePage() {
                     <div className="hero-panel hero-process home-panel-reveal-top home-panel-reveal-top--right">
                         <div className="hero-intro">
                             <span className="badge hero-badge">Процес</span>
-                            <h2 className="hero-process-title">Як ми працюємо</h2>
+                            <h2 className="hero-process-subtitle">Як ми працюємо</h2>
                             <p className="hero-text">
-                                Прозорий процес: від заявки до ідеальної чистоти.
+                                Прозорий процес в Ужгороді та області: від заявки до ідеальної чистоти.
                             </p>
                         </div>
 
                         <ProcessSteps steps={steps} />
+
+                        <h1 className="hero-process-title hero-process-seo-title">Клінінг в Ужгороді</h1>
                     </div>
                 </div>
             </section>

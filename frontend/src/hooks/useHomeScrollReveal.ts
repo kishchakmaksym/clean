@@ -24,21 +24,28 @@ export function useHomeScrollReveal() {
         const update = () => {
             if (reducedMotion.matches) {
                 home.style.setProperty("--reveal-progress", "0");
+                home.style.setProperty("--reveal-progress-bottom", "0");
                 return;
             }
 
-            const rect = bottomSection.getBoundingClientRect();
             const viewportHeight = window.innerHeight;
-            const sectionAnchor = rect.top + rect.height * 0.3;
-            const revealStart = viewportHeight * 0.98;
-            const revealEnd = viewportHeight * 0.32;
-            const progress = clamp(
-                (revealStart - sectionAnchor) / (revealStart - revealEnd),
-                0,
-                1,
+            const scrollY = window.scrollY;
+            const sectionOffset = bottomSection.offsetTop;
+
+            const endScrollTop = Math.max(
+                viewportHeight * 0.18,
+                sectionOffset - viewportHeight * 0.72,
+            );
+            const endScrollBottom = Math.max(
+                viewportHeight * 0.32,
+                sectionOffset - viewportHeight * 0.46,
             );
 
+            const progress = clamp(scrollY / endScrollTop, 0, 1);
+            const bottomProgress = clamp(scrollY / endScrollBottom, 0, 1);
+
             home.style.setProperty("--reveal-progress", progress.toFixed(4));
+            home.style.setProperty("--reveal-progress-bottom", bottomProgress.toFixed(4));
         };
 
         const scheduleUpdate = () => {

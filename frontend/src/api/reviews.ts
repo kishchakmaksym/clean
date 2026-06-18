@@ -1,6 +1,6 @@
 import type { CreateReviewResponse, DeleteReviewResponse, ReviewDto } from "./types";
 
-function sortReviewsByNewest(reviews: ReviewDto[]) {
+export function sortReviewsByNewest(reviews: ReviewDto[]) {
     return [...reviews].sort((left, right) => {
         const dateDiff =
             new Date(right.createdAtUtc).getTime() - new Date(left.createdAtUtc).getTime();
@@ -11,6 +11,15 @@ function sortReviewsByNewest(reviews: ReviewDto[]) {
 
         return right.id.localeCompare(left.id);
     });
+}
+
+export function getAverageReviewRating(reviews: ReviewDto[]): number | null {
+    if (reviews.length === 0) {
+        return null;
+    }
+
+    const total = reviews.reduce((sum, review) => sum + review.rating, 0);
+    return Math.round((total / reviews.length) * 100) / 100;
 }
 
 export async function fetchReviews(): Promise<ReviewDto[]> {

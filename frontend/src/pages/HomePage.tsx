@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import BeforeAfterSlider from "../components/home/BeforeAfterSlider";
 import CountUpMetric, { MetricRange } from "../components/home/CountUpMetric";
 import { HomeIcon, type HomeIconName } from "../components/home/HomeIcons";
+import ReviewRatingMetric from "../components/home/ReviewRatingMetric";
 import ProcessSteps from "../components/home/ProcessSteps";
 import RevealItem from "../components/home/RevealItem";
 import TypewriterText from "../components/home/TypewriterText";
@@ -81,35 +82,59 @@ export default function HomePage() {
             <section className="hero">
                 <div className="hero-grid">
                     <div className="hero-panel hero-content home-panel-reveal-top home-panel-reveal-top--left">
-                        <div className="hero-intro">
-                            <span className="badge hero-badge">Професійний клінінг</span>
-
-                            <h1>
-                                Чистий дім без стресу
-                                <span>
-                                    <TypewriterText text="і зайвих турбот" />
+                        <div className="hero-content-inner">
+                            <div className="hero-intro">
+                                <span className="badge hero-badge">
+                                    <span className="hero-badge-dot" aria-hidden="true" />
+                                    Професійний клінінг
                                 </span>
-                            </h1>
 
-                            <p className="hero-text">
-                                Прибираємо квартири, будинки та офіси. Приїжджаємо в зручний час,
-                                працюємо акуратно і залишаємо після себе ідеальну чистоту.
-                            </p>
-                        </div>
+                                <h1>
+                                    Чистий дім без стресу
+                                    <span className="hero-title-accent">
+                                        <TypewriterText text="і зайвих турбот" />
+                                    </span>
+                                </h1>
 
-                        <div className="hero-actions">
-                            <Link to="/contacts" className="primary-button">
-                                Замовити прибирання
-                            </Link>
-                            <Link to="/services" className="secondary-button">
-                                Наші послуги
-                            </Link>
-                        </div>
+                                <p className="hero-text">
+                                    Прибираємо квартири, будинки та офіси. Приїжджаємо в зручний час,
+                                    працюємо акуратно і залишаємо після себе ідеальну чистоту.
+                                </p>
 
-                        <div className="hero-metrics" aria-label="Коротко про сервіс">
-                            <CountUpMetric value={4.9} decimals={1} label="рейтинг" />
-                            <MetricRange from={2} to={4} suffix=" год" label="середній час" />
-                            <CountUpMetric value={100} suffix="%" label="чек-лист" />
+                                <ul className="hero-perks" aria-label="Переваги сервісу">
+                                    <li>Без передоплати</li>
+                                    <li>Виїзд у день звернення</li>
+                                    <li>Еко-засоби</li>
+                                </ul>
+                            </div>
+
+                            <div className="hero-actions">
+                                <Link to="/contacts" className="primary-button hero-cta-primary">
+                                    Замовити прибирання
+                                    <svg
+                                        className="hero-cta-arrow"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        aria-hidden="true"
+                                    >
+                                        <path d="M5 12h14" />
+                                        <path d="M13 6l6 6-6 6" />
+                                    </svg>
+                                </Link>
+                                <Link to="/services" className="secondary-button">
+                                    Наші послуги
+                                </Link>
+                            </div>
+
+                            <div className="hero-metrics" aria-label="Коротко про сервіс">
+                                <ReviewRatingMetric />
+                                <MetricRange from={2} to={4} suffix=" год" label="середній час" icon="clock" />
+                                <CountUpMetric value={100} suffix="%" label="чек-лист" icon="checklist" />
+                            </div>
                         </div>
                     </div>
 

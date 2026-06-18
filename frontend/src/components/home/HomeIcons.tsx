@@ -18,7 +18,9 @@ export type HomeIconName =
     | "request"
     | "van"
     | "sparkle"
-    | "handshake";
+    | "handshake"
+    | "star"
+    | "clock";
 
 export function HomeIcon({ name, className }: { name: HomeIconName; className?: string }) {
     switch (name) {
@@ -112,6 +114,19 @@ export function HomeIcon({ name, className }: { name: HomeIconName; className?: 
                     <path d="M4 12.5l3-2.5 3 2.5 2-2 3.5 3" />
                     <path d="M7 10V7.5A2 2 0 019 5.5h1.5" />
                     <path d="M17 10V7.5A2 2 0 0015 5.5H13.5" />
+                </svg>
+            );
+        case "star":
+            return (
+                <svg {...iconProps} className={className} aria-hidden="true">
+                    <path d="M12 4.5l2.2 4.5 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5L4.8 9.7l5-.7L12 4.5z" />
+                </svg>
+            );
+        case "clock":
+            return (
+                <svg {...iconProps} className={className} aria-hidden="true">
+                    <circle cx="12" cy="12" r="8.5" />
+                    <path d="M12 8v4.5l3 1.5" />
                 </svg>
             );
         default:

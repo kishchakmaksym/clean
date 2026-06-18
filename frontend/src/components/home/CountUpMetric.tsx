@@ -1,5 +1,6 @@
 import { useCountUp } from "../../hooks/useCountUp";
 import { useInView } from "../../hooks/useInView";
+import { HomeIcon, type HomeIconName } from "./HomeIcons";
 
 type CountUpMetricProps = {
     value: number;
@@ -7,6 +8,7 @@ type CountUpMetricProps = {
     prefix?: string;
     decimals?: number;
     label: string;
+    icon?: HomeIconName;
 };
 
 export default function CountUpMetric({
@@ -15,6 +17,7 @@ export default function CountUpMetric({
     prefix = "",
     decimals = 0,
     label,
+    icon,
 }: CountUpMetricProps) {
     const { ref, isInView } = useInView<HTMLDivElement>({ threshold: 0.35 });
     const displayed = useCountUp({
@@ -24,7 +27,12 @@ export default function CountUpMetric({
     });
 
     return (
-        <div className="metric" ref={ref}>
+        <div className={`metric${icon ? " metric--card" : ""}`} ref={ref}>
+            {icon && (
+                <div className="metric-icon" aria-hidden="true">
+                    <HomeIcon name={icon} />
+                </div>
+            )}
             <div className="metric-value">
                 {prefix}
                 {displayed}
@@ -40,15 +48,24 @@ type MetricRangeProps = {
     to: number;
     suffix: string;
     label: string;
+    icon?: HomeIconName;
 };
 
-export function MetricRange({ from, to, suffix, label }: MetricRangeProps) {
+export function MetricRange({ from, to, suffix, label, icon }: MetricRangeProps) {
     const { ref, isInView } = useInView<HTMLDivElement>({ threshold: 0.35 });
     const fromValue = useCountUp({ end: from, enabled: isInView });
     const toValue = useCountUp({ end: to, enabled: isInView, duration: 1600 });
 
     return (
-        <div className={`metric metric--range${isInView ? " metric--visible" : ""}`} ref={ref}>
+        <div
+            className={`metric metric--range${icon ? " metric--card" : ""}${isInView ? " metric--visible" : ""}`}
+            ref={ref}
+        >
+            {icon && (
+                <div className="metric-icon" aria-hidden="true">
+                    <HomeIcon name={icon} />
+                </div>
+            )}
             <div className="metric-value">
                 {fromValue}–{toValue}
                 {suffix}

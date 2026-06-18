@@ -1,4 +1,4 @@
-﻿import { useState, type ReactNode } from "react";
+﻿import { useRef, type PointerEvent, type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 import "./AppLayout.css";
 
@@ -14,45 +14,34 @@ const navItems = [
 ];
 
 export default function AppLayout({ children }: AppLayoutProps) {
-    const [headerHover, setHeaderHover] = useState(false);
+    const shellRef = useRef<HTMLDivElement>(null);
+
+    const resetShell = () => {
+        const shell = shellRef.current;
+        if (!shell) return;
+        shell.classList.remove("header-shell--hover");
+        shell.style.transform = "";
+        shell.style.removeProperty("--spot-x");
+    };
+
+    const pullBlob = (e: PointerEvent<HTMLElement>) => {
+        const shell = shellRef.current;
+        if (!shell) return;
+
+        const rect = shell.getBoundingClientRect();
+        if (rect.width === 0) return;
+
+        const nx = (e.clientX - rect.left) / rect.width - 0.5;
+        const ny = (e.clientY - rect.top) / rect.height - 0.5;
+        const abs = Math.abs(nx);
+
+        shell.classList.add("header-shell--hover");
+        shell.style.setProperty("--spot-x", `${50 + nx * 38}%`);
+        shell.style.transform = `translateX(${nx * 28}px) scale(${1 + 0.065 + abs * 0.11}, ${1 - 0.025 - abs * 0.045 + ny * 0.03})`;
+    };
 
     return (
         <div className="app-layout">
-            <svg className="header-filters" aria-hidden="true">
-                <defs>
-                    <filter id="header-liquid" x="-25%" y="-35%" width="150%" height="170%">
-                        <feTurbulence
-                            type="fractalNoise"
-                            baseFrequency="0.014"
-                            numOctaves="2"
-                            seed="4"
-                            result="noise"
-                        >
-                            <animate
-                                attributeName="baseFrequency"
-                                dur="2.4s"
-                                values="0.01;0.02;0.012;0.018;0.01"
-                                repeatCount="indefinite"
-                            />
-                        </feTurbulence>
-                        <feDisplacementMap
-                            in="SourceGraphic"
-                            in2="noise"
-                            scale="7"
-                            xChannelSelector="R"
-                            yChannelSelector="G"
-                        >
-                            <animate
-                                attributeName="scale"
-                                dur="1.8s"
-                                values="5;11;6;9;5"
-                                repeatCount="indefinite"
-                            />
-                        </feDisplacementMap>
-                    </filter>
-                </defs>
-            </svg>
-
             <div className="ambient" aria-hidden="true">
                 <div className="orb orb-1" />
                 <div className="orb orb-2" />
@@ -63,30 +52,27 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </div>
 
             <header
-                className={`header${headerHover ? " header--hover" : ""}`}
-                onMouseEnter={() => setHeaderHover(true)}
-                onMouseLeave={() => setHeaderHover(false)}
+                className="header"
+                onPointerEnter={pullBlob}
+                onPointerMove={pullBlob}
+                onPointerLeave={resetShell}
             >
-                <div className="header-shell">
+                <div className="header-shell" ref={shellRef}>
                     <div className="header-glass" aria-hidden="true" />
                     <div className="header-inner">
-                        <NavLink to="/" className="header-logo header-liquid-text">
+                        <NavLink to="/" className="header-logo">
                             CleanPro
                         </NavLink>
 
                         <nav className="header-nav" aria-label="Головна навігація">
                             {navItems.map((item) => (
-                                <NavLink
-                                    key={item.to}
-                                    to={item.to}
-                                    className="header-link header-liquid-text"
-                                >
+                                <NavLink key={item.to} to={item.to} className="header-link">
                                     {item.label}
                                 </NavLink>
                             ))}
                         </nav>
 
-                        <NavLink to="/contacts" className="header-cta header-liquid-text">
+                        <NavLink to="/contacts" className="header-cta">
                             Замовити
                         </NavLink>
                     </div>

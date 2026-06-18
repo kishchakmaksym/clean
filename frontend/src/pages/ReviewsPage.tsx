@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import {
     createAdminReview,
     createReview,
+    deleteAdminReview,
     fetchReviews,
     formatReviewDate,
     renderStars,
@@ -20,7 +21,8 @@ function todayInputValue() {
 export default function ReviewsPage() {
     const { user } = useAuth();
     const isAdmin = user?.role === "Admin";
-    const canLeaveRegularReview = user && !isAdmin;
+    const isEmployee = user?.role === "Employee";
+    const canLeaveRegularReview = user?.role === "User";
 
     const [reviews, setReviews] = useState<ReviewDto[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -33,6 +35,8 @@ export default function ReviewsPage() {
     const [errors, setErrors] = useState<string[]>([]);
     const [successMessage, setSuccessMessage] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
+    const [pendingDeleteReview, setPendingDeleteReview] = useState<ReviewDto | null>(null);
 
     const loadReviews = useCallback(async () => {
         setIsLoading(true);
@@ -124,8 +128,78 @@ export default function ReviewsPage() {
         }
     }
 
+    async function handleDeleteReview(reviewId: string) {
+        if (!user || !isAdmin) {
+            return;
+        }
+
+        setErrors([]);
+        setSuccessMessage("");
+        setDeletingReviewId(reviewId);
+
+        try {
+            const result = await deleteAdminReview({
+                userId: user.id,
+                reviewId,
+            });
+
+            if (!result.success) {
+                setErrors(result.errors ?? ["Не вдалося видалити відгук."]);
+                return;
+            }
+
+            setSuccessMessage(result.message ?? "Відгук видалено.");
+            setPendingDeleteReview(null);
+            await loadReviews();
+        } catch {
+            setErrors(["Помилка з'єднання з сервером."]);
+        } finally {
+            setDeletingReviewId(null);
+        }
+    }
+
+    function requestDeleteReview(review: ReviewDto) {
+        setPendingDeleteReview(review);
+    }
+
     return (
         <section className="section reviews-layout">
+            {pendingDeleteReview && (
+                <div className="review-modal-backdrop" role="presentation" onClick={() => setPendingDeleteReview(null)}>
+                    <div
+                        className="review-modal"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="delete-review-title"
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <h3 id="delete-review-title">Видалити відгук?</h3>
+                        <p>
+                            Ви впевнені, що хочете видалити відгук від{" "}
+                            <strong>{pendingDeleteReview.authorName}</strong>? Цю дію не можна скасувати.
+                        </p>
+                        <div className="review-modal-actions">
+                            <button
+                                type="button"
+                                className="secondary-button compact"
+                                onClick={() => setPendingDeleteReview(null)}
+                                disabled={deletingReviewId === pendingDeleteReview.id}
+                            >
+                                Скасувати
+                            </button>
+                            <button
+                                type="button"
+                                className="review-delete-button review-delete-button-confirm"
+                                disabled={deletingReviewId === pendingDeleteReview.id}
+                                onClick={() => void handleDeleteReview(pendingDeleteReview.id)}
+                            >
+                                {deletingReviewId === pendingDeleteReview.id ? "Видалення..." : "Так, видалити"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="section-head">
                 <span className="badge">Відгуки</span>
                 <h2>Що кажуть клієнти</h2>
@@ -204,6 +278,10 @@ export default function ReviewsPage() {
                             {isSubmitting ? "Додавання..." : "Додати відгук"}
                         </button>
                     </form>
+                ) : isEmployee ? (
+                    <p className="review-employee-hint">
+                        Ви увійшли як працівник, тому не можете залишати відгук у цьому розділі.
+                    </p>
                 ) : canLeaveRegularReview ? (
                     <form className="review-form" onSubmit={handleRegularSubmit} noValidate>
                         {errors.length > 0 && (
@@ -277,13 +355,23 @@ export default function ReviewsPage() {
             {!isLoading && !loadError && reviews.length > 0 && (
                 <div className="grid-3">
                     {reviews.map((review) => (
-                        <article key={review.id} className="glass-card info-card">
+                        <article key={review.id} className="glass-card info-card review-card">
                             <div className="review-stars-display" aria-label={`Оцінка ${review.rating} з 5`}>
                                 {renderStars(review.rating)}
                             </div>
                             <h3>{review.authorName}</h3>
                             <p>{review.text}</p>
                             <p className="review-meta">{formatReviewDate(review.createdAtUtc)}</p>
+                            {isAdmin && (
+                                <button
+                                    type="button"
+                                    className="review-delete-button"
+                                    disabled={deletingReviewId === review.id}
+                                    onClick={() => requestDeleteReview(review)}
+                                >
+                                    {deletingReviewId === review.id ? "Видалення..." : "Видалити"}
+                                </button>
+                            )}
                         </article>
                     ))}
                 </div>

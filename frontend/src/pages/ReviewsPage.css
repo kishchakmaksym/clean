@@ -114,6 +114,93 @@
     text-decoration: underline;
 }
 
+.review-employee-hint {
+    margin: 0;
+    padding: 0.85rem 1rem;
+    border-radius: var(--radius-lg);
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.35);
+    color: #ffe08a;
+    font-size: var(--text-small);
+    text-align: center;
+}
+
+.review-card {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.review-delete-button {
+    margin-top: 0.5rem;
+    padding: 0.55rem 0.9rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(220, 53, 69, 0.45);
+    background: rgba(220, 53, 69, 0.12);
+    color: #ffb4b4;
+    font: inherit;
+    font-size: var(--text-small);
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.review-delete-button:hover:not(:disabled) {
+    background: rgba(220, 53, 69, 0.22);
+}
+
+.review-delete-button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.review-delete-button-confirm {
+    margin-top: 0;
+    min-width: 8.5rem;
+}
+
+.review-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+}
+
+.review-modal {
+    width: min(100%, 24rem);
+    padding: 1.25rem;
+    border-radius: var(--radius-xl);
+    background: var(--glass-bg-strong);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    display: grid;
+    gap: 0.85rem;
+}
+
+.review-modal h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    color: var(--text);
+}
+
+.review-modal p {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.55;
+    font-size: var(--text-small);
+}
+
+.review-modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    margin-top: 0.25rem;
+}
+
 .review-form-label {
     display: block;
     font-weight: 600;

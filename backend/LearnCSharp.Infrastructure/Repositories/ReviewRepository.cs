@@ -18,4 +18,13 @@ public sealed class ReviewRepository(AppDbContext dbContext) : IReviewRepository
         dbContext.Reviews.Add(review);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    public Task<Review?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+        dbContext.Reviews.FirstOrDefaultAsync(review => review.Id == id, cancellationToken);
+
+    public async Task DeleteAsync(Review review, CancellationToken cancellationToken = default)
+    {
+        dbContext.Reviews.Remove(review);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 }

@@ -1,6 +1,7 @@
 ﻿.home {
     width: 100%;
     overflow-x: clip;
+    --reveal-progress: 0;
 }
 
 /* ── Hero ── */
@@ -250,6 +251,50 @@
 
 .home-bottom-grid {
     max-width: 72rem;
+}
+
+.home-panel-reveal-top {
+    --reveal-spread-top: calc(var(--reveal-progress) * min(7rem, 14vw));
+    --reveal-scale-top: calc(1 - var(--reveal-progress) * 0.04);
+    will-change: transform;
+}
+
+.home-panel-reveal-top--left {
+    transform: translate3d(calc(var(--reveal-spread-top) * -1), 0, 0) scale(var(--reveal-scale-top));
+}
+
+.home-panel-reveal-top--right {
+    transform: translate3d(var(--reveal-spread-top), 0, 0) scale(var(--reveal-scale-top));
+}
+
+.home-panel-reveal {
+    --reveal-spread: calc((1 - var(--reveal-progress)) * min(9rem, 18vw));
+    --reveal-scale: calc(0.88 + var(--reveal-progress) * 0.12);
+    --reveal-opacity: calc(0.15 + var(--reveal-progress) * 0.85);
+    will-change: transform, opacity;
+}
+
+.home-panel-reveal--left {
+    transform: translate3d(calc(var(--reveal-spread) * -1), 0, 0) scale(var(--reveal-scale));
+    opacity: var(--reveal-opacity);
+}
+
+.home-panel-reveal--right {
+    transform: translate3d(var(--reveal-spread), 0, 0) scale(var(--reveal-scale));
+    opacity: var(--reveal-opacity);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .home {
+        --reveal-progress: 0;
+    }
+
+    .home-panel-reveal,
+    .home-panel-reveal-top {
+        will-change: auto;
+        transform: none;
+        opacity: 1;
+    }
 }
 
 .hero-benefits .hero-text,

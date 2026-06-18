@@ -42,3 +42,9 @@ export type CreateReviewResponse = {
     review?: ReviewDto;
     errors?: string[];
 };
+
+export type DeleteReviewResponse = {
+    success: boolean;
+    message?: string;
+    errors?: string[];
+};

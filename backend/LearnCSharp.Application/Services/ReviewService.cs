@@ -43,6 +43,11 @@ public sealed class ReviewService(
             return Failure(["Адміністратор не може залишати звичайний відгук."]);
         }
 
+        if (user.Role == UserRole.Employee)
+        {
+            return Failure(["Працівники не можуть залишати відгуки."]);
+        }
+
         var review = new Review
         {
             Id = Guid.NewGuid(),
@@ -110,7 +115,51 @@ public sealed class ReviewService(
         };
     }
 
+    public async Task<DeleteReviewResponseDto> DeleteAdminReviewAsync(
+        DeleteReviewRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request.UserId == Guid.Empty || request.ReviewId == Guid.Empty)
+        {
+            return DeleteFailure(["Некоректний запит на видалення."]);
+        }
+
+        var admin = await userRepository.FindByIdAsync(request.UserId, cancellationToken);
+
+        if (admin is null)
+        {
+            return DeleteFailure(["Користувача не знайдено. Увійдіть знову."]);
+        }
+
+        if (admin.Role != UserRole.Admin)
+        {
+            return DeleteFailure(["Лише адміністратор може видаляти відгуки."]);
+        }
+
+        var review = await reviewRepository.FindByIdAsync(request.ReviewId, cancellationToken);
+
+        if (review is null)
+        {
+            return DeleteFailure(["Відгук не знайдено."]);
+        }
+
+        await reviewRepository.DeleteAsync(review, cancellationToken);
+
+        return new DeleteReviewResponseDto
+        {
+            Success = true,
+            Message = "Відгук видалено."
+        };
+    }
+
     private static CreateReviewResponseDto Failure(IReadOnlyList<string> errors) =>
+        new()
+        {
+            Success = false,
+            Errors = errors
+        };
+
+    private static DeleteReviewResponseDto DeleteFailure(IReadOnlyList<string> errors) =>
         new()
         {
             Success = false,

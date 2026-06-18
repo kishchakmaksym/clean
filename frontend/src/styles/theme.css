@@ -76,6 +76,51 @@
     --text-body: clamp(1rem, 0.35vw + 0.9rem, 1.125rem);
     --text-small: clamp(0.8125rem, 0.2vw + 0.75rem, 0.875rem);
     --text-label: 0.6875rem;
+
+    color-scheme: dark;
+}
+
+input,
+textarea,
+select {
+    color: var(--text);
+    caret-color: var(--text);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: var(--muted2);
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+    color: var(--muted);
+}
+
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+    color-scheme: dark;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.8;
+    cursor: pointer;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--text);
+    box-shadow: 0 0 0 1000px rgba(255, 255, 255, 0.05) inset;
+    transition: background-color 9999s ease-out 0s;
 }
 
 .glass {

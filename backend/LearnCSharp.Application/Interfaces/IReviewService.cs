@@ -13,4 +13,8 @@ public interface IReviewService
     Task<CreateReviewResponseDto> CreateAdminReviewAsync(
         AdminReviewRequestDto request,
         CancellationToken cancellationToken = default);
+
+    Task<DeleteReviewResponseDto> DeleteAdminReviewAsync(
+        DeleteReviewRequestDto request,
+        CancellationToken cancellationToken = default);
 }

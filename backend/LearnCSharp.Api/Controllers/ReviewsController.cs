@@ -38,4 +38,15 @@ public sealed class ReviewsController(IReviewService reviewService) : Controller
         var result = await reviewService.CreateAdminReviewAsync(request, cancellationToken);
         return result.Success ? Ok(result) : BadRequest(result);
     }
+
+    [HttpDelete("admin")]
+    [ProducesResponseType(typeof(DeleteReviewResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(DeleteReviewResponseDto), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<DeleteReviewResponseDto>> DeleteAdminReview(
+        [FromBody] DeleteReviewRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var result = await reviewService.DeleteAdminReviewAsync(request, cancellationToken);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
 }

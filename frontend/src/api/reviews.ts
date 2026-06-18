@@ -1,4 +1,4 @@
-import type { CreateReviewResponse, ReviewDto } from "./types";
+import type { CreateReviewResponse, DeleteReviewResponse, ReviewDto } from "./types";
 
 export async function fetchReviews(): Promise<ReviewDto[]> {
     const response = await fetch("/api/reviews");
@@ -52,6 +52,28 @@ export async function createAdminReview(payload: {
         return {
             success: false,
             errors: ["Не вдалося додати відгук."],
+        };
+    }
+
+    return data;
+}
+
+export async function deleteAdminReview(payload: {
+    userId: string;
+    reviewId: string;
+}): Promise<DeleteReviewResponse> {
+    const response = await fetch("/api/reviews/admin", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+
+    const data = (await response.json()) as DeleteReviewResponse;
+
+    if (!response.ok && data.success !== false) {
+        return {
+            success: false,
+            errors: ["Не вдалося видалити відгук."],
         };
     }
 

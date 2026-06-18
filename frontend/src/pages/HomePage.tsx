@@ -1,6 +1,8 @@
 ﻿import "./HomePage.css";
 import { Link } from "react-router-dom";
 
+import { useHomeScrollReveal } from "../hooks/useHomeScrollReveal";
+
 const highlights = [
     {
         icon: "🚀",
@@ -50,11 +52,13 @@ const steps = [
 ];
 
 export default function HomePage() {
+    const { homeRef } = useHomeScrollReveal();
+
     return (
-        <div className="home">
+        <div className="home" ref={homeRef}>
             <section className="hero">
                 <div className="hero-grid">
-                    <div className="hero-panel hero-content">
+                    <div className="hero-panel hero-content home-panel-reveal-top home-panel-reveal-top--left">
                         <div className="hero-intro">
                             <span className="badge hero-badge">Професійний клінінг</span>
 
@@ -94,7 +98,7 @@ export default function HomePage() {
                         </div>
                     </div>
 
-                    <div className="hero-panel hero-process">
+                    <div className="hero-panel hero-process home-panel-reveal-top home-panel-reveal-top--right">
                         <div className="hero-intro">
                             <span className="badge hero-badge">Процес</span>
                             <h2 className="hero-process-title">Як ми працюємо</h2>
@@ -122,7 +126,7 @@ export default function HomePage() {
 
             <section className="home-bottom">
                 <div className="hero-grid home-bottom-grid">
-                    <div className="hero-panel hero-benefits">
+                    <div className="hero-panel hero-benefits home-panel-reveal home-panel-reveal--left">
                         <div className="hero-intro">
                             <span className="badge hero-badge">Переваги</span>
                             <h2 className="hero-process-title">Чому нас обирають</h2>
@@ -146,7 +150,7 @@ export default function HomePage() {
                         </div>
                     </div>
 
-                    <div className="hero-panel hero-guarantee">
+                    <div className="hero-panel hero-guarantee home-panel-reveal home-panel-reveal--right">
                         <div className="hero-intro">
                             <span className="badge hero-badge">Надійність</span>
                             <h2 className="hero-process-title">Гарантія якості</h2>

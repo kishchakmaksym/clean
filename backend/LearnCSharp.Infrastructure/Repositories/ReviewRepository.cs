@@ -11,6 +11,7 @@ public sealed class ReviewRepository(AppDbContext dbContext) : IReviewRepository
         await dbContext.Reviews
             .AsNoTracking()
             .OrderByDescending(review => review.CreatedAtUtc)
+            .ThenByDescending(review => review.Id)
             .ToListAsync(cancellationToken);
 
     public async Task AddAsync(Review review, CancellationToken cancellationToken = default)

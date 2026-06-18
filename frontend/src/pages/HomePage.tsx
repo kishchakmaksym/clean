@@ -4,11 +4,13 @@ import { Link } from "react-router-dom";
 import BeforeAfterSlider from "../components/home/BeforeAfterSlider";
 import CountUpMetric, { MetricRange } from "../components/home/CountUpMetric";
 import { HomeIcon, type HomeIconName } from "../components/home/HomeIcons";
+import ReviewCountMetric from "../components/home/ReviewCountMetric";
 import ReviewRatingMetric from "../components/home/ReviewRatingMetric";
 import ProcessSteps from "../components/home/ProcessSteps";
 import RevealItem from "../components/home/RevealItem";
 import TypewriterText from "../components/home/TypewriterText";
 import { useHomeScrollReveal } from "../hooks/useHomeScrollReveal";
+import { useReviewStats } from "../hooks/useReviewStats";
 
 const highlights: { icon: HomeIconName; title: string; text: string }[] = [
     {
@@ -33,11 +35,6 @@ const guarantees: { icon: HomeIconName; title: string; text: string }[] = [
         icon: "shield",
         title: "Гарантія результату",
         text: "Приймаєте роботу разом із менеджером — фіксуємо якість на місці.",
-    },
-    {
-        icon: "refresh",
-        title: "Безкоштовне доопрацювання",
-        text: "Якщо щось пропустили — повернемось і виправимо без додаткової оплати.",
     },
     {
         icon: "checklist",
@@ -76,6 +73,7 @@ const steps: { icon: HomeIconName; title: string; text: string }[] = [
 
 export default function HomePage() {
     const { homeRef } = useHomeScrollReveal();
+    const reviewStats = useReviewStats();
 
     return (
         <div className="home" ref={homeRef}>
@@ -100,38 +98,17 @@ export default function HomePage() {
                                     Прибираємо квартири, будинки та офіси. Приїжджаємо в зручний час,
                                     працюємо акуратно і залишаємо після себе ідеальну чистоту.
                                 </p>
-
-                                <ul className="hero-perks" aria-label="Переваги сервісу">
-                                    <li>Без передоплати</li>
-                                    <li>Виїзд у день звернення</li>
-                                    <li>Еко-засоби</li>
-                                </ul>
                             </div>
 
                             <div className="hero-actions">
-                                <Link to="/contacts" className="primary-button hero-cta-primary">
+                                <Link to="/services" className="primary-button hero-cta-primary">
                                     Замовити прибирання
-                                    <svg
-                                        className="hero-cta-arrow"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        aria-hidden="true"
-                                    >
-                                        <path d="M5 12h14" />
-                                        <path d="M13 6l6 6-6 6" />
-                                    </svg>
-                                </Link>
-                                <Link to="/services" className="secondary-button">
-                                    Наші послуги
                                 </Link>
                             </div>
 
                             <div className="hero-metrics" aria-label="Коротко про сервіс">
-                                <ReviewRatingMetric />
+                                <ReviewRatingMetric stats={reviewStats} />
+                                <ReviewCountMetric stats={reviewStats} />
                                 <MetricRange from={2} to={4} suffix=" год" label="середній час" icon="clock" />
                                 <CountUpMetric value={100} suffix="%" label="чек-лист" icon="checklist" />
                             </div>
@@ -200,10 +177,6 @@ export default function HomePage() {
                                 </RevealItem>
                             ))}
                         </div>
-
-                        <Link to="/reviews" className="secondary-button compact panel-cta">
-                            Читати відгуки
-                        </Link>
                     </div>
                 </div>
             </section>

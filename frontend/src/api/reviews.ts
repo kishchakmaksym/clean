@@ -13,6 +13,20 @@ export function sortReviewsByNewest(reviews: ReviewDto[]) {
     });
 }
 
+export function mergeReviewAtTop(reviews: ReviewDto[], review: ReviewDto) {
+    const normalized: ReviewDto = {
+        ...review,
+        id: String(review.id),
+        createdAtUtc:
+            typeof review.createdAtUtc === "string"
+                ? review.createdAtUtc
+                : new Date(review.createdAtUtc as unknown as string).toISOString(),
+    };
+
+    const withoutDuplicate = reviews.filter((item) => item.id !== normalized.id);
+    return sortReviewsByNewest([normalized, ...withoutDuplicate]);
+}
+
 export function getAverageReviewRating(reviews: ReviewDto[]): number | null {
     if (reviews.length === 0) {
         return null;

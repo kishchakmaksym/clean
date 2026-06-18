@@ -1,4 +1,4 @@
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 import {
@@ -7,6 +7,7 @@ import {
     deleteAdminReview,
     fetchReviews,
     formatReviewDate,
+    mergeReviewAtTop,
     renderStars,
 } from "../api/reviews";
 import type { ReviewDto } from "../api/types";
@@ -75,9 +76,12 @@ export default function ReviewsPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
     const [pendingDeleteReview, setPendingDeleteReview] = useState<ReviewDto | null>(null);
+    const reviewsTopRef = useRef<HTMLDivElement>(null);
 
-    const loadReviews = useCallback(async () => {
-        setIsLoading(true);
+    const loadReviews = useCallback(async (options?: { silent?: boolean }) => {
+        if (!options?.silent) {
+            setIsLoading(true);
+        }
         setLoadError("");
 
         try {
@@ -86,8 +90,17 @@ export default function ReviewsPage() {
         } catch {
             setLoadError("Не вдалося завантажити відгуки. Перевірте, чи запущений backend.");
         } finally {
-            setIsLoading(false);
+            if (!options?.silent) {
+                setIsLoading(false);
+            }
         }
+    }, []);
+
+    const showNewReviewAtTop = useCallback((review: ReviewDto) => {
+        setReviews((current) => mergeReviewAtTop(current, review));
+        requestAnimationFrame(() => {
+            reviewsTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
     }, []);
 
     useEffect(() => {
@@ -120,7 +133,12 @@ export default function ReviewsPage() {
             setSuccessMessage(result.message ?? "Відгук опубліковано.");
             setRating(0);
             setText("");
-            await loadReviews();
+
+            if (result.review) {
+                showNewReviewAtTop(result.review);
+            } else {
+                await loadReviews({ silent: true });
+            }
         } catch {
             setErrors(["Помилка з'єднання з сервером."]);
         } finally {
@@ -158,7 +176,12 @@ export default function ReviewsPage() {
             setRating(0);
             setText("");
             setReviewDate(todayInputValue());
-            await loadReviews();
+
+            if (result.review) {
+                showNewReviewAtTop(result.review);
+            } else {
+                await loadReviews({ silent: true });
+            }
         } catch {
             setErrors(["Помилка з'єднання з сервером."]);
         } finally {
@@ -242,6 +265,40 @@ export default function ReviewsPage() {
                 <span className="badge">Відгуки</span>
                 <h2>Що кажуть клієнти</h2>
                 <p>Реальні враження від наших клієнтів.</p>
+            </div>
+
+            <div ref={reviewsTopRef} className="reviews-list-anchor">
+                {isLoading && <p className="reviews-empty">Завантаження відгуків...</p>}
+                {loadError && <p className="review-load-error">{loadError}</p>}
+
+                {!isLoading && !loadError && reviews.length === 0 && (
+                    <p className="reviews-empty">Поки що немає відгуків. Будьте першим!</p>
+                )}
+
+                {!isLoading && !loadError && reviews.length > 0 && (
+                    <div className="reviews-grid">
+                        {reviews.map((review) => (
+                            <article key={review.id} className="glass-card info-card review-card">
+                                <div className="review-stars-display" aria-label={`Оцінка ${review.rating} з 5`}>
+                                    {renderStars(review.rating)}
+                                </div>
+                                <h3>{review.authorName}</h3>
+                                <ReviewText text={review.text} />
+                                <p className="review-meta">{formatReviewDate(review.createdAtUtc)}</p>
+                                {isAdmin && (
+                                    <button
+                                        type="button"
+                                        className="review-delete-button"
+                                        disabled={deletingReviewId === review.id}
+                                        onClick={() => requestDeleteReview(review)}
+                                    >
+                                        {deletingReviewId === review.id ? "Видалення..." : "Видалити"}
+                                    </button>
+                                )}
+                            </article>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <div className="review-form-card">
@@ -382,38 +439,6 @@ export default function ReviewsPage() {
                     </p>
                 )}
             </div>
-
-            {isLoading && <p className="reviews-empty">Завантаження відгуків...</p>}
-            {loadError && <p className="review-load-error">{loadError}</p>}
-
-            {!isLoading && !loadError && reviews.length === 0 && (
-                <p className="reviews-empty">Поки що немає відгуків. Будьте першим!</p>
-            )}
-
-            {!isLoading && !loadError && reviews.length > 0 && (
-                <div className="reviews-grid">
-                    {reviews.map((review) => (
-                        <article key={review.id} className="glass-card info-card review-card">
-                            <div className="review-stars-display" aria-label={`Оцінка ${review.rating} з 5`}>
-                                {renderStars(review.rating)}
-                            </div>
-                            <h3>{review.authorName}</h3>
-                            <ReviewText text={review.text} />
-                            <p className="review-meta">{formatReviewDate(review.createdAtUtc)}</p>
-                            {isAdmin && (
-                                <button
-                                    type="button"
-                                    className="review-delete-button"
-                                    disabled={deletingReviewId === review.id}
-                                    onClick={() => requestDeleteReview(review)}
-                                >
-                                    {deletingReviewId === review.id ? "Видалення..." : "Видалити"}
-                                </button>
-                            )}
-                        </article>
-                    ))}
-                </div>
-            )}
         </section>
     );
 }

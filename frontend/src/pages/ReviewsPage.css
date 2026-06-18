@@ -3,6 +3,10 @@
     gap: calc(var(--gap) * 1.5);
 }
 
+.reviews-list-anchor {
+    scroll-margin-top: 6rem;
+}
+
 .review-form-card {
     padding: clamp(1.25rem, 2.5vw, 1.75rem);
     border-radius: var(--radius-xl);

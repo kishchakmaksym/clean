@@ -1,8 +1,6 @@
-import { useEffect, useState } from "react";
-
-import { fetchReviews, getAverageReviewRating } from "../../api/reviews";
 import CountUpMetric from "./CountUpMetric";
 import { HomeIcon } from "./HomeIcons";
+import type { ReviewStats } from "../../hooks/useReviewStats";
 
 function ReviewRatingFallback({ value }: { value: string }) {
     return (
@@ -16,38 +14,20 @@ function ReviewRatingFallback({ value }: { value: string }) {
     );
 }
 
-export default function ReviewRatingMetric() {
-    const [averageRating, setAverageRating] = useState<number | null | undefined>(undefined);
+type ReviewRatingMetricProps = {
+    stats: ReviewStats;
+};
 
-    useEffect(() => {
-        let cancelled = false;
-
-        fetchReviews()
-            .then((reviews) => {
-                if (!cancelled) {
-                    setAverageRating(getAverageReviewRating(reviews));
-                }
-            })
-            .catch(() => {
-                if (!cancelled) {
-                    setAverageRating(null);
-                }
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, []);
-
-    if (averageRating === undefined) {
+export default function ReviewRatingMetric({ stats }: ReviewRatingMetricProps) {
+    if (stats.loading) {
         return <ReviewRatingFallback value="…" />;
     }
 
-    if (averageRating === null) {
+    if (stats.averageRating === null) {
         return <ReviewRatingFallback value="—" />;
     }
 
     return (
-        <CountUpMetric value={averageRating} decimals={2} label="рейтинг" icon="star" />
+        <CountUpMetric value={stats.averageRating} decimals={2} label="рейтинг" icon="star" />
     );
 }

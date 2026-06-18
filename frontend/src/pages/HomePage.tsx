@@ -1,54 +1,76 @@
 ﻿import "./HomePage.css";
 import { Link } from "react-router-dom";
 
+import BeforeAfterSlider from "../components/home/BeforeAfterSlider";
+import CountUpMetric, { MetricRange } from "../components/home/CountUpMetric";
+import { HomeIcon, type HomeIconName } from "../components/home/HomeIcons";
+import ProcessSteps from "../components/home/ProcessSteps";
+import RevealItem from "../components/home/RevealItem";
+import TypewriterText from "../components/home/TypewriterText";
 import { useHomeScrollReveal } from "../hooks/useHomeScrollReveal";
 
-const highlights = [
+const highlights: { icon: HomeIconName; title: string; text: string }[] = [
     {
-        icon: "🚀",
+        icon: "rocket",
         title: "Виїзд у день звернення",
         text: "Підбираємо зручний час і приїжджаємо без запізнень.",
     },
     {
-        icon: "🌿",
+        icon: "leaf",
         title: "Безпечні засоби",
         text: "Працюємо акуратно, без різких запахів і пошкоджень.",
     },
     {
-        icon: "✓",
+        icon: "price",
         title: "Фіксована ціна",
         text: "Домовляємось наперед — без сюрпризів після прибирання.",
     },
 ];
 
-const guarantees = [
+const guarantees: { icon: HomeIconName; title: string; text: string }[] = [
     {
-        icon: "🛡️",
+        icon: "shield",
         title: "Гарантія результату",
         text: "Приймаєте роботу разом із менеджером — фіксуємо якість на місці.",
     },
     {
-        icon: "↩️",
+        icon: "refresh",
         title: "Безкоштовне доопрацювання",
         text: "Якщо щось пропустили — повернемось і виправимо без додаткової оплати.",
     },
     {
-        icon: "📋",
+        icon: "checklist",
         title: "Чек-лист 50+ пунктів",
         text: "Працюємо за стандартом, щоб нічого важливого не залишилось поза увагою.",
     },
     {
-        icon: "💬",
+        icon: "chat",
         title: "Підтримка після візиту",
         text: "Залишаємось на зв'язку — відповімо на питання і підкажемо по догляду.",
     },
 ];
 
-const steps = [
-    { title: "Заявка", text: "Залишаєте заявку — уточнюємо деталі за 2 хвилини." },
-    { title: "Виїзд", text: "Приїжджаємо у зручний час із усім необхідним." },
-    { title: "Прибирання", text: "Працюємо за чек-листом — акуратно й швидко." },
-    { title: "Прийом роботи", text: "Показуємо результат і враховуємо побажання." },
+const steps: { icon: HomeIconName; title: string; text: string }[] = [
+    {
+        icon: "request",
+        title: "Заявка",
+        text: "Залишаєте заявку — уточнюємо деталі за 2 хвилини.",
+    },
+    {
+        icon: "van",
+        title: "Виїзд",
+        text: "Приїжджаємо у зручний час із усім необхідним.",
+    },
+    {
+        icon: "sparkle",
+        title: "Прибирання",
+        text: "Працюємо за чек-листом — акуратно й швидко.",
+    },
+    {
+        icon: "handshake",
+        title: "Прийом роботи",
+        text: "Показуємо результат і враховуємо побажання.",
+    },
 ];
 
 export default function HomePage() {
@@ -64,7 +86,9 @@ export default function HomePage() {
 
                             <h1>
                                 Чистий дім без стресу
-                                <span>і зайвих турбот</span>
+                                <span>
+                                    <TypewriterText text="і зайвих турбот" />
+                                </span>
                             </h1>
 
                             <p className="hero-text">
@@ -83,18 +107,9 @@ export default function HomePage() {
                         </div>
 
                         <div className="hero-metrics" aria-label="Коротко про сервіс">
-                            <div className="metric">
-                                <div className="metric-value">4.9</div>
-                                <div className="metric-label">рейтинг</div>
-                            </div>
-                            <div className="metric">
-                                <div className="metric-value">2–4 год</div>
-                                <div className="metric-label">середній час</div>
-                            </div>
-                            <div className="metric">
-                                <div className="metric-value">100%</div>
-                                <div className="metric-label">чек-лист</div>
-                            </div>
+                            <CountUpMetric value={4.9} decimals={1} label="рейтинг" />
+                            <MetricRange from={2} to={4} suffix=" год" label="середній час" />
+                            <CountUpMetric value={100} suffix="%" label="чек-лист" />
                         </div>
                     </div>
 
@@ -107,19 +122,7 @@ export default function HomePage() {
                             </p>
                         </div>
 
-                        <div className="hero-steps">
-                            {steps.map((step, idx) => (
-                                <article key={step.title} className="hero-step">
-                                    <div className="hero-step-number">
-                                        {String(idx + 1).padStart(2, "0")}
-                                    </div>
-                                    <div className="hero-step-body">
-                                        <h3>{step.title}</h3>
-                                        <p>{step.text}</p>
-                                    </div>
-                                </article>
-                            ))}
-                        </div>
+                        <ProcessSteps steps={steps} />
                     </div>
                 </div>
             </section>
@@ -136,16 +139,16 @@ export default function HomePage() {
                         </div>
 
                         <div className="panel-list">
-                            {highlights.map((item) => (
-                                <article key={item.title} className="panel-item">
+                            {highlights.map((item, idx) => (
+                                <RevealItem key={item.title} index={idx} className="panel-item reveal-item">
                                     <div className="panel-item-icon" aria-hidden="true">
-                                        {item.icon}
+                                        <HomeIcon name={item.icon} />
                                     </div>
                                     <div className="panel-item-body">
                                         <h3>{item.title}</h3>
                                         <p>{item.text}</p>
                                     </div>
-                                </article>
+                                </RevealItem>
                             ))}
                         </div>
                     </div>
@@ -160,16 +163,16 @@ export default function HomePage() {
                         </div>
 
                         <div className="panel-list">
-                            {guarantees.map((item) => (
-                                <article key={item.title} className="panel-item">
+                            {guarantees.map((item, idx) => (
+                                <RevealItem key={item.title} index={idx} className="panel-item reveal-item">
                                     <div className="panel-item-icon" aria-hidden="true">
-                                        {item.icon}
+                                        <HomeIcon name={item.icon} />
                                     </div>
                                     <div className="panel-item-body">
                                         <h3>{item.title}</h3>
                                         <p>{item.text}</p>
                                     </div>
-                                </article>
+                                </RevealItem>
                             ))}
                         </div>
 
@@ -177,6 +180,12 @@ export default function HomePage() {
                             Читати відгуки
                         </Link>
                     </div>
+                </div>
+            </section>
+
+            <section className="home-result" aria-label="Результат прибирання">
+                <div className="hero-panel home-result-panel">
+                    <BeforeAfterSlider />
                 </div>
             </section>
         </div>

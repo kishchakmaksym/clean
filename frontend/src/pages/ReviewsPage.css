@@ -39,7 +39,7 @@
     padding: 0.85rem 1rem;
     border-radius: var(--radius-lg);
     border: 1px solid var(--glass-border);
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--input-bg);
     font-size: 1rem;
     font-family: inherit;
     outline: none;
@@ -95,7 +95,7 @@
     margin: 0;
     padding: 0.85rem 1rem;
     border-radius: var(--radius-lg);
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--input-bg);
     border: 1px solid var(--glass-border);
     color: var(--muted);
     font-size: var(--text-small);

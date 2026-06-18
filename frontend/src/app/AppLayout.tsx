@@ -20,40 +20,36 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
     return (
         <div className="app-layout">
-            <div className="ambient" aria-hidden="true">
-                <div className="orb orb-1" />
-                <div className="orb orb-2" />
-                <div className="orb orb-3" />
-                <div className="orb orb-4" />
-                <div className="orb orb-5" />
-                <div className="orb orb-6" />
-            </div>
+            <div className="ambient" aria-hidden="true" />
 
             <header className="header">
+                <NavLink to="/" className="header-logo" aria-label="Smart Clean — головна">
+                    <img src="/logo.png" alt="Smart Clean" className="header-logo-img" />
+                </NavLink>
+
                 <div className="header-shell">
                     <div className="header-glass" aria-hidden="true" />
                     <div className="header-inner">
-                        <NavLink to="/" className="header-logo" aria-label="Smart Clean — головна">
-                            <img src="/logo.png" alt="Smart Clean" className="header-logo-img" />
-                        </NavLink>
-
                         <nav className="header-nav" aria-label="Головна навігація">
                             {navItems.map((item) => (
                                 <NavLink key={item.to} to={item.to} className="header-link">
                                     {item.label}
                                 </NavLink>
                             ))}
-                            {user ? (
-                                <NavLink to="/profile" className="header-link">
-                                    Профіль
-                                </NavLink>
-                            ) : (
-                                <NavLink to="/login" className="header-link">
-                                    Вхід/Реєстрація
-                                </NavLink>
-                            )}
                         </nav>
                     </div>
+                </div>
+
+                <div className="header-actions">
+                    {user ? (
+                        <NavLink to="/profile" className="header-auth">
+                            Профіль
+                        </NavLink>
+                    ) : (
+                        <NavLink to="/login" className="header-auth">
+                            Вхід/Реєстрація
+                        </NavLink>
+                    )}
                 </div>
             </header>
 

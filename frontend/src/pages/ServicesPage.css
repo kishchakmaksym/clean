@@ -109,8 +109,8 @@
     display: flex;
     gap: 1.5rem;
     flex-wrap: wrap;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .services-meta-item {
@@ -185,7 +185,7 @@
     grid-template-columns: 1fr;
     gap: 1rem;
     padding-top: 0.25rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .services-pricing-item h3 {

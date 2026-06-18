@@ -1,4 +1,4 @@
-﻿import { useRef, type PointerEvent, type ReactNode } from "react";
+﻿import { type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 import "./AppLayout.css";
 
@@ -14,32 +14,6 @@ const navItems = [
 ];
 
 export default function AppLayout({ children }: AppLayoutProps) {
-    const shellRef = useRef<HTMLDivElement>(null);
-
-    const resetShell = () => {
-        const shell = shellRef.current;
-        if (!shell) return;
-        shell.classList.remove("header-shell--hover");
-        shell.style.transform = "";
-        shell.style.removeProperty("--spot-x");
-    };
-
-    const pullBlob = (e: PointerEvent<HTMLElement>) => {
-        const shell = shellRef.current;
-        if (!shell) return;
-
-        const rect = shell.getBoundingClientRect();
-        if (rect.width === 0) return;
-
-        const nx = (e.clientX - rect.left) / rect.width - 0.5;
-        const ny = (e.clientY - rect.top) / rect.height - 0.5;
-        const abs = Math.abs(nx);
-
-        shell.classList.add("header-shell--hover");
-        shell.style.setProperty("--spot-x", `${50 + nx * 38}%`);
-        shell.style.transform = `translateX(${nx * 28}px) scale(${1 + 0.065 + abs * 0.11}, ${1 - 0.025 - abs * 0.045 + ny * 0.03})`;
-    };
-
     return (
         <div className="app-layout">
             <div className="ambient" aria-hidden="true">
@@ -51,13 +25,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <div className="orb orb-6" />
             </div>
 
-            <header
-                className="header"
-                onPointerEnter={pullBlob}
-                onPointerMove={pullBlob}
-                onPointerLeave={resetShell}
-            >
-                <div className="header-shell" ref={shellRef}>
+            <header className="header">
+                <div className="header-shell">
                     <div className="header-glass" aria-hidden="true" />
                     <div className="header-inner">
                         <NavLink to="/" className="header-logo">

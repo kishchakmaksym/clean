@@ -32,7 +32,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                         onDragStart={(event) => event.preventDefault()}
                     >
                         <img
-                            src="/logo.png"
+                            src="/logo.gif"
                             alt=""
                             className="header-logo-img"
                             draggable={false}
@@ -67,8 +67,20 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <footer className="footer">
                 <div className="footer-inner">
                     <div className="footer-brand">
-                        <NavLink to="/" className="footer-logo">
-                            CleanPro
+                        <NavLink
+                            to="/"
+                            className="footer-logo"
+                            aria-label="Smart Clean — головна"
+                            onContextMenu={(event) => event.preventDefault()}
+                            onDragStart={(event) => event.preventDefault()}
+                        >
+                            <img
+                                src="/logo.gif"
+                                alt=""
+                                className="footer-logo-img"
+                                draggable={false}
+                                onContextMenu={(event) => event.preventDefault()}
+                            />
                         </NavLink>
                         <p>Професійне прибирання квартир, будинків та офісів.</p>
                     </div>

@@ -50,16 +50,18 @@
     --btn-secondary: #f1f5f9;
     --btn-secondary-hover: #e8edf3;
 
-    --header-surface: #ffffff;
+    --chrome-surface: #f7f8fa;
+    --chrome-surface-muted: #f1f3f6;
+    --header-surface: var(--chrome-surface);
     --header-blur: none;
-    --header-border: var(--primary);
-    --header-shadow: none;
+    --header-border: var(--chrome-border);
+    --header-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
     --header-link: var(--muted);
     --header-link-hover: var(--text);
     --header-link-active: var(--primary);
     --header-link-active-bg: rgba(var(--primary-rgb), 0.1);
     --site-header-h: 4.25rem;
-    --footer-surface: #f4f6f8;
+    --footer-surface: var(--chrome-surface);
     --footer-text: #5c5c7a;
     --footer-heading: #1a1a2e;
 

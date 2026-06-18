@@ -37,12 +37,13 @@ export function useHomeScrollReveal() {
                 sectionOffset - viewportHeight * 0.72,
             );
             const endScrollBottom = Math.max(
-                viewportHeight * 0.32,
-                sectionOffset - viewportHeight * 0.46,
+                viewportHeight * 0.48,
+                sectionOffset - viewportHeight * 0.24,
             );
 
             const progress = clamp(scrollY / endScrollTop, 0, 1);
-            const bottomProgress = clamp(scrollY / endScrollBottom, 0, 1);
+            const bottomRaw = clamp(scrollY / endScrollBottom, 0, 1);
+            const bottomProgress = Math.pow(bottomRaw, 1.2);
 
             home.style.setProperty("--reveal-progress", progress.toFixed(4));
             home.style.setProperty("--reveal-progress-bottom", bottomProgress.toFixed(4));

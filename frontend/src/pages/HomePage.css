@@ -32,8 +32,6 @@
     width: 100%;
     padding: clamp(2rem, 4.5vw, 3rem);
     border-radius: 1.35rem;
-    background: #141b23;
-    border: 1px solid rgba(255, 255, 255, 0.07);
     box-shadow:
         0 1px 0 rgba(255, 255, 255, 0.04) inset,
         0 24px 64px rgba(0, 0, 0, 0.28);
@@ -372,10 +370,8 @@
 .step {
     padding: 1.25rem;
     border-radius: var(--radius-xl);
-    background: var(--glass-bg);
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
     display: flex;
     flex-direction: column;
@@ -566,9 +562,7 @@
 .contact-form {
     padding: clamp(1.25rem, 2.5vw, 1.75rem);
     border-radius: var(--radius-xl);
-    background: var(--glass-bg);
     backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
 }
 

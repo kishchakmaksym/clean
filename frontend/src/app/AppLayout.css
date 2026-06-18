@@ -1,4 +1,5 @@
 ﻿@import "../styles/theme.css";
+@import "../styles/rgb-border.css";
 
 * {
     box-sizing: border-box;

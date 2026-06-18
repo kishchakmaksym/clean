@@ -1,126 +1,169 @@
-﻿import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+﻿import { Link } from "react-router-dom";
+
+import "./HomePage.css";
 import "./ServicesPage.css";
 
 const services = [
     {
         icon: "🏠",
         title: "Прибирання квартири",
-        text: "Кухня, санвузол, кімнати — акуратно і без поспіху.",
-        badge: "Хіт",
+        text: "Щоденний догляд за житлом: кухня, санвузол, кімнати — акуратно і без поспіху.",
+        badge: "Популярне",
+        priceFrom: "від 800 ₴",
+        duration: "2–4 год",
+        includes: ["Вологе прибирання поверхонь", "Пилосос і миття підлоги", "Санвузол і кухня", "Винесення сміття"],
     },
     {
         icon: "✨",
         title: "Генеральне прибирання",
-        text: "Глибоке прибирання важкодоступних зон і накопиченого бруду.",
-        badge: "Pro",
+        text: "Глибоке прибирання важкодоступних зон, накопиченого бруду та дрібних деталей.",
+        badge: "Глибоке",
+        priceFrom: "від 1 500 ₴",
+        duration: "4–8 год",
+        includes: ["Внутрішні поверхні шаф", "Плінтуси та батареї", "Скло та дзеркала", "Дезінфекція санвузла"],
     },
     {
         icon: "🏢",
         title: "Офіси",
-        text: "Чистий простір для команди та гідне враження для клієнтів.",
+        text: "Чистий простір для команди та гідне враження для клієнтів і партнерів.",
         badge: "B2B",
+        priceFrom: "від 1 200 ₴",
+        duration: "2–6 год",
+        includes: ["Робочі зони і переговорні", "Кухня та санвузли", "Прибирання за графіком", "Договір для компаній"],
     },
     {
         icon: "🧱",
         title: "Після ремонту",
-        text: "Прибираємо пил, сліди будматеріалів і дрібні залишки.",
-        badge: "Після",
+        text: "Прибираємо будівельний пил, сліди матеріалів і дрібні залишки після робіт.",
+        badge: "Складне",
+        priceFrom: "від 2 000 ₴",
+        duration: "6–12 год",
+        includes: ["Пил після ремонту", "Вікна та підвіконня", "Плитка і шви", "Фінальна поліровка"],
     },
     {
         icon: "🪟",
         title: "Миття вікон",
-        text: "Скло, рами та підвіконня — без розводів і плям.",
-        badge: "Сезон",
+        text: "Скло, рами та підвіконня — без розводів, плям і розводів від засобів.",
+        badge: "Окремо",
+        priceFrom: "від 400 ₴",
+        duration: "1–3 год",
+        includes: ["Скло з обох боків", "Рами та фурнітура", "Підвіконня", "Можна додати до замовлення"],
     },
     {
         icon: "🧼",
         title: "Підтримуюче",
-        text: "Регулярний догляд щотижня або раз на два тижні.",
+        text: "Регулярний догляд щотижня або раз на два тижні — завжди охайно вдома.",
         badge: "Регулярно",
+        priceFrom: "від 600 ₴",
+        duration: "1.5–3 год",
+        includes: ["Фіксований графік", "Той самий виконавець", "Знижка при абонементі", "Пріоритет у записі"],
     },
 ] as const;
 
+const pricingNotes = [
+    {
+        title: "Площа і стан",
+        text: "Вартість залежить від метражу, кількості кімнат і ступеня забруднення.",
+    },
+    {
+        title: "Без прихованих платежів",
+        text: "Озвучуємо ціну до виїзду. Додаткові роботи — лише за вашою згодою.",
+    },
+    {
+        title: "Зручний запис",
+        text: "Підбираємо час під вас: ранок, вечір або вихідні.",
+    },
+];
+
 export default function ServicesPage() {
-    const [selected, setSelected] = useState<Record<string, boolean>>({});
-
-    const selectedTitles = useMemo(
-        () => services.filter((s) => selected[s.title]).map((s) => s.title),
-        [selected]
-    );
-
-    const toggle = (title: string) => {
-        setSelected((prev) => ({ ...prev, [title]: !prev[title] }));
-    };
-
     return (
         <div className="services-page">
-            <header className="services-intro panel">
-                <div className="services-intro-top">
-                    <div>
-                        <span className="badge services-badge">Послуги</span>
-                        <h1>Оберіть послуги</h1>
-                        <p>
-                            Відмітьте потрібні пункти — ми підкажемо орієнтовний час і вартість
-                            після заявки.
-                        </p>
-                    </div>
-                    <div className="services-intro-actions">
-                        <Link to="/contacts" className="primary-button">
-                            Залишити заявку
-                        </Link>
-                        <Link to="/contacts" className="secondary-button">
-                            Написати нам
-                        </Link>
-                    </div>
+            <header className="services-hero hero-panel">
+                <span className="badge hero-badge">Послуги</span>
+                <h1 className="services-title">Що ми прибираємо</h1>
+                <p className="services-lead">
+                    Прозорі ціни, зрозумілий склад робіт і швидкий виїзд. Оберіть послугу —
+                    ми уточнимо деталі та підтвердимо вартість перед приїздом.
+                </p>
+                <div className="services-hero-actions">
+                    <Link to="/contacts" className="primary-button">
+                        Замовити прибирання
+                    </Link>
+                    <Link to="/reviews" className="secondary-button">
+                        Читати відгуки
+                    </Link>
                 </div>
             </header>
 
-            <div className="services-grid" role="group" aria-label="Список послуг">
-                {services.map((card) => {
-                    const isSelected = Boolean(selected[card.title]);
+            <div className="services-grid">
+                {services.map((service) => (
+                    <article key={service.title} className="services-card hero-panel">
+                        <div className="services-card-head">
+                            <div className="services-card-icon" aria-hidden="true">
+                                {service.icon}
+                            </div>
+                            <span className="services-card-badge">{service.badge}</span>
+                        </div>
 
-                    return (
-                        <button
-                            key={card.title}
-                            type="button"
-                            className={`service-card ${isSelected ? "is-selected" : ""}`}
-                            aria-pressed={isSelected}
-                            aria-label={`${card.title}. ${isSelected ? "Обрано" : "Не обрано"}`}
-                            onClick={() => toggle(card.title)}
+                        <h2 className="services-card-title">{service.title}</h2>
+                        <p className="services-card-text">{service.text}</p>
+
+                        <div className="services-card-meta">
+                            <div className="services-meta-item">
+                                <span className="services-meta-label">Ціна</span>
+                                <span className="services-meta-value">{service.priceFrom}</span>
+                            </div>
+                            <div className="services-meta-item">
+                                <span className="services-meta-label">Час</span>
+                                <span className="services-meta-value">{service.duration}</span>
+                            </div>
+                        </div>
+
+                        <ul className="services-card-includes">
+                            {service.includes.map((item) => (
+                                <li key={item}>{item}</li>
+                            ))}
+                        </ul>
+
+                        <Link
+                            to="/contacts"
+                            className="secondary-button compact services-card-cta"
                         >
-                            <span className="service-card-badge">{card.badge}</span>
-                            <span className="service-card-icon" aria-hidden="true">
-                                {card.icon}
-                            </span>
-                            <span className="service-card-title">{card.title}</span>
-                            <span className="service-card-text">{card.text}</span>
-                            <span className="service-card-check" aria-hidden="true">
-                                {isSelected ? "✓" : ""}
-                            </span>
-                        </button>
-                    );
-                })}
+                            Замовити
+                        </Link>
+                    </article>
+                ))}
             </div>
 
-            <footer className="services-selection panel" aria-label="Обрані послуги">
-                <div className="services-selection-info">
-                    <p className="services-selection-label">Обрано</p>
-                    <p className="services-selection-text">
-                        {selectedTitles.length
-                            ? selectedTitles.join(" · ")
-                            : "Натисніть на картку, щоб обрати послугу"}
+            <section className="services-pricing hero-panel" aria-label="Як формується ціна">
+                <div className="services-pricing-intro">
+                    <span className="badge hero-badge">Ціноутворення</span>
+                    <h2 className="hero-process-title">Як ми рахуємо вартість</h2>
+                    <p className="hero-text">
+                        Орієнтовні ціни в картках — для типових замовлень. Точну суму
+                        називаємо після короткої консультації.
                     </p>
                 </div>
-                <div className="services-selection-actions">
-                    <Link to="/contacts" className="secondary-button compact">
-                        Замовити
-                    </Link>
-                    <Link to="/contacts" className="primary-button compact">
-                        Розрахувати
-                    </Link>
+
+                <div className="services-pricing-list">
+                    {pricingNotes.map((note) => (
+                        <article key={note.title} className="services-pricing-item">
+                            <h3>{note.title}</h3>
+                            <p>{note.text}</p>
+                        </article>
+                    ))}
                 </div>
-            </footer>
+            </section>
+
+            <section className="cta services-cta">
+                <div>
+                    <h2>Не знаєте, що обрати?</h2>
+                    <p>Напишіть нам — підберемо послугу під ваш об’єкт і бюджет без зобов’язань.</p>
+                </div>
+                <Link to="/contacts" className="primary-button">
+                    Отримати консультацію
+                </Link>
+            </section>
         </div>
     );
 }

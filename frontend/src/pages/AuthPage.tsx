@@ -51,7 +51,8 @@ export default function AuthPage() {
             }
 
             setSuccessMessage(result.message ?? "Вхід успішний.");
-            setTimeout(() => navigate("/"), 1200);
+            const returnTo = searchParams.get("returnTo");
+            setTimeout(() => navigate(returnTo && returnTo.startsWith("/") ? returnTo : "/"), 1200);
         } catch {
             setErrors(["Помилка з'єднання з сервером. Перевірте, чи запущений backend."]);
         } finally {
@@ -84,7 +85,8 @@ export default function AuthPage() {
             }
 
             setSuccessMessage(result.message ?? "Реєстрація успішна.");
-            setTimeout(() => navigate("/"), 1200);
+            const returnTo = searchParams.get("returnTo");
+            setTimeout(() => navigate(returnTo && returnTo.startsWith("/") ? returnTo : "/"), 1200);
         } catch {
             setErrors(["Помилка з'єднання з сервером. Перевірте, чи запущений backend."]);
         } finally {

@@ -1,6 +1,7 @@
 using LearnCSharp.Application;
+using LearnCSharp.Api.Json;
 using LearnCSharp.Infrastructure;
-using LearnCSharp.Api.Options;
+using LearnCSharp.Infrastructure.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +9,8 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeConverter());
+        options.JsonSerializerOptions.Converters.Add(new NullableUtcDateTimeConverter());
     });
 builder.Services.AddOpenApi();
 

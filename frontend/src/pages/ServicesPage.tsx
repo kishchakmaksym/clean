@@ -2,6 +2,9 @@
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { createMonoInvoice } from "../api/payments";
+import { createOrder } from "../api/orders";
+import { savePendingOrder, type PendingOrderPayload } from "../api/pendingOrder";
+import { useAuth } from "../auth/AuthContext";
 import "./HomePage.css";
 import "./ServicesPage.css";
 
@@ -252,21 +255,6 @@ const customExtras = [
     { id: "ironing", label: "Прасування", price: 300 },
 ] as const;
 
-const pricingNotes = [
-    {
-        title: "Площа і стан",
-        text: "Вартість залежить від метражу, кількості кімнат і ступеня забруднення.",
-    },
-    {
-        title: "Без прихованих платежів",
-        text: "Озвучуємо ціну до виїзду. Додаткові роботи — лише за вашою згодою.",
-    },
-    {
-        title: "Зручний запис",
-        text: "Підбираємо час під вас: ранок, вечір або вихідні.",
-    },
-];
-
 const cleaningTimeSlots = [
     { id: "morning", label: "08:00 – 12:00" },
     { id: "afternoon", label: "12:00 – 16:00" },
@@ -289,7 +277,7 @@ function CleaningTimeSlotSelector({ value, onChange }: CleaningTimeSlotSelectorP
 
     return (
         <fieldset className="services-time-slots">
-            <legend>Час прибирання</legend>
+            <legend>Бажаний час прибирання</legend>
             <p className="services-time-slots-note">Працюємо щодня з 08:00 до 20:00</p>
             <div className="services-time-slots-grid" role="radiogroup" aria-label="Час прибирання">
                 {cleaningTimeSlots.map((slot) => (
@@ -330,21 +318,25 @@ type OrderPaymentOptionsProps = {
     total: number;
     method: PaymentMethod;
     onMethodChange: (method: PaymentMethod) => void;
-    isPaying?: boolean;
-    onConfirm: () => void;
-    orderLabel?: string;
+    onSubmit: () => void;
+    error?: string;
+    isSubmitting?: boolean;
 };
 
 function OrderPaymentOptions({
     total,
     method,
     onMethodChange,
-    isPaying = false,
-    onConfirm,
-    orderLabel = "Підтвердити замовлення",
+    onSubmit,
+    error,
+    isSubmitting = false,
 }: OrderPaymentOptionsProps) {
     const cardTotal = getCardPaymentTotal(total);
     const inputName = `payment-${total}`;
+    const submitLabel =
+        method === "card" ? "Підтвердження оплати" : "Підтвердити замовлення";
+    const submittingLabel =
+        method === "card" ? "Переходимо до оплати…" : "Створюємо замовлення…";
 
     return (
         <div className="services-payment-options">
@@ -387,13 +379,19 @@ function OrderPaymentOptions({
                 </label>
             </div>
 
+            {error ? (
+                <p className="services-payment-error-inline" role="alert">
+                    {error}
+                </p>
+            ) : null}
+
             <button
                 type="button"
                 className="primary-button services-custom-cta"
-                disabled={isPaying}
-                onClick={onConfirm}
+                disabled={isSubmitting}
+                onClick={onSubmit}
             >
-                {isPaying ? "Переходимо до оплати…" : orderLabel}
+                {isSubmitting ? submittingLabel : submitLabel}
             </button>
         </div>
     );
@@ -461,6 +459,7 @@ function getPackageItemPriceHint(item: FixedPackageItem) {
 
 export default function ServicesPage() {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
     const paymentSuccess = searchParams.get("paid") === "1";
 
@@ -470,6 +469,8 @@ export default function ServicesPage() {
     const [paymentError, setPaymentError] = useState("");
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
     const [cleaningTimeSlot, setCleaningTimeSlot] = useState<CleaningTimeSlotId>("morning");
+    const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+    const [checkoutError, setCheckoutError] = useState("");
 
     const [fixedArea, setFixedArea] = useState("55");
     const [fixedSelectedAddons, setFixedSelectedAddons] = useState<string[]>([]);
@@ -537,6 +538,33 @@ export default function ServicesPage() {
         setPaymentError("");
         setPaymentMethod("card");
         setCleaningTimeSlot("morning");
+        setCheckoutError("");
+    }
+
+    function requireAuthForCheckout() {
+        if (user) {
+            return true;
+        }
+
+        navigate(`/login?returnTo=${encodeURIComponent("/services")}`);
+        return false;
+    }
+
+    function handlePaymentSubmit() {
+        if (!requireAuthForCheckout()) {
+            return;
+        }
+
+        if (user?.role !== "User") {
+            const message = "Замовлення можуть оформлювати лише клієнти. Увійдіть під звичайним акаунтом.";
+            setPaymentError(message);
+            setCheckoutError(message);
+            return;
+        }
+
+        setPaymentError("");
+        setCheckoutError("");
+        confirmCheckoutOrder();
     }
 
     function buildFixedOrderDescription() {
@@ -552,42 +580,166 @@ export default function ServicesPage() {
         return `${servicePart}, ${getCleaningTimeSlotLabel(cleaningTimeSlot)}`;
     }
 
-    function confirmFixedOrder() {
-        if (!selectedService || !fixedEstimate) {
+    async function submitFixedOrder() {
+        if (!user || !selectedService || !fixedEstimate) {
             return;
         }
 
-        if (paymentMethod === "card") {
-            void payWithMono(getCardPaymentTotal(fixedEstimate.total), buildFixedOrderDescription());
-            return;
-        }
-
-        navigate("/contacts");
-    }
-
-    function confirmCustomOrder() {
-        navigate("/contacts");
-    }
-
-    async function payWithMono(amountUah: number, description: string) {
+        setIsSubmittingOrder(true);
         setPaymentError("");
-        setIsPaying(true);
+        setCheckoutError("");
+
+        const selectedAddonLabels = selectedService.packageItems
+            .filter((item) => !item.defaultSelected && fixedSelectedAddons.includes(item.id))
+            .map((item) => item.label);
+
+        const orderPayload = {
+            userId: user.id,
+            serviceId: selectedService.id,
+            serviceTitle: selectedService.title,
+            orderType: "fixed" as const,
+            areaSqm: selectedService.flatPrice != null ? undefined : fixedEstimate.sqm,
+            selectedAddons: selectedAddonLabels,
+            timeSlot: cleaningTimeSlot,
+            timeSlotLabel: getCleaningTimeSlotLabel(cleaningTimeSlot),
+            notes: fixedNotes.trim() || undefined,
+            paymentMethod,
+            totalAmount: fixedEstimate.total,
+            payableAmount:
+                paymentMethod === "card"
+                    ? getCardPaymentTotal(fixedEstimate.total)
+                    : fixedEstimate.total,
+        };
 
         try {
-            const result = await createMonoInvoice({
-                amountKopiyky: Math.round(amountUah * 100),
-                destination: description,
-                reference: crypto.randomUUID(),
-            });
-
-            if (!result.success || !result.pageUrl) {
-                setPaymentError(result.error ?? "Не вдалося створити рахунок Monobank.");
+            if (paymentMethod === "card") {
+                await startCardPayment({
+                    ...orderPayload,
+                    paymentMethod: "card",
+                    paymentReference: crypto.randomUUID(),
+                    description: buildFixedOrderDescription(),
+                });
                 return;
             }
 
-            window.location.href = result.pageUrl;
+            const result = await createOrder(orderPayload);
+
+            if (!result.success || !result.order) {
+                const message = result.errors?.[0] ?? "Не вдалося створити замовлення.";
+                setCheckoutError(message);
+                setPaymentError(message);
+                return;
+            }
+
+            navigate("/profile");
         } catch {
-            setPaymentError("Помилка з'єднання з сервером. Перевірте, чи запущений backend.");
+            const message = "Помилка з'єднання з сервером. Перевірте, чи запущений backend.";
+            setCheckoutError(message);
+            setPaymentError(message);
+        } finally {
+            setIsSubmittingOrder(false);
+        }
+    }
+
+    async function submitCustomOrder() {
+        if (!user) {
+            return;
+        }
+
+        setIsSubmittingOrder(true);
+        setPaymentError("");
+        setCheckoutError("");
+
+        const selectedAddonLabels = customExtras
+            .filter((extra) => selectedExtras.includes(extra.id))
+            .map((extra) => extra.label);
+
+        const orderPayload = {
+            userId: user.id,
+            serviceId: cleaningType,
+            serviceTitle: customEstimate.typeLabel,
+            orderType: "custom" as const,
+            areaSqm: customEstimate.sqm,
+            rooms: customEstimate.roomCount,
+            bathrooms: customEstimate.bathCount,
+            selectedAddons: selectedAddonLabels,
+            timeSlot: cleaningTimeSlot,
+            timeSlotLabel: getCleaningTimeSlotLabel(cleaningTimeSlot),
+            notes: notes.trim() || undefined,
+            paymentMethod,
+            totalAmount: customEstimate.total,
+            payableAmount:
+                paymentMethod === "card"
+                    ? getCardPaymentTotal(customEstimate.total)
+                    : customEstimate.total,
+        };
+
+        try {
+            if (paymentMethod === "card") {
+                await startCardPayment({
+                    ...orderPayload,
+                    paymentMethod: "card",
+                    paymentReference: crypto.randomUUID(),
+                    description: `${customEstimate.typeLabel} — ${customEstimate.sqm} м², ${getCleaningTimeSlotLabel(cleaningTimeSlot)}`,
+                });
+                return;
+            }
+
+            const result = await createOrder(orderPayload);
+
+            if (!result.success || !result.order) {
+                const message = result.errors?.[0] ?? "Не вдалося створити замовлення.";
+                setCheckoutError(message);
+                setPaymentError(message);
+                return;
+            }
+
+            navigate("/profile");
+        } catch {
+            const message = "Помилка з'єднання з сервером. Перевірте, чи запущений backend.";
+            setCheckoutError(message);
+            setPaymentError(message);
+        } finally {
+            setIsSubmittingOrder(false);
+        }
+    }
+
+    async function startCardPayment(
+        pending: Omit<PendingOrderPayload, "invoiceId">,
+    ): Promise<boolean> {
+        setPaymentError("");
+        setCheckoutError("");
+        setIsPaying(true);
+
+        try {
+            const { paymentReference, description, ...orderPayload } = pending;
+
+            const result = await createMonoInvoice({
+                amountKopiyky: Math.round(pending.payableAmount * 100),
+                destination: description,
+                reference: paymentReference,
+                pendingOrder: orderPayload,
+            });
+
+            if (!result.success || !result.pageUrl || !result.invoiceId) {
+                const message = result.error ?? "Не вдалося створити рахунок Monobank.";
+                setCheckoutError(message);
+                setPaymentError(message);
+                return false;
+            }
+
+            savePendingOrder({
+                ...pending,
+                invoiceId: result.invoiceId,
+            });
+
+            window.location.assign(result.pageUrl);
+            return true;
+        } catch {
+            const message = "Помилка з'єднання з сервером. Перевірте, чи запущений backend.";
+            setCheckoutError(message);
+            setPaymentError(message);
+            return false;
         } finally {
             setIsPaying(false);
         }
@@ -595,13 +747,24 @@ export default function ServicesPage() {
 
     function closeFixedService() {
         setSelectedFixedService(null);
+        setCheckoutError("");
     }
 
     function switchTab(tab: ServiceTab) {
         setActiveTab(tab);
+        setCheckoutError("");
         if (tab !== "fixed") {
             setSelectedFixedService(null);
         }
+    }
+
+    function confirmCheckoutOrder() {
+        if (activeTab === "fixed") {
+            void submitFixedOrder();
+            return;
+        }
+
+        void submitCustomOrder();
     }
 
     return (
@@ -833,8 +996,9 @@ export default function ServicesPage() {
                                         total={fixedEstimate.total}
                                         method={paymentMethod}
                                         onMethodChange={setPaymentMethod}
-                                        isPaying={isPaying}
-                                        onConfirm={confirmFixedOrder}
+                                        onSubmit={handlePaymentSubmit}
+                                        error={checkoutError}
+                                        isSubmitting={isSubmittingOrder || isPaying}
                                     />
                                 </aside>
                             </div>
@@ -1054,7 +1218,9 @@ export default function ServicesPage() {
                                 total={customEstimate.total}
                                 method={paymentMethod}
                                 onMethodChange={setPaymentMethod}
-                                onConfirm={confirmCustomOrder}
+                                onSubmit={handlePaymentSubmit}
+                                error={checkoutError}
+                                isSubmitting={isSubmittingOrder || isPaying}
                             />
                         </aside>
                     </div>
@@ -1116,43 +1282,6 @@ export default function ServicesPage() {
                     </div>
                 </div>
             )}
-
-            <section className="services-pricing hero-panel" aria-label="Як формується ціна">
-                <div className="services-pricing-intro">
-                    <span className="badge hero-badge">Ціноутворення</span>
-                    <h2 className="hero-process-title">Як ми рахуємо вартість</h2>
-                    <p className="hero-text">
-                        Оберіть тип послуги — далі вкажете площу та деталі. Кастомне замовлення — коли
-                        потрібен індивідуальний підхід. Підписка — для регулярного догляду.
-                    </p>
-                </div>
-
-                <div className="services-pricing-list">
-                    {pricingNotes.map((note) => (
-                        <article key={note.title} className="services-pricing-item">
-                            <h3>{note.title}</h3>
-                            <p>{note.text}</p>
-                        </article>
-                    ))}
-                </div>
-            </section>
-
-            <header className="services-hero hero-panel">
-                <span className="badge hero-badge">Послуги</span>
-                <h1 className="services-title">Що ми прибираємо</h1>
-                <p className="services-lead">
-                    Прозорі ціни, зрозумілий склад робіт і швидкий виїзд. Оберіть послугу — ми
-                    уточнимо деталі та підтвердимо вартість перед приїздом.
-                </p>
-                <div className="services-hero-actions">
-                    <Link to="/contacts" className="primary-button">
-                        Замовити прибирання
-                    </Link>
-                    <Link to="/reviews" className="secondary-button">
-                        Читати відгуки
-                    </Link>
-                </div>
-            </header>
         </div>
     );
 }

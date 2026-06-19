@@ -12,11 +12,12 @@ import {
 } from "../api/reviews";
 import type { ReviewDto } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
+import { ukraineLocalDateTimeToUtcIso, ukraineTodayInputValue } from "../utils/dateTime";
 import "./HomePage.css";
 import "./ReviewsPage.css";
 
 function todayInputValue() {
-    return new Date().toISOString().slice(0, 10);
+    return ukraineTodayInputValue();
 }
 
 const REVIEW_PREVIEW_WORDS = 36;
@@ -163,7 +164,7 @@ export default function ReviewsPage() {
                 authorName,
                 rating,
                 text,
-                createdAtUtc: new Date(`${reviewDate}T12:00:00`).toISOString(),
+                createdAtUtc: ukraineLocalDateTimeToUtcIso(reviewDate),
             });
 
             if (!result.success) {

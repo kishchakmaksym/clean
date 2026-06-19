@@ -3,6 +3,7 @@ using LearnCSharp.Application.Seeding;
 using LearnCSharp.Application.Services;
 using LearnCSharp.Infrastructure.Persistence;
 using LearnCSharp.Infrastructure.Repositories;
+using LearnCSharp.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +24,9 @@ public static class DependencyInjection
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<IReviewRepository, ReviewRepository>();
+        services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IPendingCardOrderRepository, PendingCardOrderRepository>();
+        services.AddScoped<IMonoPaymentClient, MonoPaymentClient>();
 
         return services;
     }

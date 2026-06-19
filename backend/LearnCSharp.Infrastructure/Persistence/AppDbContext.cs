@@ -9,6 +9,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<Review> Reviews => Set<Review>();
 
+    public DbSet<Order> Orders => Set<Order>();
+
+    public DbSet<PendingCardOrder> PendingCardOrders => Set<PendingCardOrder>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<User>(entity =>
@@ -67,6 +71,68 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
                 .HasForeignKey(review => review.UserId)
                 .OnDelete(DeleteBehavior.SetNull)
                 .IsRequired(false);
+        });
+
+        modelBuilder.Entity<Order>(entity =>
+        {
+            entity.HasKey(order => order.Id);
+
+            entity.Property(order => order.ServiceId)
+                .HasMaxLength(64)
+                .IsRequired();
+
+            entity.Property(order => order.ServiceTitle)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(order => order.OrderType)
+                .HasMaxLength(16)
+                .IsRequired();
+
+            entity.Property(order => order.SelectedAddonsJson)
+                .HasMaxLength(4000);
+
+            entity.Property(order => order.TimeSlot)
+                .HasMaxLength(32)
+                .IsRequired();
+
+            entity.Property(order => order.TimeSlotLabel)
+                .HasMaxLength(64)
+                .IsRequired();
+
+            entity.Property(order => order.Notes)
+                .HasMaxLength(2000);
+
+            entity.Property(order => order.PaymentMethod)
+                .HasMaxLength(16)
+                .IsRequired();
+
+            entity.Property(order => order.Status)
+                .IsRequired();
+
+            entity.Property(order => order.CreatedAtUtc)
+                .IsRequired();
+
+            entity.HasOne(order => order.User)
+                .WithMany()
+                .HasForeignKey(order => order.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<PendingCardOrder>(entity =>
+        {
+            entity.HasKey(pending => pending.InvoiceId);
+
+            entity.Property(pending => pending.InvoiceId)
+                .HasMaxLength(64)
+                .IsRequired();
+
+            entity.Property(pending => pending.OrderPayloadJson)
+                .HasMaxLength(8000)
+                .IsRequired();
+
+            entity.Property(pending => pending.CreatedAtUtc)
+                .IsRequired();
         });
     }
 }

@@ -1,9 +1,10 @@
 import type { CreateReviewResponse, DeleteReviewResponse, ReviewDto } from "./types";
+import { formatUkrainianDate, parseUtcDate } from "../utils/dateTime";
 
 export function sortReviewsByNewest(reviews: ReviewDto[]) {
     return [...reviews].sort((left, right) => {
         const dateDiff =
-            new Date(right.createdAtUtc).getTime() - new Date(left.createdAtUtc).getTime();
+            parseUtcDate(right.createdAtUtc).getTime() - parseUtcDate(left.createdAtUtc).getTime();
 
         if (dateDiff !== 0) {
             return dateDiff;
@@ -118,11 +119,7 @@ export async function deleteAdminReview(payload: {
 }
 
 export function formatReviewDate(isoDate: string) {
-    return new Intl.DateTimeFormat("uk-UA", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-    }).format(new Date(isoDate));
+    return formatUkrainianDate(isoDate);
 }
 
 export function renderStars(rating: number) {

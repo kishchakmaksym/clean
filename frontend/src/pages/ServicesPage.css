@@ -645,6 +645,16 @@
     margin-top: 0.15rem;
 }
 
+.services-payment-error-inline {
+    margin: 0;
+    padding: 0.75rem 0.85rem;
+    border-radius: 0.75rem;
+    background: rgba(239, 68, 68, 0.08);
+    color: #b91c1c;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+}
+
 .services-custom-cta {
     margin-top: 1.25rem;
     width: 100%;

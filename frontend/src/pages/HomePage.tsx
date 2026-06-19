@@ -14,9 +14,9 @@ import { useReviewStats } from "../hooks/useReviewStats";
 
 const highlights: { icon: HomeIconName; title: string; text: string }[] = [
     {
-        icon: "rocket",
-        title: "Виїзд у день звернення",
-        text: "Підбираємо зручний час і приїжджаємо без запізнень.",
+        icon: "sparkle",
+        title: "З усім необхідним",
+        text: "Привозимо засоби та обладнання — від вас лише доступ у приміщення.",
     },
     {
         icon: "leaf",

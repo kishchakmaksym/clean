@@ -1,5 +1,17 @@
 export type UserRole = "User" | "Employee" | "Admin";
 
+export function normalizeUserRole(role: unknown): UserRole {
+    if (role === "Admin" || role === 2) {
+        return "Admin";
+    }
+
+    if (role === "Employee" || role === 1) {
+        return "Employee";
+    }
+
+    return "User";
+}
+
 export type UserDto = {
     id: string;
     name: string;

@@ -17,4 +17,8 @@ public class User
     public UserRole Role { get; set; } = UserRole.User;
 
     public DateTime CreatedAtUtc { get; set; }
+
+    public DateTime? UpdatedAtUtc { get; set; }
+
+    public ICollection<UserAddress> Addresses { get; set; } = [];
 }

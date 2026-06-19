@@ -32,6 +32,12 @@ public class Order
 
     public string? Notes { get; set; }
 
+    public Guid? UserAddressId { get; set; }
+
+    public UserAddress? UserAddress { get; set; }
+
+    public string? Address { get; set; }
+
     public required string PaymentMethod { get; set; }
 
     public int TotalAmount { get; set; }

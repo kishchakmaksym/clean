@@ -10,7 +10,9 @@ public sealed class OrderService(
     IOrderRepository orderRepository,
     IUserRepository userRepository,
     IPendingCardOrderRepository pendingCardOrderRepository,
-    IMonoPaymentClient monoPaymentClient) : IOrderService
+    IMonoPaymentClient monoPaymentClient,
+    IProfileService profileService,
+    ITelegramStaffService telegramStaffService) : IOrderService
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -38,6 +40,17 @@ public sealed class OrderService(
             return CreateFailure(["Замовлення можуть оформлювати лише клієнти."]);
         }
 
+        var addressResult = await profileService.ResolveOrderAddressAsync(
+            user.Id,
+            request.AddressId,
+            request.Address,
+            cancellationToken);
+
+        if (!addressResult.Success)
+        {
+            return CreateFailure(addressResult.Errors);
+        }
+
         var order = new Order
         {
             Id = Guid.NewGuid(),
@@ -53,6 +66,8 @@ public sealed class OrderService(
             TimeSlot = request.TimeSlot.Trim(),
             TimeSlotLabel = request.TimeSlotLabel.Trim(),
             Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
+            UserAddressId = addressResult.AddressId,
+            Address = addressResult.AddressLine,
             PaymentMethod = request.PaymentMethod.Trim(),
             TotalAmount = request.TotalAmount,
             PayableAmount = request.PayableAmount,
@@ -60,6 +75,7 @@ public sealed class OrderService(
         };
 
         await orderRepository.AddAsync(order, cancellationToken);
+        await telegramStaffService.NotifyNewOrderAsync(order.Id, cancellationToken);
 
         return new CreateOrderResponseDto
         {
@@ -114,14 +130,18 @@ public sealed class OrderService(
 
         if (actor.Role == UserRole.Admin)
         {
-            if (targetStatus == OrderStatus.Confirmed && order.Status != OrderStatus.PendingConfirmation)
+            var isValidTransition = (order.Status, targetStatus) switch
             {
-                return UpdateFailure(["Підтвердити можна лише замовлення, що чекають підтвердження."]);
-            }
+                (OrderStatus.PendingConfirmation, OrderStatus.Confirmed) => true,
+                (OrderStatus.Confirmed, OrderStatus.Completed) => true,
+                (OrderStatus.Confirmed, OrderStatus.PendingConfirmation) => true,
+                (OrderStatus.Completed, OrderStatus.Confirmed) => true,
+                _ => false,
+            };
 
-            if (targetStatus == OrderStatus.Completed && order.Status != OrderStatus.Confirmed)
+            if (!isValidTransition)
             {
-                return UpdateFailure(["Завершити можна лише підтверджене замовлення."]);
+                return UpdateFailure(["Недозволений перехід статусу для цього замовлення."]);
             }
         }
         else if (actor.Role == UserRole.Employee)
@@ -136,6 +156,7 @@ public sealed class OrderService(
             return UpdateFailure(["Недостатньо прав для зміни статусу."]);
         }
 
+        var previousStatus = order.Status;
         order.Status = targetStatus;
         order.UpdatedAtUtc = DateTime.UtcNow;
         await orderRepository.UpdateAsync(order, cancellationToken);
@@ -143,10 +164,14 @@ public sealed class OrderService(
         return new UpdateOrderStatusResponseDto
         {
             Success = true,
-            Message = targetStatus switch
+            Message = (previousStatus, targetStatus) switch
             {
-                OrderStatus.Confirmed => "Замовлення підтверджено.",
-                OrderStatus.Completed => "Замовлення позначено як виконане.",
+                (OrderStatus.Completed, OrderStatus.Confirmed) =>
+                    "Замовлення повернено на підтверджені.",
+                (OrderStatus.Confirmed, OrderStatus.PendingConfirmation) =>
+                    "Замовлення повернено на очікування підтвердження.",
+                (_, OrderStatus.Confirmed) => "Замовлення підтверджено.",
+                (_, OrderStatus.Completed) => "Замовлення позначено як виконане.",
                 _ => "Статус оновлено.",
             },
             Order = MapOrder(order, order.User?.Name ?? "Клієнт"),
@@ -271,6 +296,11 @@ public sealed class OrderService(
             errors.Add("Сума замовлення має бути не менше 1 ₴.");
         }
 
+        if (request.AddressId is null && string.IsNullOrWhiteSpace(request.Address))
+        {
+            errors.Add("Вкажіть адресу доставки.");
+        }
+
         return errors;
     }
 
@@ -278,7 +308,7 @@ public sealed class OrderService(
     {
         if (Enum.TryParse<OrderStatus>(value, ignoreCase: true, out status))
         {
-            return status is OrderStatus.Confirmed or OrderStatus.Completed;
+            return true;
         }
 
         status = default;
@@ -329,6 +359,8 @@ public sealed class OrderService(
             TimeSlot = order.TimeSlot,
             TimeSlotLabel = order.TimeSlotLabel,
             Notes = order.Notes,
+            UserAddressId = order.UserAddressId,
+            Address = order.Address,
             PaymentMethod = order.PaymentMethod,
             TotalAmount = order.TotalAmount,
             PayableAmount = order.PayableAmount,

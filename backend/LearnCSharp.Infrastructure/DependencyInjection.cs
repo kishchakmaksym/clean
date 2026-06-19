@@ -26,6 +26,8 @@ public static class DependencyInjection
         services.AddScoped<IReviewRepository, ReviewRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IPendingCardOrderRepository, PendingCardOrderRepository>();
+        services.AddScoped<IUserAddressRepository, UserAddressRepository>();
+        services.AddScoped<ITelegramStaffRepository, TelegramStaffRepository>();
         services.AddScoped<IMonoPaymentClient, MonoPaymentClient>();
 
         return services;

@@ -225,7 +225,7 @@ export default function ReviewsPage() {
     }
 
     return (
-        <section className="section reviews-layout">
+        <div className="reviews-page reviews-layout">
             {pendingDeleteReview && (
                 <div className="review-modal-backdrop" role="presentation" onClick={() => setPendingDeleteReview(null)}>
                     <div
@@ -266,40 +266,6 @@ export default function ReviewsPage() {
                 <span className="badge">Відгуки</span>
                 <h2>Що кажуть клієнти</h2>
                 <p>Реальні враження від наших клієнтів.</p>
-            </div>
-
-            <div ref={reviewsTopRef} className="reviews-list-anchor">
-                {isLoading && <p className="reviews-empty">Завантаження відгуків...</p>}
-                {loadError && <p className="review-load-error">{loadError}</p>}
-
-                {!isLoading && !loadError && reviews.length === 0 && (
-                    <p className="reviews-empty">Поки що немає відгуків. Будьте першим!</p>
-                )}
-
-                {!isLoading && !loadError && reviews.length > 0 && (
-                    <div className="reviews-grid">
-                        {reviews.map((review) => (
-                            <article key={review.id} className="glass-card info-card review-card">
-                                <div className="review-stars-display" aria-label={`Оцінка ${review.rating} з 5`}>
-                                    {renderStars(review.rating)}
-                                </div>
-                                <h3>{review.authorName}</h3>
-                                <ReviewText text={review.text} />
-                                <p className="review-meta">{formatReviewDate(review.createdAtUtc)}</p>
-                                {isAdmin && (
-                                    <button
-                                        type="button"
-                                        className="review-delete-button"
-                                        disabled={deletingReviewId === review.id}
-                                        onClick={() => requestDeleteReview(review)}
-                                    >
-                                        {deletingReviewId === review.id ? "Видалення..." : "Видалити"}
-                                    </button>
-                                )}
-                            </article>
-                        ))}
-                    </div>
-                )}
             </div>
 
             <div className="review-form-card">
@@ -440,6 +406,40 @@ export default function ReviewsPage() {
                     </p>
                 )}
             </div>
-        </section>
+
+            <div ref={reviewsTopRef} className="reviews-list-anchor">
+                {isLoading && <p className="reviews-empty">Завантаження відгуків...</p>}
+                {loadError && <p className="review-load-error">{loadError}</p>}
+
+                {!isLoading && !loadError && reviews.length === 0 && (
+                    <p className="reviews-empty">Поки що немає відгуків. Будьте першим!</p>
+                )}
+
+                {!isLoading && !loadError && reviews.length > 0 && (
+                    <div className="reviews-grid">
+                        {reviews.map((review) => (
+                            <article key={review.id} className="glass-card info-card review-card">
+                                <div className="review-stars-display" aria-label={`Оцінка ${review.rating} з 5`}>
+                                    {renderStars(review.rating)}
+                                </div>
+                                <h3>{review.authorName}</h3>
+                                <ReviewText text={review.text} />
+                                <p className="review-meta">{formatReviewDate(review.createdAtUtc)}</p>
+                                {isAdmin && (
+                                    <button
+                                        type="button"
+                                        className="review-delete-button"
+                                        disabled={deletingReviewId === review.id}
+                                        onClick={() => requestDeleteReview(review)}
+                                    >
+                                        {deletingReviewId === review.id ? "Видалення..." : "Видалити"}
+                                    </button>
+                                )}
+                            </article>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
     );
 }

@@ -13,6 +13,20 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<PendingCardOrder> PendingCardOrders => Set<PendingCardOrder>();
 
+    public DbSet<UserAddress> UserAddresses => Set<UserAddress>();
+
+    public DbSet<TelegramAccount> TelegramAccounts => Set<TelegramAccount>();
+
+    public DbSet<EmployeeProfile> EmployeeProfiles => Set<EmployeeProfile>();
+
+    public DbSet<OrderAssignment> OrderAssignments => Set<OrderAssignment>();
+
+    public DbSet<StaffAuditLog> StaffAuditLogs => Set<StaffAuditLog>();
+
+    public DbSet<TelegramOutboxMessage> TelegramOutboxMessages => Set<TelegramOutboxMessage>();
+
+    public DbSet<TelegramOrderNotification> TelegramOrderNotifications => Set<TelegramOrderNotification>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<User>(entity =>
@@ -45,6 +59,26 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
                 .IsRequired();
 
             entity.Property(user => user.Role)
+                .IsRequired();
+
+            entity.HasMany(user => user.Addresses)
+                .WithOne(address => address.User)
+                .HasForeignKey(address => address.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<UserAddress>(entity =>
+        {
+            entity.HasKey(address => address.Id);
+
+            entity.Property(address => address.Label)
+                .HasMaxLength(64);
+
+            entity.Property(address => address.AddressLine)
+                .HasMaxLength(500)
+                .IsRequired();
+
+            entity.Property(address => address.CreatedAtUtc)
                 .IsRequired();
         });
 
@@ -103,6 +137,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(order => order.Notes)
                 .HasMaxLength(2000);
 
+            entity.Property(order => order.Address)
+                .HasMaxLength(500);
+
             entity.Property(order => order.PaymentMethod)
                 .HasMaxLength(16)
                 .IsRequired();
@@ -117,6 +154,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
                 .WithMany()
                 .HasForeignKey(order => order.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(order => order.UserAddress)
+                .WithMany()
+                .HasForeignKey(order => order.UserAddressId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<PendingCardOrder>(entity =>
@@ -133,6 +175,95 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
             entity.Property(pending => pending.CreatedAtUtc)
                 .IsRequired();
+        });
+
+        modelBuilder.Entity<TelegramAccount>(entity =>
+        {
+            entity.HasKey(account => account.Id);
+
+            entity.HasIndex(account => account.TelegramUserId)
+                .IsUnique();
+
+            entity.HasIndex(account => account.UserId)
+                .IsUnique();
+
+            entity.Property(account => account.VerifiedPhone)
+                .HasMaxLength(20)
+                .IsRequired();
+
+            entity.HasOne(account => account.User)
+                .WithMany()
+                .HasForeignKey(account => account.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<EmployeeProfile>(entity =>
+        {
+            entity.HasKey(profile => profile.UserId);
+
+            entity.Property(profile => profile.SharePercent)
+                .HasPrecision(5, 2);
+
+            entity.HasOne(profile => profile.User)
+                .WithMany()
+                .HasForeignKey(profile => profile.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<OrderAssignment>(entity =>
+        {
+            entity.HasKey(assignment => assignment.OrderId);
+
+            entity.HasOne(assignment => assignment.Order)
+                .WithMany()
+                .HasForeignKey(assignment => assignment.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(assignment => assignment.Employee)
+                .WithMany()
+                .HasForeignKey(assignment => assignment.EmployeeUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<StaffAuditLog>(entity =>
+        {
+            entity.HasKey(log => log.Id);
+
+            entity.Property(log => log.Details)
+                .HasMaxLength(2000)
+                .IsRequired();
+
+            entity.HasOne(log => log.Actor)
+                .WithMany()
+                .HasForeignKey(log => log.ActorUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(log => log.Order)
+                .WithMany()
+                .HasForeignKey(log => log.OrderId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<TelegramOutboxMessage>(entity =>
+        {
+            entity.HasKey(message => message.Id);
+
+            entity.Property(message => message.PayloadJson)
+                .HasMaxLength(8000)
+                .IsRequired();
+        });
+
+        modelBuilder.Entity<TelegramOrderNotification>(entity =>
+        {
+            entity.HasKey(notification => notification.Id);
+
+            entity.HasIndex(notification => new { notification.OrderId, notification.ChatId, notification.MessageId })
+                .IsUnique();
+
+            entity.HasOne(notification => notification.Order)
+                .WithMany()
+                .HasForeignKey(notification => notification.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

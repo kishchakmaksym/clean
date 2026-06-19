@@ -211,3 +211,5 @@ C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Api\obj\Debug\net10.0\r
 C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Api\obj\Debug\net10.0\LearnCSharp.Api.pdb
 C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Api\obj\Debug\net10.0\LearnCSharp.Api.genruntimeconfig.cache
 C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Api\obj\Debug\net10.0\ref\LearnCSharp.Api.dll
+c:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Api\bin\Debug\net10.0\Data\service-area-streets.json
+c:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Api\bin\Debug\net10.0\Data\street-supplements.json

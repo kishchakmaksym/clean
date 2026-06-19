@@ -1,0 +1,116 @@
+.faq-accordion {
+    display: grid;
+    gap: 0.65rem;
+}
+
+.faq-accordion-item {
+    border-radius: 1rem;
+    background: var(--panel-bg);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+    overflow: hidden;
+}
+
+.faq-accordion-item[open] {
+    border-color: rgba(var(--primary-rgb), 0.22);
+    box-shadow: 0 4px 16px rgba(var(--primary-rgb), 0.08);
+}
+
+.faq-accordion-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.85rem;
+    padding: 1rem 1.1rem;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+
+.faq-accordion-summary::-webkit-details-marker {
+    display: none;
+}
+
+.faq-accordion-question {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--text);
+}
+
+.faq-accordion-icon {
+    flex-shrink: 0;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    background: rgba(var(--primary-rgb), 0.08);
+    position: relative;
+}
+
+.faq-accordion-icon::before,
+.faq-accordion-icon::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0.55rem;
+    height: 2px;
+    background: var(--primary);
+    border-radius: 1px;
+    transform: translate(-50%, -50%);
+    transition: transform 0.2s ease;
+}
+
+.faq-accordion-icon::after {
+    transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.faq-accordion-item[open] .faq-accordion-icon::after {
+    transform: translate(-50%, -50%) rotate(0deg);
+    opacity: 0;
+}
+
+.faq-accordion-answer {
+    padding: 0 1.1rem 1rem;
+}
+
+.faq-accordion-answer p {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.6;
+    color: var(--muted);
+}
+
+.faq-accordion--compact {
+    gap: 0.45rem;
+}
+
+.faq-accordion--compact .faq-accordion-item {
+    border-radius: 0.85rem;
+}
+
+.faq-accordion--compact .faq-accordion-summary {
+    padding: 0.75rem 0.85rem;
+}
+
+.faq-accordion--compact .faq-accordion-question {
+    font-size: 0.8125rem;
+}
+
+.faq-accordion--compact .faq-accordion-answer {
+    padding: 0 0.85rem 0.75rem;
+}
+
+.faq-accordion--compact .faq-accordion-answer p {
+    font-size: 0.8125rem;
+}
+
+.faq-accordion--compact .faq-accordion-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.faq-accordion--compact .faq-accordion-icon::before,
+.faq-accordion--compact .faq-accordion-icon::after {
+    width: 0.45rem;
+}

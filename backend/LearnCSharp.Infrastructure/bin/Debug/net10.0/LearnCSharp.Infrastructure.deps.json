@@ -1043,8 +1043,10 @@
         "dependencies": {
           "BCrypt.Net-Next": "4.0.3",
           "LearnCSharp.Domain": "1.0.0",
+          "Microsoft.Extensions.Caching.Memory": "10.0.0",
           "Microsoft.Extensions.Configuration.Abstractions": "10.0.0",
           "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.0",
+          "Microsoft.Extensions.Http": "10.0.0",
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0"
         },
         "runtime": {

@@ -1,0 +1,78 @@
+.faq-page {
+    width: 100%;
+    max-width: 42rem;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 2.5rem) var(--pad-inline) var(--pad-block);
+    padding-left: max(var(--pad-inline), env(safe-area-inset-left));
+    padding-right: max(var(--pad-inline), env(safe-area-inset-right));
+    display: grid;
+    gap: clamp(1.25rem, 3vw, 1.75rem);
+}
+
+.faq-hero {
+    display: grid;
+    gap: 0.65rem;
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+}
+
+.faq-hero-title {
+    margin: 0;
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text);
+}
+
+.faq-hero-text {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+    color: var(--muted);
+    max-width: 36rem;
+}
+
+.faq-contact {
+    display: grid;
+    gap: 0.75rem;
+    padding: clamp(1.1rem, 2.5vw, 1.35rem);
+    text-align: center;
+}
+
+.faq-contact-title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.faq-contact-text {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: var(--muted);
+}
+
+.faq-contact-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.65rem;
+    margin-top: 0.25rem;
+}
+
+.faq-contact-actions .primary-button,
+.faq-contact-actions .secondary-button {
+    text-decoration: none;
+}
+
+@media (max-width: 30rem) {
+    .faq-contact-actions {
+        flex-direction: column;
+    }
+
+    .faq-contact-actions .primary-button,
+    .faq-contact-actions .secondary-button {
+        width: 100%;
+        justify-content: center;
+    }
+}

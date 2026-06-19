@@ -65,9 +65,9 @@
     margin: 0;
     padding: 0.85rem 1rem;
     border-radius: var(--radius-lg);
-    background: rgba(40, 167, 69, 0.12);
-    border: 1px solid rgba(40, 167, 69, 0.35);
-    color: #15803d;
+    background: var(--success-soft);
+    border: 1px solid var(--success-border);
+    color: var(--success-text);
 }
 
 .auth-footer {

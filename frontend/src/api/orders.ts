@@ -17,6 +17,8 @@ export type OrderDto = {
     timeSlot: string;
     timeSlotLabel: string;
     notes?: string | null;
+    userAddressId?: string | null;
+    address?: string | null;
     paymentMethod: PaymentMethodType;
     totalAmount: number;
     payableAmount: number;
@@ -36,6 +38,8 @@ export type CreateOrderRequest = {
     timeSlot: string;
     timeSlotLabel: string;
     notes?: string;
+    addressId?: string;
+    address?: string;
     paymentMethod: PaymentMethodType;
     totalAmount: number;
     payableAmount: number;
@@ -51,7 +55,7 @@ export type CreateOrderResponse = {
 export type UpdateOrderStatusRequest = {
     userId: string;
     orderId: string;
-    status: "Confirmed" | "Completed";
+    status: OrderStatus;
 };
 
 export type UpdateOrderStatusResponse = {
@@ -190,9 +194,15 @@ export async function updateOrderStatus(
 }
 
 export const orderStatusLabels: Record<OrderStatus, string> = {
-    PendingConfirmation: "Чекає підтвердження",
+    PendingConfirmation: "Замовлення очікує підтвердження",
     Confirmed: "Підтверджено",
     Completed: "Виконано",
+};
+
+export const orderStatusGroupLabels: Record<OrderStatus, string> = {
+    PendingConfirmation: "Очікують підтвердження",
+    Confirmed: "Підтверджені",
+    Completed: "Виконані",
 };
 
 export const paymentMethodLabels: Record<PaymentMethodType, string> = {

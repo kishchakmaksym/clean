@@ -22,6 +22,15 @@ export function formatUkrainianDateTime(
     }).format(parseUtcDate(value));
 }
 
+export function formatUkrainianShortDate(value: string): string {
+    return new Intl.DateTimeFormat("uk-UA", {
+        timeZone: UKRAINE_TIME_ZONE,
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+    }).format(parseUtcDate(value));
+}
+
 export function formatUkrainianDate(
     value: string,
     options?: Intl.DateTimeFormatOptions,

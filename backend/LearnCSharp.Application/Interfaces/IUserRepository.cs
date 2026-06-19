@@ -17,5 +17,13 @@ public interface IUserRepository
 
     Task<User?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
+    Task<User?> FindByIdWithAddressesAsync(Guid id, CancellationToken cancellationToken = default);
+
+    Task<bool> EmailExistsForOtherUserAsync(string normalizedEmail, Guid userId, CancellationToken cancellationToken = default);
+
+    Task<bool> PhoneExistsForOtherUserAsync(string normalizedPhone, Guid userId, CancellationToken cancellationToken = default);
+
     Task AddAsync(User user, CancellationToken cancellationToken = default);
+
+    Task UpdateAsync(User user, CancellationToken cancellationToken = default);
 }

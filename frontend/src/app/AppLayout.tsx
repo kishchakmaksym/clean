@@ -1,6 +1,8 @@
 import { type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 
+import SupportFab from "../components/support/SupportFab";
+import { supportContacts } from "../config/contacts";
 import { useAuth } from "../auth/AuthContext";
 import "./AppLayout.css";
 
@@ -12,7 +14,7 @@ const navItems = [
     { to: "/", label: "Головна" },
     { to: "/services", label: "Послуги" },
     { to: "/reviews", label: "Відгуки" },
-    { to: "/contacts", label: "Контакти" },
+    { to: "/faq", label: "FAQ" },
 ];
 
 export default function AppLayout({ children }: AppLayoutProps) {
@@ -104,11 +106,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
                     <div className="footer-contact">
                         <p className="footer-contact-label">Контакти</p>
-                        <a href="tel:+380000000000" className="footer-link">
-                            +380 XX XXX XX XX
+                        <a href={supportContacts.phoneHref} className="footer-link">
+                            {supportContacts.phoneDisplay}
                         </a>
-                        <a href="mailto:cleanpro@gmail.com" className="footer-link">
-                            cleanpro@gmail.com
+                        <a href={supportContacts.emailHref} className="footer-link">
+                            {supportContacts.email}
                         </a>
                     </div>
                 </div>
@@ -117,6 +119,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     <p>© {new Date().getFullYear()} CleanPro. Усі права захищені.</p>
                 </div>
             </footer>
+
+            <SupportFab />
         </div>
     );
 }

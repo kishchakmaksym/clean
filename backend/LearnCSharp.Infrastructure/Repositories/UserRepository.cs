@@ -26,9 +26,32 @@ public sealed class UserRepository(AppDbContext dbContext) : IUserRepository
     public Task<User?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         dbContext.Users.FirstOrDefaultAsync(user => user.Id == id, cancellationToken);
 
+    public Task<User?> FindByIdWithAddressesAsync(Guid id, CancellationToken cancellationToken = default) =>
+        dbContext.Users
+            .Include(user => user.Addresses)
+            .FirstOrDefaultAsync(user => user.Id == id, cancellationToken);
+
+    public Task<bool> EmailExistsForOtherUserAsync(
+        string normalizedEmail,
+        Guid userId,
+        CancellationToken cancellationToken = default) =>
+        dbContext.Users.AnyAsync(user => user.Email == normalizedEmail && user.Id != userId, cancellationToken);
+
+    public Task<bool> PhoneExistsForOtherUserAsync(
+        string normalizedPhone,
+        Guid userId,
+        CancellationToken cancellationToken = default) =>
+        dbContext.Users.AnyAsync(user => user.Phone == normalizedPhone && user.Id != userId, cancellationToken);
+
     public async Task AddAsync(User user, CancellationToken cancellationToken = default)
     {
         dbContext.Users.Add(user);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UpdateAsync(User user, CancellationToken cancellationToken = default)
+    {
+        dbContext.Users.Update(user);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

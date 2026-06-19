@@ -89,8 +89,14 @@
 
 /* ── Tabs ── */
 .services-tabs-wrap {
+    position: sticky;
+    top: calc(var(--site-header-h) + env(safe-area-inset-top, 0px));
+    z-index: 40;
     display: flex;
     justify-content: center;
+    padding-block: 0.75rem;
+    margin-block: -0.75rem;
+    background: var(--bg);
 }
 
 .services-tabs {
@@ -439,6 +445,91 @@
 .services-extra-option--on {
     border-color: rgba(var(--primary-rgb), 0.35);
     background: rgba(var(--primary-rgb), 0.06);
+}
+
+.services-address-fieldset {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.services-address-fieldset legend {
+    font-size: 0.8125rem;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 0.15rem;
+}
+
+.services-address-options {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.services-address-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.65rem;
+    padding: 0.7rem 0.85rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: rgba(255, 255, 255, 0.65);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.services-address-option--on,
+.services-address-option:has(input:checked) {
+    border-color: rgba(var(--primary-rgb), 0.35);
+    background: rgba(var(--primary-rgb), 0.06);
+}
+
+.services-address-option input {
+    margin-top: 0.15rem;
+    accent-color: var(--primary);
+}
+
+.services-address-option-copy {
+    display: grid;
+    gap: 0.2rem;
+    flex: 1;
+}
+
+.services-address-option-title {
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.services-address-option-badge {
+    font-size: 0.625rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--primary);
+}
+
+.services-address-hint {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--muted);
+}
+
+.services-address-custom {
+    display: grid;
+    gap: 0.45rem;
+    margin-top: 0.15rem;
+}
+
+.services-address-custom-label {
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
 }
 
 .services-extra-option--locked {

@@ -24,6 +24,10 @@ public sealed class CreateOrderRequestDto
 
     public string? Notes { get; init; }
 
+    public Guid? AddressId { get; init; }
+
+    public string? Address { get; init; }
+
     public required string PaymentMethod { get; init; }
 
     public required int TotalAmount { get; init; }

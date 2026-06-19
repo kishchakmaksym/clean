@@ -1,9 +1,13 @@
-﻿import { useMemo, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+﻿import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { createMonoInvoice } from "../api/payments";
 import { createOrder } from "../api/orders";
 import { savePendingOrder, type PendingOrderPayload } from "../api/pendingOrder";
+import { buildOrderAddressFields, fetchProfile, type UserAddressDto } from "../api/profile";
+import { validateServiceAreaAddress } from "../utils/serviceAreaAddress";
+import { supportContacts } from "../config/contacts";
+import OrderAddressSelector from "../components/profile/OrderAddressSelector";
 import { useAuth } from "../auth/AuthContext";
 import "./HomePage.css";
 import "./ServicesPage.css";
@@ -483,6 +487,11 @@ export default function ServicesPage() {
     const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
     const [notes, setNotes] = useState("");
 
+    const [savedAddresses, setSavedAddresses] = useState<UserAddressDto[]>([]);
+    const [addressesLoading, setAddressesLoading] = useState(false);
+    const [addressSelection, setAddressSelection] = useState("new");
+    const [customAddress, setCustomAddress] = useState("");
+
     const selectedService = fixedServiceCategories.find((item) => item.id === selectedFixedService);
 
     const fixedEstimate = useMemo(() => {
@@ -512,6 +521,78 @@ export default function ServicesPage() {
             extrasTotal,
         };
     }, [area, bathrooms, cleaningType, rooms, selectedExtras]);
+
+    useEffect(() => {
+        if (!user || user.role !== "User") {
+            setSavedAddresses([]);
+            setAddressSelection("new");
+            setCustomAddress("");
+            return;
+        }
+
+        let cancelled = false;
+        const currentUser = user;
+
+        async function loadAddresses() {
+            setAddressesLoading(true);
+
+            try {
+                const result = await fetchProfile(currentUser.id);
+                if (cancelled) {
+                    return;
+                }
+
+                if (!result.success || !result.profile) {
+                    setSavedAddresses([]);
+                    setAddressSelection("new");
+                    return;
+                }
+
+                const addresses = result.profile.addresses;
+                setSavedAddresses(addresses);
+
+                const preferredAddress = addresses[0];
+                if (preferredAddress) {
+                    setAddressSelection(preferredAddress.id);
+                    setCustomAddress("");
+                } else {
+                    setAddressSelection("new");
+                }
+            } catch {
+                if (!cancelled) {
+                    setSavedAddresses([]);
+                    setAddressSelection("new");
+                }
+            } finally {
+                if (!cancelled) {
+                    setAddressesLoading(false);
+                }
+            }
+        }
+
+        void loadAddresses();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [user]);
+
+    function getOrderAddressFields() {
+        return buildOrderAddressFields(addressSelection, customAddress);
+    }
+
+    function validateOrderAddress(): string | null {
+        const fields = getOrderAddressFields();
+        if (!fields) {
+            return "Вкажіть адресу прибирання.";
+        }
+
+        if (fields.address) {
+            return validateServiceAreaAddress(fields.address);
+        }
+
+        return null;
+    }
 
     function toggleExtra(id: string) {
         setSelectedExtras((current) =>
@@ -589,6 +670,16 @@ export default function ServicesPage() {
         setPaymentError("");
         setCheckoutError("");
 
+        const addressError = validateOrderAddress();
+        if (addressError) {
+            setCheckoutError(addressError);
+            setPaymentError(addressError);
+            setIsSubmittingOrder(false);
+            return;
+        }
+
+        const addressFields = getOrderAddressFields()!;
+
         const selectedAddonLabels = selectedService.packageItems
             .filter((item) => !item.defaultSelected && fixedSelectedAddons.includes(item.id))
             .map((item) => item.label);
@@ -603,6 +694,7 @@ export default function ServicesPage() {
             timeSlot: cleaningTimeSlot,
             timeSlotLabel: getCleaningTimeSlotLabel(cleaningTimeSlot),
             notes: fixedNotes.trim() || undefined,
+            ...addressFields,
             paymentMethod,
             totalAmount: fixedEstimate.total,
             payableAmount:
@@ -631,7 +723,7 @@ export default function ServicesPage() {
                 return;
             }
 
-            navigate("/profile");
+            navigate("/profile/orders");
         } catch {
             const message = "Помилка з'єднання з сервером. Перевірте, чи запущений backend.";
             setCheckoutError(message);
@@ -650,6 +742,16 @@ export default function ServicesPage() {
         setPaymentError("");
         setCheckoutError("");
 
+        const addressError = validateOrderAddress();
+        if (addressError) {
+            setCheckoutError(addressError);
+            setPaymentError(addressError);
+            setIsSubmittingOrder(false);
+            return;
+        }
+
+        const addressFields = getOrderAddressFields()!;
+
         const selectedAddonLabels = customExtras
             .filter((extra) => selectedExtras.includes(extra.id))
             .map((extra) => extra.label);
@@ -666,6 +768,7 @@ export default function ServicesPage() {
             timeSlot: cleaningTimeSlot,
             timeSlotLabel: getCleaningTimeSlotLabel(cleaningTimeSlot),
             notes: notes.trim() || undefined,
+            ...addressFields,
             paymentMethod,
             totalAmount: customEstimate.total,
             payableAmount:
@@ -694,7 +797,7 @@ export default function ServicesPage() {
                 return;
             }
 
-            navigate("/profile");
+            navigate("/profile/orders");
         } catch {
             const message = "Помилка з'єднання з сервером. Перевірте, чи запущений backend.";
             setCheckoutError(message);
@@ -933,6 +1036,15 @@ export default function ServicesPage() {
                                         </fieldset>
                                     ) : null}
 
+                                    <OrderAddressSelector
+                                        addresses={savedAddresses}
+                                        selection={addressSelection}
+                                        onSelectionChange={setAddressSelection}
+                                        customAddress={customAddress}
+                                        onCustomAddressChange={setCustomAddress}
+                                        loading={addressesLoading}
+                                    />
+
                                     <CleaningTimeSlotSelector
                                         value={cleaningTimeSlot}
                                         onChange={setCleaningTimeSlot}
@@ -1155,6 +1267,15 @@ export default function ServicesPage() {
                                 </div>
                             </fieldset>
 
+                            <OrderAddressSelector
+                                addresses={savedAddresses}
+                                selection={addressSelection}
+                                onSelectionChange={setAddressSelection}
+                                customAddress={customAddress}
+                                onCustomAddressChange={setCustomAddress}
+                                loading={addressesLoading}
+                            />
+
                             <CleaningTimeSlotSelector
                                 value={cleaningTimeSlot}
                                 onChange={setCleaningTimeSlot}
@@ -1271,12 +1392,12 @@ export default function ServicesPage() {
                                     ))}
                                 </ul>
 
-                                <Link
-                                    to="/contacts"
+                                <a
+                                    href={supportContacts.phoneHref}
                                     className="secondary-button compact services-card-cta"
                                 >
                                     Оформити підписку
-                                </Link>
+                                </a>
                             </article>
                         ))}
                     </div>

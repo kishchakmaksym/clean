@@ -1,4 +1,15 @@
 import type { AuthResponse, LoginRequest, RegisterRequest, UserDto } from "./types";
+import { normalizeUserRole } from "./types";
+
+function normalizeUser(user: Partial<UserDto> & Pick<UserDto, "id">): UserDto {
+    return {
+        id: user.id,
+        name: user.name ?? "",
+        email: user.email ?? "",
+        phone: user.phone ?? "",
+        role: normalizeUserRole(user.role),
+    };
+}
 
 async function parseAuthResponse(response: Response): Promise<AuthResponse> {
     const data = (await response.json()) as AuthResponse;
@@ -37,7 +48,7 @@ export const AUTH_USER_STORAGE_KEY = "cleanpro_user";
 
 export function saveAuthUser(user: AuthResponse["user"]) {
     if (!user) return;
-    localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user));
+    localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(normalizeUser(user)));
 }
 
 export function getAuthUser() {
@@ -46,13 +57,11 @@ export function getAuthUser() {
 
     try {
         const parsed = JSON.parse(raw) as Partial<UserDto>;
-        return {
-            id: parsed.id ?? "",
-            name: parsed.name ?? "",
-            email: parsed.email ?? "",
-            phone: parsed.phone ?? "",
-            role: parsed.role ?? "User",
-        };
+        if (!parsed.id) {
+            return null;
+        }
+
+        return normalizeUser({ ...parsed, id: parsed.id });
     } catch {
         localStorage.removeItem(AUTH_USER_STORAGE_KEY);
         return null;

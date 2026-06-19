@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
 import SupportFab from "../components/support/SupportFab";
 import { supportContacts } from "../config/contacts";
@@ -19,6 +19,17 @@ const navItems = [
 
 export default function AppLayout({ children }: AppLayoutProps) {
     const { user } = useAuth();
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    function handleServicesNavClick(event: React.MouseEvent<HTMLAnchorElement>) {
+        if (location.pathname !== "/services") {
+            return;
+        }
+
+        event.preventDefault();
+        navigate("/services", { replace: true, state: { scrollServicesTop: true } });
+    }
 
     return (
         <div className="app-layout">
@@ -43,11 +54,22 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     </NavLink>
 
                     <nav className="header-nav" aria-label="Головна навігація">
-                        {navItems.map((item) => (
-                            <NavLink key={item.to} to={item.to} className="header-link">
-                                {item.label}
-                            </NavLink>
-                        ))}
+                        {navItems.map((item) =>
+                            item.to === "/services" ? (
+                                <NavLink
+                                    key={item.to}
+                                    to="/services"
+                                    className="header-link"
+                                    onClick={handleServicesNavClick}
+                                >
+                                    {item.label}
+                                </NavLink>
+                            ) : (
+                                <NavLink key={item.to} to={item.to} className="header-link">
+                                    {item.label}
+                                </NavLink>
+                            ),
+                        )}
                     </nav>
 
                     <div className="header-actions">
@@ -97,11 +119,22 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     </div>
 
                     <nav className="footer-nav" aria-label="Навігація в футері">
-                        {navItems.map((item) => (
-                            <NavLink key={item.to} to={item.to} className="footer-link">
-                                {item.label}
-                            </NavLink>
-                        ))}
+                        {navItems.map((item) =>
+                            item.to === "/services" ? (
+                                <NavLink
+                                    key={item.to}
+                                    to="/services"
+                                    className="footer-link"
+                                    onClick={handleServicesNavClick}
+                                >
+                                    {item.label}
+                                </NavLink>
+                            ) : (
+                                <NavLink key={item.to} to={item.to} className="footer-link">
+                                    {item.label}
+                                </NavLink>
+                            ),
+                        )}
                     </nav>
 
                     <div className="footer-contact">

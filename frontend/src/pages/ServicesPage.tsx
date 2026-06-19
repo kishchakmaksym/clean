@@ -1,5 +1,5 @@
-﻿import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import { createMonoInvoice } from "../api/payments";
 import { createOrder } from "../api/orders";
@@ -7,12 +7,50 @@ import { savePendingOrder, type PendingOrderPayload } from "../api/pendingOrder"
 import { buildOrderAddressFields, fetchProfile, type UserAddressDto } from "../api/profile";
 import { validateServiceAreaAddress } from "../utils/serviceAreaAddress";
 import { supportContacts } from "../config/contacts";
+import {
+    allCustomExtras,
+    buildCustomOrganizationalNote,
+    customCleaningTypes,
+    customExtraCategories,
+    pollutionLevelOptions,
+    propertyTypeOptions,
+    calculateCustomExtraTotal,
+    customExtraUsesQuantity,
+    formatCustomExtraOrderLabel,
+    formatCustomExtraRate,
+    getCustomExtraQuantityLabel,
+    type CustomExtraItem,
+} from "../config/customCleaningOptions";
 import OrderAddressSelector from "../components/profile/OrderAddressSelector";
 import { useAuth } from "../auth/AuthContext";
 import "./HomePage.css";
 import "./ServicesPage.css";
 
 type ServiceTab = "fixed" | "custom" | "subscription";
+
+function parseServiceTab(value: string | null): ServiceTab {
+    if (value === "custom" || value === "subscription") {
+        return value;
+    }
+
+    return "fixed";
+}
+
+function scrollToServicesSection(element: HTMLElement | null) {
+    if (!element) {
+        return;
+    }
+
+    const header = document.querySelector(".header");
+    const tabs = document.querySelector(".services-tabs-wrap");
+    const offset =
+        (header?.getBoundingClientRect().height ?? 0) +
+        (tabs?.getBoundingClientRect().height ?? 0) +
+        12;
+    const top = element.getBoundingClientRect().top + window.scrollY - offset;
+
+    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+}
 
 type FixedPackageItem = {
     id: string;
@@ -29,9 +67,33 @@ type FixedServiceCategory = {
     packageItems: readonly FixedPackageItem[];
     flatPrice?: number;
     basePerSqm?: number;
+    /** Перші N м² за basePerSqm; решта — за sqmTierRate */
+    sqmTierThreshold?: number;
+    sqmTierRate?: number;
 };
 
 const fixedServiceCategories: readonly FixedServiceCategory[] = [
+    {
+        id: "express",
+        title: "Експрес-прибирання",
+        text: "Швидке наведення ладу — підлога, поверхні, дзеркала та сміття без генерального навантаження.",
+        duration: "1–2 год",
+        basePerSqm: 25,
+        sqmTierThreshold: 50,
+        sqmTierRate: 20,
+        packageItems: [
+            { id: "vacuum", label: "Пропилососити підлогу", defaultSelected: true, adjustment: 0 },
+            { id: "mop", label: "Швидко помити підлогу", defaultSelected: true, adjustment: 0 },
+            { id: "mirrors", label: "Протерти дзеркала", defaultSelected: true, adjustment: 0 },
+            { id: "tidy", label: "Скласти розкидані речі", defaultSelected: true, adjustment: 0 },
+            { id: "dust", label: "Витерти пил з відкритих поверхонь", defaultSelected: true, adjustment: 0 },
+            { id: "trash", label: "Винести сміття", defaultSelected: true, adjustment: 0 },
+            { id: "windows", label: "Миття вікон", defaultSelected: false, adjustment: 250 },
+            { id: "fridge", label: "Холодильник", defaultSelected: false, adjustment: 180 },
+            { id: "kitchen", label: "Вологе прибирання кухні", defaultSelected: false, adjustment: 200 },
+            { id: "bathroom", label: "Санвузол", defaultSelected: false, adjustment: 180 },
+        ],
+    },
     {
         id: "light-clean",
         title: "Легке прибирання",
@@ -68,22 +130,6 @@ const fixedServiceCategories: readonly FixedServiceCategory[] = [
             { id: "kitchen", label: "Кухня: плита, стільниці, фартух", defaultSelected: true, adjustment: 0 },
             { id: "bathroom", label: "Санвузол і дзеркала", defaultSelected: true, adjustment: 0 },
             { id: "floor", label: "Пилосос і миття підлоги", defaultSelected: true, adjustment: 0 },
-            { id: "fridge", label: "Холодильник", defaultSelected: false, adjustment: 180 },
-        ],
-    },
-    {
-        id: "express",
-        title: "Експрес-прибирання",
-        text: "Коли потрібно швидко навести лад — без генерального навантаження, але акуратно і охайно.",
-        basePerSqm: 24,
-        duration: "1.5–3 год",
-        packageItems: [
-            { id: "kitchen", label: "Вологе прибирання кухні та санвузла", defaultSelected: true, adjustment: 60 },
-            { id: "floor", label: "Пилосос і миття підлоги в основних зонах", defaultSelected: true, adjustment: 50 },
-            { id: "surfaces", label: "Протирання поверхонь і пил", defaultSelected: true, adjustment: 40 },
-            { id: "trash", label: "Винесення сміття", defaultSelected: true, adjustment: 50 },
-            { id: "mirrors", label: "Дзеркала та скло", defaultSelected: true, adjustment: 40 },
-            { id: "windows", label: "Миття вікон", defaultSelected: false, adjustment: 250 },
             { id: "fridge", label: "Холодильник", defaultSelected: false, adjustment: 180 },
         ],
     },
@@ -185,6 +231,10 @@ const fixedServiceCategories: readonly FixedServiceCategory[] = [
 
 type FixedServiceId = (typeof fixedServiceCategories)[number]["id"];
 
+function isFixedServiceId(value: string | null): value is FixedServiceId {
+    return value !== null && fixedServiceCategories.some((item) => item.id === value);
+}
+
 const subscriptionPlans = [
     {
         title: "Щотижня",
@@ -244,21 +294,6 @@ const subscriptionPlans = [
     },
 ] as const;
 
-const customCleaningTypes = [
-    { id: "regular", label: "Звичайне", basePerSqm: 18 },
-    { id: "deep", label: "Генеральне", basePerSqm: 28 },
-    { id: "post-renovation", label: "Після ремонту", basePerSqm: 38 },
-    { id: "office", label: "Офіс", basePerSqm: 22 },
-] as const;
-
-const customExtras = [
-    { id: "windows", label: "Миття вікон", price: 350 },
-    { id: "fridge", label: "Холодильник", price: 200 },
-    { id: "oven", label: "Духова шафа", price: 250 },
-    { id: "balcony", label: "Балкон", price: 150 },
-    { id: "ironing", label: "Прасування", price: 300 },
-] as const;
-
 const cleaningTimeSlots = [
     { id: "morning", label: "08:00 – 12:00" },
     { id: "afternoon", label: "12:00 – 16:00" },
@@ -310,6 +345,24 @@ function formatPrice(value: number) {
 
 function getServiceCardPrice(service: FixedServiceCategory) {
     return service.flatPrice ?? service.basePerSqm ?? 0;
+}
+
+function formatFixedBaseBreakdown(
+    service: Pick<FixedServiceCategory, "flatPrice" | "basePerSqm" | "sqmTierThreshold" | "sqmTierRate">,
+    sqm: number,
+) {
+    if (service.flatPrice != null) {
+        return formatPrice(service.flatPrice);
+    }
+
+    const rate = service.basePerSqm ?? 0;
+
+    if (service.sqmTierThreshold != null && service.sqmTierRate != null && sqm > service.sqmTierThreshold) {
+        const extraSqm = sqm - service.sqmTierThreshold;
+        return `${formatPrice(rate)} × ${service.sqmTierThreshold} м² + ${formatPrice(service.sqmTierRate)} × ${extraSqm} м²`;
+    }
+
+    return `${formatPrice(rate)} × ${sqm} м²`;
 }
 
 function getCardPaymentTotal(total: number) {
@@ -401,31 +454,115 @@ function OrderPaymentOptions({
     );
 }
 
+type CustomExtrasSelectorProps = {
+    quantities: Record<string, number>;
+    onToggle: (extra: CustomExtraItem) => void;
+    onQuantityChange: (id: string, value: string) => void;
+};
+
+function CustomExtrasSelector({ quantities, onToggle, onQuantityChange }: CustomExtrasSelectorProps) {
+    return (
+        <div className="services-extras-categories">
+            {customExtraCategories.map((category) => (
+                <fieldset key={category.id} className="services-extras services-extras--group">
+                    <legend>{category.title}</legend>
+                    <div className="services-extras-grid">
+                        {category.items.map((extra) => {
+                            const quantity = quantities[extra.id] ?? 0;
+                            const isSelected = quantity > 0;
+                            const usesQuantity = customExtraUsesQuantity(extra);
+
+                            return (
+                                <div key={extra.id} className="services-extra-row">
+                                    <label className="services-extra-option">
+                                        <input
+                                            type="checkbox"
+                                            checked={isSelected}
+                                            onChange={() => onToggle(extra)}
+                                        />
+                                        <span className="services-extra-copy">
+                                            <span>{extra.label}</span>
+                                            <span className="services-extra-price">
+                                                {formatCustomExtraRate(extra)}
+                                                {extra.priceConfirmed ? (
+                                                    <span
+                                                        className="services-extra-price-dot"
+                                                        title="Ціну вже задано"
+                                                        aria-label="Ціну вже задано"
+                                                    />
+                                                ) : null}
+                                            </span>
+                                        </span>
+                                    </label>
+                                    {usesQuantity && isSelected ? (
+                                        <label className="services-extra-qty">
+                                            <span>{getCustomExtraQuantityLabel(extra)}</span>
+                                            <input
+                                                type="number"
+                                                min={1}
+                                                max={99}
+                                                value={quantity}
+                                                onChange={(event) =>
+                                                    onQuantityChange(extra.id, event.target.value)
+                                                }
+                                                inputMode="numeric"
+                                                aria-label={`${getCustomExtraQuantityLabel(extra)}: ${extra.label}`}
+                                            />
+                                        </label>
+                                    ) : null}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </fieldset>
+            ))}
+        </div>
+    );
+}
+
 function estimateFixedOrder(
-    service: Pick<FixedServiceCategory, "flatPrice" | "basePerSqm">,
+    service: Pick<
+        FixedServiceCategory,
+        "flatPrice" | "basePerSqm" | "sqmTierThreshold" | "sqmTierRate"
+    >,
     area: string,
     packageItems: readonly FixedPackageItem[],
     selectedAddons: string[],
+    customExtrasTotal = 0,
 ) {
-    const addedTotal = packageItems
+    const packageAddonsTotal = packageItems
         .filter((item) => !item.defaultSelected && selectedAddons.includes(item.id))
         .reduce((sum, item) => sum + item.adjustment, 0);
+    const addedTotal = packageAddonsTotal + customExtrasTotal;
 
     if (service.flatPrice != null) {
         return {
             sqm: 0,
             base: service.flatPrice,
+            packageAddonsTotal,
+            customExtrasTotal,
             addedTotal,
             total: Math.round(service.flatPrice + addedTotal),
         };
     }
 
     const sqm = Math.max(20, Number.parseInt(area, 10) || 0);
-    const base = sqm * (service.basePerSqm ?? 0);
+    const rate = service.basePerSqm ?? 0;
+    let base: number;
+
+    if (service.sqmTierThreshold != null && service.sqmTierRate != null) {
+        const firstTierSqm = Math.min(sqm, service.sqmTierThreshold);
+        const extraSqm = Math.max(0, sqm - service.sqmTierThreshold);
+        base = firstTierSqm * rate + extraSqm * service.sqmTierRate;
+    } else {
+        base = sqm * rate;
+    }
 
     return {
         sqm,
         base,
+        packageAddonsTotal,
+        customExtrasTotal,
         addedTotal,
         total: Math.round(base + addedTotal),
     };
@@ -463,12 +600,18 @@ function getPackageItemPriceHint(item: FixedPackageItem) {
 
 export default function ServicesPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { user } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
     const paymentSuccess = searchParams.get("paid") === "1";
+    const fixedPanelRef = useRef<HTMLDivElement>(null);
+    const servicesTopRef = useRef<HTMLDivElement>(null);
+    const previousServiceRef = useRef<string | null>(null);
 
-    const [activeTab, setActiveTab] = useState<ServiceTab>("fixed");
-    const [selectedFixedService, setSelectedFixedService] = useState<FixedServiceId | null>(null);
+    const activeTab = parseServiceTab(searchParams.get("tab"));
+    const serviceParam = searchParams.get("service");
+    const selectedFixedService =
+        activeTab === "fixed" && isFixedServiceId(serviceParam) ? serviceParam : null;
     const [isPaying, setIsPaying] = useState(false);
     const [paymentError, setPaymentError] = useState("");
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
@@ -478,14 +621,22 @@ export default function ServicesPage() {
 
     const [fixedArea, setFixedArea] = useState("55");
     const [fixedSelectedAddons, setFixedSelectedAddons] = useState<string[]>([]);
+    const [fixedExtraQuantities, setFixedExtraQuantities] = useState<Record<string, number>>({});
     const [fixedNotes, setFixedNotes] = useState("");
 
     const [cleaningType, setCleaningType] = useState<(typeof customCleaningTypes)[number]["id"]>("regular");
     const [area, setArea] = useState("55");
     const [rooms, setRooms] = useState("2");
     const [bathrooms, setBathrooms] = useState("1");
-    const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
+    const [extraQuantities, setExtraQuantities] = useState<Record<string, number>>({});
     const [notes, setNotes] = useState("");
+    const [propertyType, setPropertyType] = useState<(typeof propertyTypeOptions)[number]["id"]>("apartment");
+    const [pollutionLevel, setPollutionLevel] = useState<(typeof pollutionLevelOptions)[number]["id"]>("light");
+    const [hasPets, setHasPets] = useState(false);
+    const [ownSupplies, setOwnSupplies] = useState(false);
+    const [needLadder, setNeedLadder] = useState(false);
+    const [hasElevator, setHasElevator] = useState(true);
+    const [cleanersCount, setCleanersCount] = useState("1");
 
     const [savedAddresses, setSavedAddresses] = useState<UserAddressDto[]>([]);
     const [addressesLoading, setAddressesLoading] = useState(false);
@@ -499,19 +650,39 @@ export default function ServicesPage() {
             return null;
         }
 
+        const sqmForExtras = Math.max(20, Number.parseInt(fixedArea, 10) || 0);
+        const customExtrasTotal = allCustomExtras
+            .filter((extra) => (fixedExtraQuantities[extra.id] ?? 0) > 0)
+            .reduce(
+                (sum, extra) =>
+                    sum +
+                    calculateCustomExtraTotal(
+                        extra,
+                        sqmForExtras,
+                        fixedExtraQuantities[extra.id] ?? 1,
+                    ),
+                0,
+            );
+
         return estimateFixedOrder(
             selectedService,
             fixedArea,
             selectedService.packageItems,
             fixedSelectedAddons,
+            customExtrasTotal,
         );
-    }, [fixedArea, fixedSelectedAddons, selectedService]);
+    }, [fixedArea, fixedExtraQuantities, fixedSelectedAddons, selectedService]);
 
     const customEstimate = useMemo(() => {
         const type = customCleaningTypes.find((item) => item.id === cleaningType) ?? customCleaningTypes[0];
-        const extrasTotal = customExtras
-            .filter((extra) => selectedExtras.includes(extra.id))
-            .reduce((sum, extra) => sum + extra.price, 0);
+        const sqm = Math.max(20, Number.parseInt(area, 10) || 0);
+        const extrasTotal = allCustomExtras
+            .filter((extra) => (extraQuantities[extra.id] ?? 0) > 0)
+            .reduce(
+                (sum, extra) =>
+                    sum + calculateCustomExtraTotal(extra, sqm, extraQuantities[extra.id] ?? 1),
+                0,
+            );
 
         const result = estimateCustomOrder(type.basePerSqm, area, rooms, bathrooms, extrasTotal);
 
@@ -520,7 +691,7 @@ export default function ServicesPage() {
             typeLabel: type.label,
             extrasTotal,
         };
-    }, [area, bathrooms, cleaningType, rooms, selectedExtras]);
+    }, [area, bathrooms, cleaningType, extraQuantities, rooms]);
 
     useEffect(() => {
         if (!user || user.role !== "User") {
@@ -577,6 +748,36 @@ export default function ServicesPage() {
         };
     }, [user]);
 
+    useEffect(() => {
+        if (serviceParam && selectedFixedService) {
+            window.requestAnimationFrame(() => {
+                scrollToServicesSection(fixedPanelRef.current);
+            });
+        } else if (previousServiceRef.current && !serviceParam) {
+            window.requestAnimationFrame(() => {
+                scrollToServicesSection(servicesTopRef.current);
+            });
+        }
+
+        previousServiceRef.current = serviceParam;
+    }, [serviceParam, selectedFixedService]);
+
+    useEffect(() => {
+        const state = location.state as { scrollServicesTop?: boolean } | null;
+        if (!state?.scrollServicesTop) {
+            return;
+        }
+
+        window.requestAnimationFrame(() => {
+            scrollToServicesSection(servicesTopRef.current);
+        });
+
+        navigate(
+            { pathname: location.pathname, search: location.search },
+            { replace: true, state: null },
+        );
+    }, [location.pathname, location.search, location.state, navigate]);
+
     function getOrderAddressFields() {
         return buildOrderAddressFields(addressSelection, customAddress);
     }
@@ -594,10 +795,62 @@ export default function ServicesPage() {
         return null;
     }
 
-    function toggleExtra(id: string) {
-        setSelectedExtras((current) =>
-            current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
-        );
+    function toggleExtra(extra: (typeof allCustomExtras)[number]) {
+        setExtraQuantities((current) => {
+            if ((current[extra.id] ?? 0) > 0) {
+                const next = { ...current };
+                delete next[extra.id];
+                return next;
+            }
+
+            return { ...current, [extra.id]: 1 };
+        });
+    }
+
+    function setExtraQuantity(id: string, rawValue: string) {
+        const parsed = Number.parseInt(rawValue, 10);
+        if (!Number.isFinite(parsed) || parsed < 1) {
+            setExtraQuantities((current) => {
+                const next = { ...current };
+                delete next[id];
+                return next;
+            });
+            return;
+        }
+
+        setExtraQuantities((current) => ({
+            ...current,
+            [id]: Math.min(99, parsed),
+        }));
+    }
+
+    function toggleFixedExtra(extra: CustomExtraItem) {
+        setFixedExtraQuantities((current) => {
+            if ((current[extra.id] ?? 0) > 0) {
+                const next = { ...current };
+                delete next[extra.id];
+                return next;
+            }
+
+            return { ...current, [extra.id]: 1 };
+        });
+    }
+
+    function setFixedExtraQuantity(id: string, rawValue: string) {
+        const parsed = Number.parseInt(rawValue, 10);
+        if (!Number.isFinite(parsed) || parsed < 1) {
+            setFixedExtraQuantities((current) => {
+                const next = { ...current };
+                delete next[id];
+                return next;
+            });
+            return;
+        }
+
+        setFixedExtraQuantities((current) => ({
+            ...current,
+            [id]: Math.min(99, parsed),
+        }));
     }
 
     function toggleFixedAddon(id: string) {
@@ -612,14 +865,21 @@ export default function ServicesPage() {
             return;
         }
 
-        setSelectedFixedService(id);
         setFixedArea("55");
         setFixedSelectedAddons([]);
+        setFixedExtraQuantities({});
         setFixedNotes("");
         setPaymentError("");
         setPaymentMethod("card");
         setCleaningTimeSlot("morning");
         setCheckoutError("");
+
+        setSearchParams((current) => {
+            const next = new URLSearchParams(current);
+            next.set("tab", "fixed");
+            next.set("service", id);
+            return next;
+        });
     }
 
     function requireAuthForCheckout() {
@@ -680,9 +940,14 @@ export default function ServicesPage() {
 
         const addressFields = getOrderAddressFields()!;
 
-        const selectedAddonLabels = selectedService.packageItems
+        const selectedPackageAddonLabels = selectedService.packageItems
             .filter((item) => !item.defaultSelected && fixedSelectedAddons.includes(item.id))
             .map((item) => item.label);
+        const selectedCustomExtraLabels = allCustomExtras
+            .filter((extra) => (fixedExtraQuantities[extra.id] ?? 0) > 0)
+            .map((extra) =>
+                formatCustomExtraOrderLabel(extra, fixedExtraQuantities[extra.id] ?? 1),
+            );
 
         const orderPayload = {
             userId: user.id,
@@ -690,7 +955,7 @@ export default function ServicesPage() {
             serviceTitle: selectedService.title,
             orderType: "fixed" as const,
             areaSqm: selectedService.flatPrice != null ? undefined : fixedEstimate.sqm,
-            selectedAddons: selectedAddonLabels,
+            selectedAddons: [...selectedPackageAddonLabels, ...selectedCustomExtraLabels],
             timeSlot: cleaningTimeSlot,
             timeSlotLabel: getCleaningTimeSlotLabel(cleaningTimeSlot),
             notes: fixedNotes.trim() || undefined,
@@ -752,9 +1017,23 @@ export default function ServicesPage() {
 
         const addressFields = getOrderAddressFields()!;
 
-        const selectedAddonLabels = customExtras
-            .filter((extra) => selectedExtras.includes(extra.id))
-            .map((extra) => extra.label);
+        const selectedAddonLabels = allCustomExtras
+            .filter((extra) => (extraQuantities[extra.id] ?? 0) > 0)
+            .map((extra) =>
+                formatCustomExtraOrderLabel(extra, extraQuantities[extra.id] ?? 1),
+            );
+
+        const organizationalNote = buildCustomOrganizationalNote({
+            propertyType,
+            pollutionLevel,
+            hasPets,
+            ownSupplies,
+            needLadder,
+            hasElevator,
+            cleanersCount,
+        });
+
+        const combinedNotes = [organizationalNote, notes.trim()].filter(Boolean).join("\n\n");
 
         const orderPayload = {
             userId: user.id,
@@ -767,7 +1046,7 @@ export default function ServicesPage() {
             selectedAddons: selectedAddonLabels,
             timeSlot: cleaningTimeSlot,
             timeSlotLabel: getCleaningTimeSlotLabel(cleaningTimeSlot),
-            notes: notes.trim() || undefined,
+            notes: combinedNotes || undefined,
             ...addressFields,
             paymentMethod,
             totalAmount: customEstimate.total,
@@ -849,16 +1128,25 @@ export default function ServicesPage() {
     }
 
     function closeFixedService() {
-        setSelectedFixedService(null);
+        setSearchParams((current) => {
+            const next = new URLSearchParams(current);
+            next.delete("service");
+            next.set("tab", "fixed");
+            return next;
+        });
         setCheckoutError("");
     }
 
     function switchTab(tab: ServiceTab) {
-        setActiveTab(tab);
+        setSearchParams((current) => {
+            const next = new URLSearchParams(current);
+            next.set("tab", tab);
+            if (tab !== "fixed") {
+                next.delete("service");
+            }
+            return next;
+        });
         setCheckoutError("");
-        if (tab !== "fixed") {
-            setSelectedFixedService(null);
-        }
     }
 
     function confirmCheckoutOrder() {
@@ -872,6 +1160,7 @@ export default function ServicesPage() {
 
     return (
         <div className="services-page">
+            <div ref={servicesTopRef} className="services-page-anchor" aria-hidden="true" />
             {paymentSuccess ? (
                 <div className="services-payment-banner hero-panel" role="status">
                     <p>Оплату отримано. Дякуємо!</p>
@@ -939,6 +1228,7 @@ export default function ServicesPage() {
 
             {activeTab === "fixed" && (
                 <div
+                    ref={fixedPanelRef}
                     id="services-panel-fixed"
                     role="tabpanel"
                     aria-labelledby="services-tab-fixed"
@@ -967,24 +1257,41 @@ export default function ServicesPage() {
                                     <div className="services-category-rate hero-panel">
                                         <span className="services-category-rate-label">Базова ціна</span>
                                         <span className="services-category-rate-value">
-                                            {formatPrice(getServiceCardPrice(selectedService))}{" "}
-                                            <span>/ м²</span>
+                                            {selectedService.flatPrice != null ? (
+                                                formatPrice(selectedService.flatPrice)
+                                            ) : selectedService.sqmTierThreshold != null &&
+                                              selectedService.sqmTierRate != null ? (
+                                                <>
+                                                    {formatPrice(selectedService.basePerSqm ?? 0)}{" "}
+                                                    <span>/ м² до {selectedService.sqmTierThreshold} м²</span>
+                                                    <span className="services-category-rate-tier">
+                                                        {formatPrice(selectedService.sqmTierRate)} / м² далі
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    {formatPrice(selectedService.basePerSqm ?? 0)}{" "}
+                                                    <span>/ м²</span>
+                                                </>
+                                            )}
                                         </span>
                                     </div>
 
-                                    {selectedService.flatPrice == null ? (
-                                        <label className="services-field services-field--area">
-                                            <span>Площа, м²</span>
-                                            <input
-                                                type="number"
-                                                min={20}
-                                                max={500}
-                                                value={fixedArea}
-                                                onChange={(event) => setFixedArea(event.target.value)}
-                                                inputMode="numeric"
-                                            />
-                                        </label>
-                                    ) : null}
+                                    <label className="services-field services-field--area">
+                                        <span>
+                                            {selectedService.flatPrice != null
+                                                ? "Площа, м² (для додаткових послуг)"
+                                                : "Площа, м²"}
+                                        </span>
+                                        <input
+                                            type="number"
+                                            min={20}
+                                            max={500}
+                                            value={fixedArea}
+                                            onChange={(event) => setFixedArea(event.target.value)}
+                                            inputMode="numeric"
+                                        />
+                                    </label>
 
                                     <fieldset className="services-extras">
                                         <legend>В пакеті</legend>
@@ -1035,6 +1342,15 @@ export default function ServicesPage() {
                                             </div>
                                         </fieldset>
                                     ) : null}
+
+                                    <fieldset className="services-extras">
+                                        <legend>Додаткові послуги</legend>
+                                        <CustomExtrasSelector
+                                            quantities={fixedExtraQuantities}
+                                            onToggle={toggleFixedExtra}
+                                            onQuantityChange={setFixedExtraQuantity}
+                                        />
+                                    </fieldset>
 
                                     <OrderAddressSelector
                                         addresses={savedAddresses}
@@ -1087,15 +1403,19 @@ export default function ServicesPage() {
                                         <li>
                                             <span>База</span>
                                             <span>
-                                                {selectedService.flatPrice != null
-                                                    ? formatPrice(selectedService.flatPrice)
-                                                    : `${formatPrice(selectedService.basePerSqm ?? 0)} × ${fixedEstimate.sqm} м²`}
+                                                {formatFixedBaseBreakdown(selectedService, fixedEstimate.sqm)}
                                             </span>
                                         </li>
-                                        {fixedEstimate.addedTotal > 0 ? (
+                                        {fixedEstimate.packageAddonsTotal > 0 ? (
                                             <li>
-                                                <span>Додатково</span>
-                                                <span>+{formatPrice(fixedEstimate.addedTotal)}</span>
+                                                <span>Опції пакета</span>
+                                                <span>+{formatPrice(fixedEstimate.packageAddonsTotal)}</span>
+                                            </li>
+                                        ) : null}
+                                        {fixedEstimate.customExtrasTotal > 0 ? (
+                                            <li>
+                                                <span>Додаткові послуги</span>
+                                                <span>+{formatPrice(fixedEstimate.customExtrasTotal)}</span>
                                             </li>
                                         ) : null}
                                         <li>
@@ -1127,12 +1447,35 @@ export default function ServicesPage() {
                                     <article key={service.id} className="services-card services-card--category hero-panel">
                                         <div className="services-category-head">
                                             <h2 className="services-card-title">{service.title}</h2>
-                                            <div className="services-category-price">
-                                                <span className="services-category-price-value">
-                                                    {formatPrice(getServiceCardPrice(service))}
-                                                </span>
-                                                <span className="services-category-price-unit">/ м²</span>
-                                            </div>
+                                            <p className="services-category-price">
+                                                {service.flatPrice != null ? (
+                                                    <>
+                                                        <span className="services-category-price-amount">
+                                                            {formatPrice(service.flatPrice)}
+                                                        </span>
+                                                        <span className="services-category-price-unit">фікс.</span>
+                                                    </>
+                                                ) : service.sqmTierThreshold != null && service.sqmTierRate != null ? (
+                                                    <>
+                                                        <span className="services-category-price-amount">
+                                                            {formatPrice(service.basePerSqm ?? 0)}
+                                                        </span>
+                                                        <span className="services-category-price-unit">
+                                                            / м² до {service.sqmTierThreshold} м²
+                                                        </span>
+                                                        <span className="services-category-price-tier">
+                                                            {formatPrice(service.sqmTierRate)} / м² далі
+                                                        </span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <span className="services-category-price-amount">
+                                                            {formatPrice(getServiceCardPrice(service))}
+                                                        </span>
+                                                        <span className="services-category-price-unit">/ м²</span>
+                                                    </>
+                                                )}
+                                            </p>
                                         </div>
 
                                         <p className="services-card-text">{service.text}</p>
@@ -1143,12 +1486,9 @@ export default function ServicesPage() {
                                                 {service.packageItems.map((item) => (
                                                     <li
                                                         key={item.id}
-                                                        className={`services-package-preview-item${item.defaultSelected ? " services-package-preview-item--included" : " services-package-preview-item--extra"}`}
+                                                        className={`services-package-preview-item${item.defaultSelected ? "" : " services-package-preview-item--extra"}`}
                                                     >
-                                                        <span className="services-package-check" aria-hidden="true">
-                                                            {item.defaultSelected ? "✓" : "+"}
-                                                        </span>
-                                                        <span>{item.label}</span>
+                                                        {item.label}
                                                     </li>
                                                 ))}
                                             </ul>
@@ -1183,8 +1523,8 @@ export default function ServicesPage() {
                     className="services-panel"
                 >
                     <p className="services-panel-lead">
-                        Зберіть замовлення під ваше приміщення — оберіть тип, площу та додаткові опції.
-                        Орієнтовну вартість побачите одразу.
+                        Зберіть замовлення під ваше приміщення — оберіть тип, параметри, роботи зі списку та
+                        додаткові опції. Орієнтовну вартість побачите одразу.
                     </p>
 
                     <div className="services-custom">
@@ -1248,24 +1588,104 @@ export default function ServicesPage() {
                                 </label>
                             </div>
 
-                            <fieldset className="services-extras">
-                                <legend>Додаткові опції</legend>
-                                <div className="services-extras-grid">
-                                    {customExtras.map((extra) => (
-                                        <label key={extra.id} className="services-extra-option">
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedExtras.includes(extra.id)}
-                                                onChange={() => toggleExtra(extra.id)}
-                                            />
-                                            <span className="services-extra-copy">
-                                                <span>{extra.label}</span>
-                                                <span>+{formatPrice(extra.price)}</span>
-                                            </span>
-                                        </label>
-                                    ))}
+                            <fieldset className="services-extras services-extras--org">
+                                <legend>Організаційні опції</legend>
+                                <div className="services-org-grid">
+                                    <label className="services-field">
+                                        <span>Тип житла</span>
+                                        <select
+                                            value={propertyType}
+                                            onChange={(event) =>
+                                                setPropertyType(
+                                                    event.target.value as (typeof propertyTypeOptions)[number]["id"],
+                                                )
+                                            }
+                                        >
+                                            {propertyTypeOptions.map((option) => (
+                                                <option key={option.id} value={option.id}>
+                                                    {option.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </label>
+                                    <label className="services-field">
+                                        <span>Ступінь забруднення</span>
+                                        <select
+                                            value={pollutionLevel}
+                                            onChange={(event) =>
+                                                setPollutionLevel(
+                                                    event.target.value as (typeof pollutionLevelOptions)[number]["id"],
+                                                )
+                                            }
+                                        >
+                                            {pollutionLevelOptions.map((option) => (
+                                                <option key={option.id} value={option.id}>
+                                                    {option.label}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </label>
+                                    <label className="services-field">
+                                        <span>Кількість прибиральників</span>
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            max={6}
+                                            value={cleanersCount}
+                                            onChange={(event) => setCleanersCount(event.target.value)}
+                                            inputMode="numeric"
+                                        />
+                                    </label>
+                                </div>
+                                <div className="services-org-checks">
+                                    <label className="services-extra-option services-extra-option--inline">
+                                        <input
+                                            type="checkbox"
+                                            checked={hasPets}
+                                            onChange={(event) => setHasPets(event.target.checked)}
+                                        />
+                                        <span className="services-extra-copy">
+                                            <span>Є домашні тварини</span>
+                                        </span>
+                                    </label>
+                                    <label className="services-extra-option services-extra-option--inline">
+                                        <input
+                                            type="checkbox"
+                                            checked={ownSupplies}
+                                            onChange={(event) => setOwnSupplies(event.target.checked)}
+                                        />
+                                        <span className="services-extra-copy">
+                                            <span>Потрібні власні засоби</span>
+                                        </span>
+                                    </label>
+                                    <label className="services-extra-option services-extra-option--inline">
+                                        <input
+                                            type="checkbox"
+                                            checked={needLadder}
+                                            onChange={(event) => setNeedLadder(event.target.checked)}
+                                        />
+                                        <span className="services-extra-copy">
+                                            <span>Потрібна драбина</span>
+                                        </span>
+                                    </label>
+                                    <label className="services-extra-option services-extra-option--inline">
+                                        <input
+                                            type="checkbox"
+                                            checked={hasElevator}
+                                            onChange={(event) => setHasElevator(event.target.checked)}
+                                        />
+                                        <span className="services-extra-copy">
+                                            <span>Є ліфт</span>
+                                        </span>
+                                    </label>
                                 </div>
                             </fieldset>
+
+                            <CustomExtrasSelector
+                                quantities={extraQuantities}
+                                onToggle={toggleExtra}
+                                onQuantityChange={setExtraQuantity}
+                            />
 
                             <OrderAddressSelector
                                 addresses={savedAddresses}

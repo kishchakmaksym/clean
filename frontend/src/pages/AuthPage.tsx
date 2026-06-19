@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { loginUser, registerUser } from "../api/auth";
 import { useAuth } from "../auth/AuthContext";
@@ -10,6 +10,8 @@ type AuthMode = "login" | "register";
 
 export default function AuthPage() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const isEmployeeLogin = searchParams.get("for") === "employee";
     const { setUser } = useAuth();
     const [mode, setMode] = useState<AuthMode>("login");
 
@@ -91,15 +93,24 @@ export default function AuthPage() {
     }
 
     const isLogin = mode === "login";
+    const showLoginForm = isEmployeeLogin || isLogin;
 
     return (
         <section className="section auth-page">
             <div className="section-head">
-                <h2>{isLogin ? "Вхід" : "Реєстрація"}</h2>
+                <h2>
+                    {isEmployeeLogin
+                        ? "Вхід для прибиральниць"
+                        : isLogin
+                          ? "Вхід"
+                          : "Реєстрація"}
+                </h2>
                 <p>
-                    {isLogin
-                        ? "Увійдіть за електронною поштою або номером телефону."
-                        : "Створіть обліковий запис, щоб швидше оформлювати замовлення."}
+                    {isEmployeeLogin
+                        ? "Увійдіть до кабінету виконавця за вашими даними."
+                        : isLogin
+                          ? "Увійдіть за електронною поштою або номером телефону."
+                          : "Створіть обліковий запис, щоб швидше оформлювати замовлення."}
                 </p>
             </div>
 
@@ -118,7 +129,7 @@ export default function AuthPage() {
                     </p>
                 )}
 
-                {isLogin ? (
+                {showLoginForm ? (
                     <form className="auth-form" onSubmit={handleLogin} noValidate>
                         <label>
                             <span>Електронна пошта або телефон</span>
@@ -215,7 +226,14 @@ export default function AuthPage() {
                 )}
 
                 <p className="auth-footer">
-                    {isLogin ? (
+                    {isEmployeeLogin ? (
+                        <>
+                            Потрібен акаунт клієнта?{" "}
+                            <button type="button" className="auth-toggle" onClick={() => navigate("/login")}>
+                                Звичайний вхід
+                            </button>
+                        </>
+                    ) : isLogin ? (
                         <>
                             Немає акаунта?{" "}
                             <button type="button" className="auth-toggle" onClick={() => switchMode("register")}>

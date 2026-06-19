@@ -49,6 +49,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     </nav>
 
                     <div className="header-actions">
+                        {user?.role === "Employee" ? (
+                            <NavLink to="/profile" className="header-cleaner">
+                                Кабінет прибиральниці
+                            </NavLink>
+                        ) : (
+                            <NavLink to="/login?for=employee" className="header-cleaner">
+                                Для прибиральниць
+                            </NavLink>
+                        )}
                         {user ? (
                             <NavLink to="/profile" className="header-auth">
                                 Профіль

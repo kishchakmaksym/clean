@@ -263,17 +263,21 @@
 
 .ba-privacy-note {
     margin: 0;
-    max-width: 42rem;
+    max-width: none;
     font-size: 0.75rem;
-    line-height: 1.6;
-    color: var(--muted2);
-    text-wrap: balance;
+    line-height: 1.4;
+    color: var(--muted);
+    white-space: nowrap;
 }
 
 @media (max-width: 40rem) {
     .ba-slider-lead {
         white-space: normal;
         max-width: 34rem;
+    }
+
+    .ba-privacy-note {
+        white-space: normal;
     }
 
     .ba-slider-stage {

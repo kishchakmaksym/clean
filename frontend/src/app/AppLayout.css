@@ -127,6 +127,38 @@ body {
     justify-self: end;
     display: flex;
     align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.header-cleaner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 0.85rem;
+    min-height: 2.25rem;
+    border-radius: var(--radius-pill);
+    font-weight: 600;
+    font-size: clamp(0.6875rem, 0.2vw + 0.65rem, 0.8125rem);
+    text-decoration: none;
+    white-space: nowrap;
+    color: var(--primary);
+    background: rgba(var(--primary-rgb), 0.08);
+    border: 1px solid rgba(var(--primary-rgb), 0.22);
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.header-cleaner:hover {
+    background: rgba(var(--primary-rgb), 0.14);
+    border-color: rgba(var(--primary-rgb), 0.35);
+    color: var(--primary-hover);
+}
+
+.header-cleaner.active {
+    background: rgba(var(--primary-rgb), 0.16);
+    border-color: rgba(var(--primary-rgb), 0.4);
+    color: var(--primary-hover);
 }
 
 .header-auth {
@@ -296,6 +328,17 @@ body {
     .header-actions {
         grid-column: 2;
         grid-row: 1;
+        gap: 0.35rem;
+    }
+
+    .header-cleaner {
+        padding-inline: 0.65rem;
+        font-size: 0.6875rem;
+    }
+
+    .header-auth {
+        padding-inline: 0.75rem;
+        font-size: 0.75rem;
     }
 
     .header-nav {

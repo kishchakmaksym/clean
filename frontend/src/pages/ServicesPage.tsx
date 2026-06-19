@@ -1,5 +1,5 @@
 ﻿import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { createMonoInvoice } from "../api/payments";
 import "./HomePage.css";
@@ -20,38 +20,49 @@ type FixedServiceCategory = {
     text: string;
     duration: string;
     packageItems: readonly FixedPackageItem[];
-    isTest?: boolean;
     flatPrice?: number;
     basePerSqm?: number;
 };
 
 const fixedServiceCategories: readonly FixedServiceCategory[] = [
     {
-        id: "test-1",
-        title: "Тест 1 ₴",
-        text: "Тестовий пакет для перевірки оплати через Monobank (plata by mono).",
-        duration: "—",
-        isTest: true,
+        id: "light-clean",
+        title: "Легке прибирання",
+        text: "Швидке наведення порядку в невеликому просторі — базові поверхні та підлога.",
+        duration: "1–1.5 год",
         flatPrice: 1,
-        packageItems: [{ id: "test", label: "Тестова оплата", defaultSelected: true, adjustment: 0 }],
+        packageItems: [
+            { id: "floor", label: "Пилосос і миття підлоги", defaultSelected: true, adjustment: 0 },
+            { id: "dust", label: "Протирання поверхонь", defaultSelected: true, adjustment: 0 },
+            { id: "trash", label: "Винесення сміття", defaultSelected: true, adjustment: 0 },
+        ],
     },
     {
-        id: "test-3",
-        title: "Тест 3 ₴",
-        text: "Тестовий пакет на 3 гривні — для перевірки Pay by mono.",
-        duration: "—",
-        isTest: true,
-        flatPrice: 3,
-        packageItems: [{ id: "test", label: "Тестова оплата", defaultSelected: true, adjustment: 0 }],
+        id: "quick-clean",
+        title: "Швидке прибирання",
+        text: "Акуратне прибирання основних зон — кухня, санвузол і житлові кімнати.",
+        duration: "1.5–2 год",
+        flatPrice: 2,
+        packageItems: [
+            { id: "kitchen", label: "Вологе прибирання кухні", defaultSelected: true, adjustment: 0 },
+            { id: "bathroom", label: "Санвузол і дзеркала", defaultSelected: true, adjustment: 0 },
+            { id: "floor", label: "Пилосос і миття підлоги", defaultSelected: true, adjustment: 0 },
+            { id: "windows", label: "Миття вікон", defaultSelected: false, adjustment: 250 },
+        ],
     },
     {
-        id: "test-5",
-        title: "Тест 5 ₴",
-        text: "Тестовий пакет на 5 гривень — для перевірки інтеграції.",
-        duration: "—",
-        isTest: true,
+        id: "basic-clean",
+        title: "Базове прибирання",
+        text: "Повний базовий цикл для квартири — усе необхідне для охайного результату.",
+        duration: "2–3 год",
         flatPrice: 5,
-        packageItems: [{ id: "test", label: "Тестова оплата", defaultSelected: true, adjustment: 0 }],
+        packageItems: [
+            { id: "rooms", label: "Прибирання всіх кімнат", defaultSelected: true, adjustment: 0 },
+            { id: "kitchen", label: "Кухня: плита, стільниці, фартух", defaultSelected: true, adjustment: 0 },
+            { id: "bathroom", label: "Санвузол і дзеркала", defaultSelected: true, adjustment: 0 },
+            { id: "floor", label: "Пилосос і миття підлоги", defaultSelected: true, adjustment: 0 },
+            { id: "fridge", label: "Холодильник", defaultSelected: false, adjustment: 180 },
+        ],
     },
     {
         id: "express",
@@ -256,8 +267,136 @@ const pricingNotes = [
     },
 ];
 
+const cleaningTimeSlots = [
+    { id: "morning", label: "08:00 – 12:00" },
+    { id: "afternoon", label: "12:00 – 16:00" },
+    { id: "evening", label: "16:00 – 20:00" },
+] as const;
+
+type CleaningTimeSlotId = (typeof cleaningTimeSlots)[number]["id"];
+
+function getCleaningTimeSlotLabel(id: CleaningTimeSlotId) {
+    return cleaningTimeSlots.find((slot) => slot.id === id)?.label ?? cleaningTimeSlots[0].label;
+}
+
+type CleaningTimeSlotSelectorProps = {
+    value: CleaningTimeSlotId;
+    onChange: (value: CleaningTimeSlotId) => void;
+};
+
+function CleaningTimeSlotSelector({ value, onChange }: CleaningTimeSlotSelectorProps) {
+    const inputName = "cleaning-time-slot";
+
+    return (
+        <fieldset className="services-time-slots">
+            <legend>Час прибирання</legend>
+            <p className="services-time-slots-note">Працюємо щодня з 08:00 до 20:00</p>
+            <div className="services-time-slots-grid" role="radiogroup" aria-label="Час прибирання">
+                {cleaningTimeSlots.map((slot) => (
+                    <label
+                        key={slot.id}
+                        className={`services-time-slot${value === slot.id ? " services-time-slot--selected" : ""}`}
+                    >
+                        <input
+                            type="radio"
+                            name={inputName}
+                            value={slot.id}
+                            checked={value === slot.id}
+                            onChange={() => onChange(slot.id)}
+                        />
+                        <span className="services-time-slot-label">{slot.label}</span>
+                    </label>
+                ))}
+            </div>
+        </fieldset>
+    );
+}
+
 function formatPrice(value: number) {
     return `${value.toLocaleString("uk-UA")} ₴`;
+}
+
+function getServiceCardPrice(service: FixedServiceCategory) {
+    return service.flatPrice ?? service.basePerSqm ?? 0;
+}
+
+function getCardPaymentTotal(total: number) {
+    return Math.max(1, Math.round(total * 0.9));
+}
+
+type PaymentMethod = "card" | "cash";
+
+type OrderPaymentOptionsProps = {
+    total: number;
+    method: PaymentMethod;
+    onMethodChange: (method: PaymentMethod) => void;
+    isPaying?: boolean;
+    onConfirm: () => void;
+    orderLabel?: string;
+};
+
+function OrderPaymentOptions({
+    total,
+    method,
+    onMethodChange,
+    isPaying = false,
+    onConfirm,
+    orderLabel = "Підтвердити замовлення",
+}: OrderPaymentOptionsProps) {
+    const cardTotal = getCardPaymentTotal(total);
+    const inputName = `payment-${total}`;
+
+    return (
+        <div className="services-payment-options">
+            <p className="services-payment-options-title">Спосіб оплати</p>
+
+            <div className="services-payment-methods" role="radiogroup" aria-label="Спосіб оплати">
+                <label
+                    className={`services-payment-method${method === "card" ? " services-payment-method--selected" : ""}`}
+                >
+                    <input
+                        type="radio"
+                        name={inputName}
+                        value="card"
+                        checked={method === "card"}
+                        onChange={() => onMethodChange("card")}
+                    />
+                    <span className="services-payment-method-dot" aria-hidden="true" />
+                    <span className="services-payment-method-copy">
+                        <span className="services-payment-method-label">Оплата картою</span>
+                        <span className="services-payment-method-hint">Знижка 10% при оплаті картою</span>
+                    </span>
+                    <span className="services-payment-method-price">{formatPrice(cardTotal)}</span>
+                </label>
+
+                <label
+                    className={`services-payment-method${method === "cash" ? " services-payment-method--selected" : ""}`}
+                >
+                    <input
+                        type="radio"
+                        name={inputName}
+                        value="cash"
+                        checked={method === "cash"}
+                        onChange={() => onMethodChange("cash")}
+                    />
+                    <span className="services-payment-method-dot" aria-hidden="true" />
+                    <span className="services-payment-method-copy">
+                        <span className="services-payment-method-label">Оплата готівкою</span>
+                    </span>
+                    <span className="services-payment-method-price">{formatPrice(total)}</span>
+                </label>
+            </div>
+
+            <button
+                type="button"
+                className="primary-button services-custom-cta"
+                disabled={isPaying}
+                onClick={onConfirm}
+            >
+                {isPaying ? "Переходимо до оплати…" : orderLabel}
+            </button>
+        </div>
+    );
 }
 
 function estimateFixedOrder(
@@ -274,8 +413,8 @@ function estimateFixedOrder(
         return {
             sqm: 0,
             base: service.flatPrice,
-            addedTotal: 0,
-            total: service.flatPrice,
+            addedTotal,
+            total: Math.round(service.flatPrice + addedTotal),
         };
     }
 
@@ -321,6 +460,7 @@ function getPackageItemPriceHint(item: FixedPackageItem) {
 }
 
 export default function ServicesPage() {
+    const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const paymentSuccess = searchParams.get("paid") === "1";
 
@@ -328,6 +468,8 @@ export default function ServicesPage() {
     const [selectedFixedService, setSelectedFixedService] = useState<FixedServiceId | null>(null);
     const [isPaying, setIsPaying] = useState(false);
     const [paymentError, setPaymentError] = useState("");
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
+    const [cleaningTimeSlot, setCleaningTimeSlot] = useState<CleaningTimeSlotId>("morning");
 
     const [fixedArea, setFixedArea] = useState("55");
     const [fixedSelectedAddons, setFixedSelectedAddons] = useState<string[]>([]);
@@ -384,7 +526,7 @@ export default function ServicesPage() {
 
     function openFixedService(id: FixedServiceId) {
         const service = fixedServiceCategories.find((item) => item.id === id);
-        if (!service || service.isTest) {
+        if (!service) {
             return;
         }
 
@@ -393,6 +535,38 @@ export default function ServicesPage() {
         setFixedSelectedAddons([]);
         setFixedNotes("");
         setPaymentError("");
+        setPaymentMethod("card");
+        setCleaningTimeSlot("morning");
+    }
+
+    function buildFixedOrderDescription() {
+        if (!selectedService || !fixedEstimate) {
+            return "";
+        }
+
+        const servicePart =
+            selectedService.flatPrice != null
+                ? selectedService.title
+                : `${selectedService.title} — ${fixedEstimate.sqm} м²`;
+
+        return `${servicePart}, ${getCleaningTimeSlotLabel(cleaningTimeSlot)}`;
+    }
+
+    function confirmFixedOrder() {
+        if (!selectedService || !fixedEstimate) {
+            return;
+        }
+
+        if (paymentMethod === "card") {
+            void payWithMono(getCardPaymentTotal(fixedEstimate.total), buildFixedOrderDescription());
+            return;
+        }
+
+        navigate("/contacts");
+    }
+
+    function confirmCustomOrder() {
+        navigate("/contacts");
     }
 
     async function payWithMono(amountUah: number, description: string) {
@@ -418,9 +592,6 @@ export default function ServicesPage() {
             setIsPaying(false);
         }
     }
-
-    const testPackages = fixedServiceCategories.filter((item) => item.isTest);
-    const regularPackages = fixedServiceCategories.filter((item) => !item.isTest);
 
     function closeFixedService() {
         setSelectedFixedService(null);
@@ -514,8 +685,9 @@ export default function ServicesPage() {
                             </button>
 
                             <p className="services-panel-lead">
-                                Вкажіть площу — базовий пакет уже включений. За потреби додайте
-                                додаткові опції.
+                                {selectedService.flatPrice != null
+                                    ? "Базовий пакет уже включений. За потреби додайте додаткові опції."
+                                    : "Вкажіть площу — базовий пакет уже включений. За потреби додайте додаткові опції."}
                             </p>
 
                             <div className="services-custom">
@@ -529,21 +701,24 @@ export default function ServicesPage() {
                                     <div className="services-category-rate hero-panel">
                                         <span className="services-category-rate-label">Базова ціна</span>
                                         <span className="services-category-rate-value">
-                                            {formatPrice(selectedService.basePerSqm ?? 0)} <span>/ м²</span>
+                                            {formatPrice(getServiceCardPrice(selectedService))}{" "}
+                                            <span>/ м²</span>
                                         </span>
                                     </div>
 
-                                    <label className="services-field services-field--area">
-                                        <span>Площа, м²</span>
-                                        <input
-                                            type="number"
-                                            min={20}
-                                            max={500}
-                                            value={fixedArea}
-                                            onChange={(event) => setFixedArea(event.target.value)}
-                                            inputMode="numeric"
-                                        />
-                                    </label>
+                                    {selectedService.flatPrice == null ? (
+                                        <label className="services-field services-field--area">
+                                            <span>Площа, м²</span>
+                                            <input
+                                                type="number"
+                                                min={20}
+                                                max={500}
+                                                value={fixedArea}
+                                                onChange={(event) => setFixedArea(event.target.value)}
+                                                inputMode="numeric"
+                                            />
+                                        </label>
+                                    ) : null}
 
                                     <fieldset className="services-extras">
                                         <legend>В пакеті</legend>
@@ -595,11 +770,16 @@ export default function ServicesPage() {
                                         </fieldset>
                                     ) : null}
 
+                                    <CleaningTimeSlotSelector
+                                        value={cleaningTimeSlot}
+                                        onChange={setCleaningTimeSlot}
+                                    />
+
                                     <label className="services-field">
                                         <span>Коментар</span>
                                         <textarea
                                             rows={3}
-                                            placeholder="Час виїзду, доступ, особливі побажання..."
+                                            placeholder="Доступ до приміщення, особливі побажання..."
                                             value={fixedNotes}
                                             onChange={(event) => setFixedNotes(event.target.value)}
                                         />
@@ -608,7 +788,18 @@ export default function ServicesPage() {
 
                                 <aside className="services-custom-summary hero-panel" aria-live="polite">
                                     <span className="badge hero-badge">Орієнтовна вартість</span>
-                                    <p className="services-custom-price">{formatPrice(fixedEstimate.total)}</p>
+                                    <p className="services-custom-price">
+                                        {formatPrice(
+                                            paymentMethod === "card"
+                                                ? getCardPaymentTotal(fixedEstimate.total)
+                                                : fixedEstimate.total,
+                                        )}
+                                    </p>
+                                    {paymentMethod === "card" ? (
+                                        <p className="services-custom-discount-note">
+                                            Зі знижкою 10% при оплаті картою
+                                        </p>
+                                    ) : null}
                                     <p className="services-custom-note">
                                         Точну суму підтвердимо перед виїздом після короткої консультації.
                                     </p>
@@ -621,7 +812,9 @@ export default function ServicesPage() {
                                         <li>
                                             <span>База</span>
                                             <span>
-                                                {formatPrice(selectedService.basePerSqm ?? 0)} × {fixedEstimate.sqm} м²
+                                                {selectedService.flatPrice != null
+                                                    ? formatPrice(selectedService.flatPrice)
+                                                    : `${formatPrice(selectedService.basePerSqm ?? 0)} × ${fixedEstimate.sqm} м²`}
                                             </span>
                                         </li>
                                         {fixedEstimate.addedTotal > 0 ? (
@@ -630,67 +823,37 @@ export default function ServicesPage() {
                                                 <span>+{formatPrice(fixedEstimate.addedTotal)}</span>
                                             </li>
                                         ) : null}
+                                        <li>
+                                            <span>Час</span>
+                                            <span>{getCleaningTimeSlotLabel(cleaningTimeSlot)}</span>
+                                        </li>
                                     </ul>
 
-                                    <Link to="/contacts" className="primary-button services-custom-cta">
-                                        Замовити
-                                    </Link>
-                                    <button
-                                        type="button"
-                                        className="services-mono-pay"
-                                        disabled={isPaying}
-                                        onClick={() =>
-                                            payWithMono(
-                                                fixedEstimate.total,
-                                                `${selectedService.title} — ${fixedEstimate.sqm} м²`,
-                                            )
-                                        }
-                                    >
-                                        {isPaying ? "Переходимо до mono…" : "Оплатити через mono"}
-                                    </button>
+                                    <OrderPaymentOptions
+                                        total={fixedEstimate.total}
+                                        method={paymentMethod}
+                                        onMethodChange={setPaymentMethod}
+                                        isPaying={isPaying}
+                                        onConfirm={confirmFixedOrder}
+                                    />
                                 </aside>
                             </div>
                         </>
                     ) : (
                         <>
                             <p className="services-panel-lead">
-                                Оберіть тип прибирання — або спочатку перевірте тестову оплату через mono.
+                                Оберіть тип прибирання — натисніть «Розрахувати вартість», щоб побачити
+                                орієнтовну суму та оформити замовлення.
                             </p>
 
-                            <section className="services-test-section" aria-label="Тестові пакети">
-                                <div className="services-test-head">
-                                    <span className="badge hero-badge">Тест</span>
-                                    <h2 className="services-test-title">Тестові пакети для перевірки mono</h2>
-                                </div>
-                                <div className="services-test-grid">
-                                    {testPackages.map((pkg) => (
-                                        <article key={pkg.id} className="services-test-card hero-panel">
-                                            <p className="services-test-price">{formatPrice(pkg.flatPrice ?? 0)}</p>
-                                            <h3 className="services-test-name">{pkg.title}</h3>
-                                            <p className="services-test-text">{pkg.text}</p>
-                                            <button
-                                                type="button"
-                                                className="services-mono-pay services-mono-pay--full"
-                                                disabled={isPaying}
-                                                onClick={() =>
-                                                    payWithMono(pkg.flatPrice ?? 0, pkg.title)
-                                                }
-                                            >
-                                                {isPaying ? "Переходимо…" : "Оплатити через mono"}
-                                            </button>
-                                        </article>
-                                    ))}
-                                </div>
-                            </section>
-
                             <div className="services-grid services-grid--categories">
-                                {regularPackages.map((service) => (
+                                {fixedServiceCategories.map((service) => (
                                     <article key={service.id} className="services-card services-card--category hero-panel">
                                         <div className="services-category-head">
                                             <h2 className="services-card-title">{service.title}</h2>
                                             <div className="services-category-price">
                                                 <span className="services-category-price-value">
-                                                    {formatPrice(service.basePerSqm ?? 0)}
+                                                    {formatPrice(getServiceCardPrice(service))}
                                                 </span>
                                                 <span className="services-category-price-unit">/ м²</span>
                                             </div>
@@ -828,11 +991,16 @@ export default function ServicesPage() {
                                 </div>
                             </fieldset>
 
+                            <CleaningTimeSlotSelector
+                                value={cleaningTimeSlot}
+                                onChange={setCleaningTimeSlot}
+                            />
+
                             <label className="services-field">
                                 <span>Коментар</span>
                                 <textarea
                                     rows={3}
-                                    placeholder="Особливі побажання, час виїзду, доступ до приміщення..."
+                                    placeholder="Особливі побажання, доступ до приміщення..."
                                     value={notes}
                                     onChange={(event) => setNotes(event.target.value)}
                                 />
@@ -841,7 +1009,18 @@ export default function ServicesPage() {
 
                         <aside className="services-custom-summary hero-panel" aria-live="polite">
                             <span className="badge hero-badge">Орієнтовна вартість</span>
-                            <p className="services-custom-price">{formatPrice(customEstimate.total)}</p>
+                            <p className="services-custom-price">
+                                {formatPrice(
+                                    paymentMethod === "card"
+                                        ? getCardPaymentTotal(customEstimate.total)
+                                        : customEstimate.total,
+                                )}
+                            </p>
+                            {paymentMethod === "card" ? (
+                                <p className="services-custom-discount-note">
+                                    Зі знижкою 10% при оплаті картою
+                                </p>
+                            ) : null}
                             <p className="services-custom-note">
                                 Точну суму підтвердимо перед виїздом після короткої консультації.
                             </p>
@@ -865,11 +1044,18 @@ export default function ServicesPage() {
                                         <span>{formatPrice(customEstimate.extrasTotal)}</span>
                                     </li>
                                 ) : null}
+                                <li>
+                                    <span>Час</span>
+                                    <span>{getCleaningTimeSlotLabel(cleaningTimeSlot)}</span>
+                                </li>
                             </ul>
 
-                            <Link to="/contacts" className="primary-button services-custom-cta">
-                                Підтвердити замовлення
-                            </Link>
+                            <OrderPaymentOptions
+                                total={customEstimate.total}
+                                method={paymentMethod}
+                                onMethodChange={setPaymentMethod}
+                                onConfirm={confirmCustomOrder}
+                            />
                         </aside>
                     </div>
                 </div>

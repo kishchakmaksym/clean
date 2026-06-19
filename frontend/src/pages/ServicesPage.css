@@ -35,71 +35,6 @@
     border: 1px solid rgba(220, 38, 38, 0.2);
 }
 
-.services-test-section {
-    margin-bottom: 0.5rem;
-    padding: clamp(1rem, 2vw, 1.35rem);
-    border-radius: 1rem;
-    background: linear-gradient(
-        135deg,
-        rgba(0, 0, 0, 0.03) 0%,
-        rgba(var(--primary-rgb), 0.06) 100%
-    );
-    border: 1px dashed rgba(var(--primary-rgb), 0.25);
-}
-
-.services-test-head {
-    display: flex;
-    align-items: center;
-    gap: 0.65rem;
-    margin-bottom: 0.85rem;
-}
-
-.services-test-title {
-    margin: 0;
-    font-size: clamp(1rem, 0.6vw + 0.9rem, 1.15rem);
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    color: var(--text);
-}
-
-.services-test-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.75rem;
-}
-
-.services-test-card {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.45rem;
-    padding: 1rem 1.1rem;
-}
-
-.services-test-price {
-    margin: 0;
-    font-size: clamp(1.5rem, 2vw + 1rem, 2rem);
-    font-weight: 800;
-    letter-spacing: -0.04em;
-    color: var(--text);
-    line-height: 1;
-}
-
-.services-test-name {
-    margin: 0;
-    font-size: 0.9375rem;
-    font-weight: 800;
-    color: var(--text);
-}
-
-.services-test-text {
-    margin: 0;
-    flex: 1;
-    font-size: 0.8125rem;
-    line-height: 1.45;
-    color: var(--muted);
-}
-
 .services-mono-pay {
     display: inline-flex;
     align-items: center;
@@ -146,10 +81,6 @@
 }
 
 @media (max-width: 40rem) {
-    .services-test-grid {
-        grid-template-columns: 1fr;
-    }
-
     .services-payment-banner {
         flex-direction: column;
         align-items: flex-start;
@@ -387,6 +318,87 @@
     gap: 0.45rem;
 }
 
+.services-time-slots {
+    margin: 0;
+    padding: 0;
+    border: none;
+    min-width: 0;
+}
+
+.services-time-slots legend {
+    margin-bottom: 0.35rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted2);
+}
+
+.services-time-slots-note {
+    margin: 0 0 0.75rem;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--muted);
+}
+
+.services-time-slots-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.55rem;
+}
+
+.services-time-slot {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3.1rem;
+    padding: 0.65rem 0.55rem;
+    border-radius: 0.75rem;
+    border: 1.5px solid rgba(15, 23, 42, 0.1);
+    background: #fff;
+    cursor: pointer;
+    text-align: center;
+    transition:
+        border-color 0.15s ease,
+        background 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.services-time-slot:hover {
+    border-color: rgba(var(--primary-rgb), 0.25);
+}
+
+.services-time-slot--selected {
+    border-color: rgba(var(--primary-rgb), 0.45);
+    background: rgba(var(--primary-rgb), 0.05);
+    box-shadow: 0 0 0 1px rgba(var(--primary-rgb), 0.08);
+}
+
+.services-time-slot input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.services-time-slot-label {
+    position: relative;
+    z-index: 1;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--text);
+    pointer-events: none;
+}
+
+.services-time-slot--selected .services-time-slot-label {
+    color: var(--primary);
+}
+
 .services-extra-option {
     display: flex;
     align-items: flex-start;
@@ -481,6 +493,14 @@
     color: var(--muted);
 }
 
+.services-custom-discount-note {
+    margin: 0.35rem 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    font-weight: 600;
+    color: var(--primary);
+}
+
 .services-custom-breakdown {
     margin: 1.25rem 0 0;
     padding: 0.85rem 0 0;
@@ -503,6 +523,126 @@
 .services-custom-breakdown li span:last-child {
     font-weight: 700;
     color: var(--text);
+}
+
+.services-payment-options {
+    margin-top: 1.25rem;
+    width: 100%;
+    display: grid;
+    gap: 0.85rem;
+}
+
+.services-payment-options-title {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.services-payment-methods {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.services-payment-method {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.9rem 1rem;
+    border-radius: 0.85rem;
+    border: 1.5px solid rgba(15, 23, 42, 0.1);
+    background: #fff;
+    cursor: pointer;
+    transition:
+        border-color 0.15s ease,
+        background 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.services-payment-method:hover {
+    border-color: rgba(var(--primary-rgb), 0.25);
+}
+
+.services-payment-method--selected {
+    border-color: rgba(var(--primary-rgb), 0.45);
+    background: rgba(var(--primary-rgb), 0.05);
+    box-shadow: 0 0 0 1px rgba(var(--primary-rgb), 0.08);
+}
+
+.services-payment-method input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.services-payment-method-dot {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+    border-radius: 50%;
+    border: 2px solid rgba(15, 23, 42, 0.22);
+    transition: border-color 0.15s ease;
+    pointer-events: none;
+}
+
+.services-payment-method--selected .services-payment-method-dot {
+    border-color: var(--primary);
+}
+
+.services-payment-method--selected .services-payment-method-dot::after {
+    content: "";
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: var(--primary);
+}
+
+.services-payment-method-copy {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.2rem;
+    min-width: 0;
+    min-height: 2.35rem;
+    pointer-events: none;
+}
+
+.services-payment-method-label {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.35;
+}
+
+.services-payment-method-hint {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: var(--muted);
+}
+
+.services-payment-method-price {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 auto;
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.services-payment-options .services-custom-cta {
+    margin-top: 0.15rem;
 }
 
 .services-custom-cta {
@@ -954,6 +1094,10 @@
     }
 
     .services-field-row {
+        grid-template-columns: 1fr;
+    }
+
+    .services-time-slots-grid {
         grid-template-columns: 1fr;
     }
 

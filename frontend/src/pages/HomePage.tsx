@@ -118,15 +118,17 @@ export default function HomePage() {
                     <div className="hero-panel hero-process home-panel-reveal-top home-panel-reveal-top--right">
                         <div className="hero-intro">
                             <span className="badge hero-badge">Процес</span>
-                            <h2 className="hero-process-subtitle">Як ми працюємо</h2>
-                            <p className="hero-text">
-                                Прозорий процес в Ужгороді та області: від заявки до ідеальної чистоти.
-                            </p>
+                            <h1 className="hero-process-eyebrow">Клінінг в Ужгороді</h1>
+
+                            <div className="hero-process-body">
+                                <h2 className="hero-process-title">Як ми працюємо</h2>
+                                <p className="hero-text">
+                                    Прозорий процес: від заявки до ідеальної чистоти.
+                                </p>
+                            </div>
                         </div>
 
                         <ProcessSteps steps={steps} />
-
-                        <h1 className="hero-process-title hero-process-seo-title">Клінінг в Ужгороді</h1>
                     </div>
                 </div>
             </section>

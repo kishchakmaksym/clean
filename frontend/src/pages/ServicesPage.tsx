@@ -1,53 +1,171 @@
 ﻿import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
+import { createMonoInvoice } from "../api/payments";
 import "./HomePage.css";
 import "./ServicesPage.css";
 
 type ServiceTab = "fixed" | "custom" | "subscription";
 
-const fixedPackages = [
+type FixedPackageItem = {
+    id: string;
+    label: string;
+    defaultSelected: boolean;
+    adjustment: number;
+};
+
+type FixedServiceCategory = {
+    id: string;
+    title: string;
+    text: string;
+    duration: string;
+    packageItems: readonly FixedPackageItem[];
+    isTest?: boolean;
+    flatPrice?: number;
+    basePerSqm?: number;
+};
+
+const fixedServiceCategories: readonly FixedServiceCategory[] = [
     {
-        title: "Студія",
-        text: "Компактне житло — швидко і акуратно.",
-        area: "до 35 м²",
-        price: "800 ₴",
-        duration: "2–3 год",
-        includes: ["Кухня і санвузол", "Пилосос і миття підлоги", "Поверхні та пил", "Винесення сміття"],
+        id: "test-1",
+        title: "Тест 1 ₴",
+        text: "Тестовий пакет для перевірки оплати через Monobank (plata by mono).",
+        duration: "—",
+        isTest: true,
+        flatPrice: 1,
+        packageItems: [{ id: "test", label: "Тестова оплата", defaultSelected: true, adjustment: 0 }],
     },
     {
-        title: "1-кімнатна",
-        text: "Стандартна однокімнатна квартира з кухнею.",
-        area: "до 45 м²",
-        price: "1 000 ₴",
-        duration: "3–4 год",
-        includes: ["Кухня і санвузол", "Жила кімната", "Підлога та пил", "Санвузол повністю"],
+        id: "test-3",
+        title: "Тест 3 ₴",
+        text: "Тестовий пакет на 3 гривні — для перевірки Pay by mono.",
+        duration: "—",
+        isTest: true,
+        flatPrice: 3,
+        packageItems: [{ id: "test", label: "Тестова оплата", defaultSelected: true, adjustment: 0 }],
     },
     {
-        title: "2-кімнатна",
-        text: "Дві кімнати, кухня та санвузол — повний цикл.",
-        area: "до 60 м²",
-        price: "1 300 ₴",
-        duration: "4–5 год",
-        includes: ["2 кімнати + кухня", "Санвузол", "Підлога та пил", "Дверні ручки та вимикачі"],
+        id: "test-5",
+        title: "Тест 5 ₴",
+        text: "Тестовий пакет на 5 гривень — для перевірки інтеграції.",
+        duration: "—",
+        isTest: true,
+        flatPrice: 5,
+        packageItems: [{ id: "test", label: "Тестова оплата", defaultSelected: true, adjustment: 0 }],
     },
     {
-        title: "3-кімнатна",
-        text: "Просторе житло — без поспіху, з увагою до деталей.",
-        area: "до 80 м²",
-        price: "1 700 ₴",
-        duration: "5–6 год",
-        includes: ["3 кімнати + кухня", "Санвузол", "Коридор і балкон", "Підлога та пил"],
+        id: "express",
+        title: "Експрес-прибирання",
+        text: "Коли потрібно швидко навести лад — без генерального навантаження, але акуратно і охайно.",
+        basePerSqm: 24,
+        duration: "1.5–3 год",
+        packageItems: [
+            { id: "kitchen", label: "Вологе прибирання кухні та санвузла", defaultSelected: true, adjustment: 60 },
+            { id: "floor", label: "Пилосос і миття підлоги в основних зонах", defaultSelected: true, adjustment: 50 },
+            { id: "surfaces", label: "Протирання поверхонь і пил", defaultSelected: true, adjustment: 40 },
+            { id: "trash", label: "Винесення сміття", defaultSelected: true, adjustment: 50 },
+            { id: "mirrors", label: "Дзеркала та скло", defaultSelected: true, adjustment: 40 },
+            { id: "windows", label: "Миття вікон", defaultSelected: false, adjustment: 250 },
+            { id: "fridge", label: "Холодильник", defaultSelected: false, adjustment: 180 },
+        ],
     },
     {
-        title: "Офіс до 50 м²",
-        text: "Робочі зони, кухня та санвузол для невеликої команди.",
-        area: "до 50 м²",
-        price: "1 200 ₴",
-        duration: "3–4 год",
-        includes: ["Робочі місця", "Переговорна", "Кухня і санвузол", "Підлога та пил"],
+        id: "after-tenants",
+        title: "Прибирання після орендарів",
+        text: "Повне відновлення квартири після виїзду — готовимо житло до нових мешканців або здачі.",
+        basePerSqm: 30,
+        duration: "4–7 год",
+        packageItems: [
+            { id: "rooms", label: "Глибоке прибирання всіх кімнат", defaultSelected: true, adjustment: 80 },
+            { id: "kitchen", label: "Кухня: плита, фартух, шафи зовні", defaultSelected: true, adjustment: 70 },
+            { id: "bathroom", label: "Санвузол і дзеркала", defaultSelected: true, adjustment: 60 },
+            { id: "windows", label: "Вікна зсередини та підвіконня", defaultSelected: true, adjustment: 120 },
+            { id: "cabinets", label: "Внутрішні поверхні шаф", defaultSelected: true, adjustment: 150 },
+            { id: "oven", label: "Духова шафа", defaultSelected: false, adjustment: 220 },
+            { id: "balcony", label: "Балкон", defaultSelected: false, adjustment: 150 },
+        ],
     },
-] as const;
+    {
+        id: "after-renovation",
+        title: "Прибирання після ремонту",
+        text: "Прибираємо будівельний пил, сліди матеріалів і дрібні залишки після будівельних робіт.",
+        basePerSqm: 38,
+        duration: "6–12 год",
+        packageItems: [
+            { id: "dust", label: "Пил після ремонту з усіх поверхонь", defaultSelected: true, adjustment: 100 },
+            { id: "floor-tile", label: "Миття підлоги, плитки та швів", defaultSelected: true, adjustment: 90 },
+            { id: "windows", label: "Вікна, рами та підвіконня", defaultSelected: true, adjustment: 110 },
+            { id: "polish", label: "Фінальна поліровка і перевірка", defaultSelected: true, adjustment: 100 },
+            { id: "fixtures", label: "Батареї та плінтуси", defaultSelected: true, adjustment: 90 },
+            { id: "facade-windows", label: "Скло зовні", defaultSelected: false, adjustment: 400 },
+            { id: "garbage", label: "Вивіз будівельного сміття", defaultSelected: false, adjustment: 350 },
+        ],
+    },
+    {
+        id: "maintenance",
+        title: "Підтримуюче прибирання",
+        text: "Легкий регулярний догляд — щоб у домі завжди було охайно між генеральними прибираннями.",
+        basePerSqm: 16,
+        duration: "1.5–3 год",
+        packageItems: [
+            { id: "floor", label: "Пилосос і вологе прибирання підлоги", defaultSelected: true, adjustment: 45 },
+            { id: "kitchen-bath", label: "Кухня та санвузол — базовий цикл", defaultSelected: true, adjustment: 50 },
+            { id: "dust", label: "Протирання пилу з поверхонь", defaultSelected: true, adjustment: 35 },
+            { id: "bedroom", label: "Спальня та текстиль", defaultSelected: true, adjustment: 45 },
+            { id: "living", label: "Вітальня / коридор", defaultSelected: true, adjustment: 45 },
+            { id: "ironing", label: "Прасування", defaultSelected: false, adjustment: 280 },
+            { id: "dishes", label: "Миття посуду", defaultSelected: false, adjustment: 120 },
+        ],
+    },
+    {
+        id: "commercial",
+        title: "Прибирання комерційних приміщень",
+        text: "Магазини, салони, зали очікування — акуратно, швидко і за зручним для бізнесу графіком.",
+        basePerSqm: 26,
+        duration: "2–6 год",
+        packageItems: [
+            { id: "client-zone", label: "Зона для клієнтів і вітрини", defaultSelected: true, adjustment: 70 },
+            { id: "floor", label: "Підлога, пил, сміття", defaultSelected: true, adjustment: 60 },
+            { id: "restroom", label: "Санвузол і підсобні приміщення", defaultSelected: true, adjustment: 55 },
+            { id: "display", label: "Протирання вітрин", defaultSelected: true, adjustment: 80 },
+            { id: "storage", label: "Склад / підсобка", defaultSelected: false, adjustment: 200 },
+            { id: "floor-machine", label: "Машинне миття підлоги", defaultSelected: false, adjustment: 300 },
+        ],
+    },
+    {
+        id: "office",
+        title: "Прибирання офісів",
+        text: "Чистий простір для команди — робочі місця, переговорні, кухня та санвузол.",
+        basePerSqm: 22,
+        duration: "2–5 год",
+        packageItems: [
+            { id: "desks", label: "Робочі столи та переговорні", defaultSelected: true, adjustment: 65 },
+            { id: "kitchen", label: "Кухня, санвузол, коридори", defaultSelected: true, adjustment: 60 },
+            { id: "floor", label: "Пилосос і миття підлоги", defaultSelected: true, adjustment: 50 },
+            { id: "meeting", label: "Переговорні кімнати", defaultSelected: true, adjustment: 70 },
+            { id: "coffee", label: "Кухня / кавова зона", defaultSelected: true, adjustment: 60 },
+            { id: "appliances", label: "Мікрохвильовка та холодильник", defaultSelected: false, adjustment: 150 },
+        ],
+    },
+    {
+        id: "after-events",
+        title: "Прибирання після свят або заходів",
+        text: "Після вечірок, корпоративів чи сімейних свят — прибираємо без зайвого стресу.",
+        basePerSqm: 32,
+        duration: "3–8 год",
+        packageItems: [
+            { id: "general", label: "Прибирання після гостей і заходів", defaultSelected: true, adjustment: 80 },
+            { id: "kitchen", label: "Кухня, посуд, поверхні", defaultSelected: true, adjustment: 70 },
+            { id: "floor", label: "Підлога, сміття, запахи", defaultSelected: true, adjustment: 65 },
+            { id: "dishes", label: "Миття посуду", defaultSelected: true, adjustment: 80 },
+            { id: "furniture", label: "М'які меблі та текстиль", defaultSelected: true, adjustment: 100 },
+            { id: "garbage", label: "Вивіз сміття", defaultSelected: false, adjustment: 200 },
+            { id: "carpet", label: "Хімчистка коврів", defaultSelected: false, adjustment: 350 },
+        ],
+    },
+] as const satisfies readonly FixedServiceCategory[];
+
+type FixedServiceId = (typeof fixedServiceCategories)[number]["id"];
 
 const subscriptionPlans = [
     {
@@ -142,8 +260,78 @@ function formatPrice(value: number) {
     return `${value.toLocaleString("uk-UA")} ₴`;
 }
 
+function estimateFixedOrder(
+    service: Pick<FixedServiceCategory, "flatPrice" | "basePerSqm">,
+    area: string,
+    packageItems: readonly FixedPackageItem[],
+    selectedAddons: string[],
+) {
+    const addedTotal = packageItems
+        .filter((item) => !item.defaultSelected && selectedAddons.includes(item.id))
+        .reduce((sum, item) => sum + item.adjustment, 0);
+
+    if (service.flatPrice != null) {
+        return {
+            sqm: 0,
+            base: service.flatPrice,
+            addedTotal: 0,
+            total: service.flatPrice,
+        };
+    }
+
+    const sqm = Math.max(20, Number.parseInt(area, 10) || 0);
+    const base = sqm * (service.basePerSqm ?? 0);
+
+    return {
+        sqm,
+        base,
+        addedTotal,
+        total: Math.round(base + addedTotal),
+    };
+}
+
+function estimateCustomOrder(
+    basePerSqm: number,
+    area: string,
+    rooms: string,
+    bathrooms: string,
+    extrasTotal = 0,
+) {
+    const sqm = Math.max(20, Number.parseInt(area, 10) || 0);
+    const roomCount = Math.max(1, Number.parseInt(rooms, 10) || 1);
+    const bathCount = Math.max(1, Number.parseInt(bathrooms, 10) || 1);
+    const base = sqm * basePerSqm;
+    const roomFee = Math.max(0, roomCount - 1) * 120;
+    const bathFee = Math.max(0, bathCount - 1) * 180;
+
+    return {
+        sqm,
+        roomCount,
+        bathCount,
+        total: Math.round(base + roomFee + bathFee + extrasTotal),
+    };
+}
+
+function getPackageItemPriceHint(item: FixedPackageItem) {
+    if (item.defaultSelected) {
+        return "в пакеті";
+    }
+
+    return `+${formatPrice(item.adjustment)}`;
+}
+
 export default function ServicesPage() {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const paymentSuccess = searchParams.get("paid") === "1";
+
     const [activeTab, setActiveTab] = useState<ServiceTab>("fixed");
+    const [selectedFixedService, setSelectedFixedService] = useState<FixedServiceId | null>(null);
+    const [isPaying, setIsPaying] = useState(false);
+    const [paymentError, setPaymentError] = useState("");
+
+    const [fixedArea, setFixedArea] = useState("55");
+    const [fixedSelectedAddons, setFixedSelectedAddons] = useState<string[]>([]);
+    const [fixedNotes, setFixedNotes] = useState("");
 
     const [cleaningType, setCleaningType] = useState<(typeof customCleaningTypes)[number]["id"]>("regular");
     const [area, setArea] = useState("55");
@@ -152,25 +340,32 @@ export default function ServicesPage() {
     const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
     const [notes, setNotes] = useState("");
 
-    const customEstimate = useMemo(() => {
-        const sqm = Math.max(20, Number.parseInt(area, 10) || 0);
-        const roomCount = Math.max(1, Number.parseInt(rooms, 10) || 1);
-        const bathCount = Math.max(1, Number.parseInt(bathrooms, 10) || 1);
-        const type = customCleaningTypes.find((item) => item.id === cleaningType) ?? customCleaningTypes[0];
+    const selectedService = fixedServiceCategories.find((item) => item.id === selectedFixedService);
 
-        const base = sqm * type.basePerSqm;
-        const roomFee = Math.max(0, roomCount - 1) * 120;
-        const bathFee = Math.max(0, bathCount - 1) * 180;
+    const fixedEstimate = useMemo(() => {
+        if (!selectedService) {
+            return null;
+        }
+
+        return estimateFixedOrder(
+            selectedService,
+            fixedArea,
+            selectedService.packageItems,
+            fixedSelectedAddons,
+        );
+    }, [fixedArea, fixedSelectedAddons, selectedService]);
+
+    const customEstimate = useMemo(() => {
+        const type = customCleaningTypes.find((item) => item.id === cleaningType) ?? customCleaningTypes[0];
         const extrasTotal = customExtras
             .filter((extra) => selectedExtras.includes(extra.id))
             .reduce((sum, extra) => sum + extra.price, 0);
 
+        const result = estimateCustomOrder(type.basePerSqm, area, rooms, bathrooms, extrasTotal);
+
         return {
-            sqm,
-            roomCount,
-            bathCount,
+            ...result,
             typeLabel: type.label,
-            total: Math.round(base + roomFee + bathFee + extrasTotal),
             extrasTotal,
         };
     }, [area, bathrooms, cleaningType, rooms, selectedExtras]);
@@ -181,8 +376,84 @@ export default function ServicesPage() {
         );
     }
 
+    function toggleFixedAddon(id: string) {
+        setFixedSelectedAddons((current) =>
+            current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
+        );
+    }
+
+    function openFixedService(id: FixedServiceId) {
+        const service = fixedServiceCategories.find((item) => item.id === id);
+        if (!service || service.isTest) {
+            return;
+        }
+
+        setSelectedFixedService(id);
+        setFixedArea("55");
+        setFixedSelectedAddons([]);
+        setFixedNotes("");
+        setPaymentError("");
+    }
+
+    async function payWithMono(amountUah: number, description: string) {
+        setPaymentError("");
+        setIsPaying(true);
+
+        try {
+            const result = await createMonoInvoice({
+                amountKopiyky: Math.round(amountUah * 100),
+                destination: description,
+                reference: crypto.randomUUID(),
+            });
+
+            if (!result.success || !result.pageUrl) {
+                setPaymentError(result.error ?? "Не вдалося створити рахунок Monobank.");
+                return;
+            }
+
+            window.location.href = result.pageUrl;
+        } catch {
+            setPaymentError("Помилка з'єднання з сервером. Перевірте, чи запущений backend.");
+        } finally {
+            setIsPaying(false);
+        }
+    }
+
+    const testPackages = fixedServiceCategories.filter((item) => item.isTest);
+    const regularPackages = fixedServiceCategories.filter((item) => !item.isTest);
+
+    function closeFixedService() {
+        setSelectedFixedService(null);
+    }
+
+    function switchTab(tab: ServiceTab) {
+        setActiveTab(tab);
+        if (tab !== "fixed") {
+            setSelectedFixedService(null);
+        }
+    }
+
     return (
         <div className="services-page">
+            {paymentSuccess ? (
+                <div className="services-payment-banner hero-panel" role="status">
+                    <p>Оплату отримано. Дякуємо!</p>
+                    <button
+                        type="button"
+                        className="services-back"
+                        onClick={() => setSearchParams({})}
+                    >
+                        Закрити
+                    </button>
+                </div>
+            ) : null}
+
+            {paymentError ? (
+                <div className="services-payment-error hero-panel" role="alert">
+                    {paymentError}
+                </div>
+            ) : null}
+
             <div className="services-tabs-wrap">
                 <div
                     className={`services-tabs services-tabs--${activeTab}`}
@@ -197,7 +468,7 @@ export default function ServicesPage() {
                         aria-selected={activeTab === "fixed"}
                         aria-controls="services-panel-fixed"
                         className={`services-tab${activeTab === "fixed" ? " services-tab--active" : ""}`}
-                        onClick={() => setActiveTab("fixed")}
+                        onClick={() => switchTab("fixed")}
                     >
                         <span className="services-tab-label services-tab-label--full">Фіксовані пакети</span>
                         <span className="services-tab-label services-tab-label--short">Фіксовані</span>
@@ -209,7 +480,7 @@ export default function ServicesPage() {
                         aria-selected={activeTab === "custom"}
                         aria-controls="services-panel-custom"
                         className={`services-tab${activeTab === "custom" ? " services-tab--active" : ""}`}
-                        onClick={() => setActiveTab("custom")}
+                        onClick={() => switchTab("custom")}
                     >
                         <span className="services-tab-label services-tab-label--full">Кастомне прибирання</span>
                         <span className="services-tab-label services-tab-label--short">Кастомне</span>
@@ -221,7 +492,7 @@ export default function ServicesPage() {
                         aria-selected={activeTab === "subscription"}
                         aria-controls="services-panel-subscription"
                         className={`services-tab${activeTab === "subscription" ? " services-tab--active" : ""}`}
-                        onClick={() => setActiveTab("subscription")}
+                        onClick={() => switchTab("subscription")}
                     >
                         <span className="services-tab-label services-tab-label--full">Прибирання по підписці</span>
                         <span className="services-tab-label services-tab-label--short">Підписка</span>
@@ -236,50 +507,232 @@ export default function ServicesPage() {
                     aria-labelledby="services-tab-fixed"
                     className="services-panel"
                 >
-                    <p className="services-panel-lead">
-                        Готові пакети з фіксованою ціною за вказану площу — обирайте і замовляйте без
-                        додаткових розрахунків.
-                    </p>
+                    {selectedService && fixedEstimate ? (
+                        <>
+                            <button type="button" className="services-back" onClick={closeFixedService}>
+                                ← Усі послуги
+                            </button>
 
-                    <div className="services-grid">
-                        {fixedPackages.map((pkg) => (
-                            <article key={pkg.title} className="services-card hero-panel">
-                                <h2 className="services-card-title">{pkg.title}</h2>
+                            <p className="services-panel-lead">
+                                Вкажіть площу — базовий пакет уже включений. За потреби додайте
+                                додаткові опції.
+                            </p>
 
-                                <p className="services-card-text">{pkg.text}</p>
+                            <div className="services-custom">
+                                <form
+                                    className="services-custom-form hero-panel"
+                                    onSubmit={(event) => event.preventDefault()}
+                                >
+                                    <h2 className="services-custom-title">{selectedService.title}</h2>
+                                    <p className="services-category-desc">{selectedService.text}</p>
 
-                                <div className="services-card-meta">
-                                    <div className="services-meta-item">
-                                        <span className="services-meta-label">Площа</span>
-                                        <span className="services-meta-value">{pkg.area}</span>
-                                    </div>
-                                    <div className="services-meta-item">
-                                        <span className="services-meta-label">Ціна</span>
-                                        <span className="services-meta-value services-meta-value--price">
-                                            {pkg.price}
+                                    <div className="services-category-rate hero-panel">
+                                        <span className="services-category-rate-label">Базова ціна</span>
+                                        <span className="services-category-rate-value">
+                                            {formatPrice(selectedService.basePerSqm ?? 0)} <span>/ м²</span>
                                         </span>
                                     </div>
-                                    <div className="services-meta-item">
-                                        <span className="services-meta-label">Час</span>
-                                        <span className="services-meta-value">{pkg.duration}</span>
-                                    </div>
+
+                                    <label className="services-field services-field--area">
+                                        <span>Площа, м²</span>
+                                        <input
+                                            type="number"
+                                            min={20}
+                                            max={500}
+                                            value={fixedArea}
+                                            onChange={(event) => setFixedArea(event.target.value)}
+                                            inputMode="numeric"
+                                        />
+                                    </label>
+
+                                    <fieldset className="services-extras">
+                                        <legend>В пакеті</legend>
+                                        <div className="services-extras-grid">
+                                            {selectedService.packageItems
+                                                .filter((item) => item.defaultSelected)
+                                                .map((item) => (
+                                                    <div
+                                                        key={item.id}
+                                                        className="services-extra-option services-extra-option--locked services-extra-option--on"
+                                                    >
+                                                        <input type="checkbox" checked disabled readOnly />
+                                                        <span className="services-extra-copy">
+                                                            <span>{item.label}</span>
+                                                            <span className="services-extra-included">в пакеті</span>
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    </fieldset>
+
+                                    {selectedService.packageItems.some((item) => !item.defaultSelected) ? (
+                                        <fieldset className="services-extras">
+                                            <legend>Можна додати</legend>
+                                            <div className="services-extras-grid">
+                                                {selectedService.packageItems
+                                                    .filter((item) => !item.defaultSelected)
+                                                    .map((item) => {
+                                                        const isSelected = fixedSelectedAddons.includes(item.id);
+
+                                                        return (
+                                                            <label
+                                                                key={item.id}
+                                                                className={`services-extra-option${isSelected ? " services-extra-option--on" : ""}`}
+                                                            >
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={isSelected}
+                                                                    onChange={() => toggleFixedAddon(item.id)}
+                                                                />
+                                                                <span className="services-extra-copy">
+                                                                    <span>{item.label}</span>
+                                                                    <span>{getPackageItemPriceHint(item)}</span>
+                                                                </span>
+                                                            </label>
+                                                        );
+                                                    })}
+                                            </div>
+                                        </fieldset>
+                                    ) : null}
+
+                                    <label className="services-field">
+                                        <span>Коментар</span>
+                                        <textarea
+                                            rows={3}
+                                            placeholder="Час виїзду, доступ, особливі побажання..."
+                                            value={fixedNotes}
+                                            onChange={(event) => setFixedNotes(event.target.value)}
+                                        />
+                                    </label>
+                                </form>
+
+                                <aside className="services-custom-summary hero-panel" aria-live="polite">
+                                    <span className="badge hero-badge">Орієнтовна вартість</span>
+                                    <p className="services-custom-price">{formatPrice(fixedEstimate.total)}</p>
+                                    <p className="services-custom-note">
+                                        Точну суму підтвердимо перед виїздом після короткої консультації.
+                                    </p>
+
+                                    <ul className="services-custom-breakdown">
+                                        <li>
+                                            <span>Послуга</span>
+                                            <span>{selectedService.title}</span>
+                                        </li>
+                                        <li>
+                                            <span>База</span>
+                                            <span>
+                                                {formatPrice(selectedService.basePerSqm ?? 0)} × {fixedEstimate.sqm} м²
+                                            </span>
+                                        </li>
+                                        {fixedEstimate.addedTotal > 0 ? (
+                                            <li>
+                                                <span>Додатково</span>
+                                                <span>+{formatPrice(fixedEstimate.addedTotal)}</span>
+                                            </li>
+                                        ) : null}
+                                    </ul>
+
+                                    <Link to="/contacts" className="primary-button services-custom-cta">
+                                        Замовити
+                                    </Link>
+                                    <button
+                                        type="button"
+                                        className="services-mono-pay"
+                                        disabled={isPaying}
+                                        onClick={() =>
+                                            payWithMono(
+                                                fixedEstimate.total,
+                                                `${selectedService.title} — ${fixedEstimate.sqm} м²`,
+                                            )
+                                        }
+                                    >
+                                        {isPaying ? "Переходимо до mono…" : "Оплатити через mono"}
+                                    </button>
+                                </aside>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <p className="services-panel-lead">
+                                Оберіть тип прибирання — або спочатку перевірте тестову оплату через mono.
+                            </p>
+
+                            <section className="services-test-section" aria-label="Тестові пакети">
+                                <div className="services-test-head">
+                                    <span className="badge hero-badge">Тест</span>
+                                    <h2 className="services-test-title">Тестові пакети для перевірки mono</h2>
                                 </div>
-
-                                <ul className="services-card-includes">
-                                    {pkg.includes.map((item) => (
-                                        <li key={item}>{item}</li>
+                                <div className="services-test-grid">
+                                    {testPackages.map((pkg) => (
+                                        <article key={pkg.id} className="services-test-card hero-panel">
+                                            <p className="services-test-price">{formatPrice(pkg.flatPrice ?? 0)}</p>
+                                            <h3 className="services-test-name">{pkg.title}</h3>
+                                            <p className="services-test-text">{pkg.text}</p>
+                                            <button
+                                                type="button"
+                                                className="services-mono-pay services-mono-pay--full"
+                                                disabled={isPaying}
+                                                onClick={() =>
+                                                    payWithMono(pkg.flatPrice ?? 0, pkg.title)
+                                                }
+                                            >
+                                                {isPaying ? "Переходимо…" : "Оплатити через mono"}
+                                            </button>
+                                        </article>
                                     ))}
-                                </ul>
+                                </div>
+                            </section>
 
-                                <Link
-                                    to="/contacts"
-                                    className="secondary-button compact services-card-cta"
-                                >
-                                    Замовити за {pkg.price}
-                                </Link>
-                            </article>
-                        ))}
-                    </div>
+                            <div className="services-grid services-grid--categories">
+                                {regularPackages.map((service) => (
+                                    <article key={service.id} className="services-card services-card--category hero-panel">
+                                        <div className="services-category-head">
+                                            <h2 className="services-card-title">{service.title}</h2>
+                                            <div className="services-category-price">
+                                                <span className="services-category-price-value">
+                                                    {formatPrice(service.basePerSqm ?? 0)}
+                                                </span>
+                                                <span className="services-category-price-unit">/ м²</span>
+                                            </div>
+                                        </div>
+
+                                        <p className="services-card-text">{service.text}</p>
+
+                                        <div className="services-category-body">
+                                            <p className="services-category-includes-title">Склад пакета</p>
+                                            <ul className="services-package-preview">
+                                                {service.packageItems.map((item) => (
+                                                    <li
+                                                        key={item.id}
+                                                        className={`services-package-preview-item${item.defaultSelected ? " services-package-preview-item--included" : " services-package-preview-item--extra"}`}
+                                                    >
+                                                        <span className="services-package-check" aria-hidden="true">
+                                                            {item.defaultSelected ? "✓" : "+"}
+                                                        </span>
+                                                        <span>{item.label}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+
+                                        <div className="services-category-foot">
+                                            <div className="services-category-duration">
+                                                <span className="services-meta-label">Орієнтовний час</span>
+                                                <span className="services-meta-value">{service.duration}</span>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="primary-button compact services-category-cta"
+                                                onClick={() => openFixedService(service.id)}
+                                            >
+                                                Розрахувати вартість
+                                            </button>
+                                        </div>
+                                    </article>
+                                ))}
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
 
@@ -483,9 +936,8 @@ export default function ServicesPage() {
                     <span className="badge hero-badge">Ціноутворення</span>
                     <h2 className="hero-process-title">Як ми рахуємо вартість</h2>
                     <p className="hero-text">
-                        Фіксовані пакети — для типових площ. Кастомне замовлення — коли потрібен
-                        індивідуальний підхід. Підписка — для регулярного догляду. Точну суму
-                        називаємо перед виїздом.
+                        Оберіть тип послуги — далі вкажете площу та деталі. Кастомне замовлення — коли
+                        потрібен індивідуальний підхід. Підписка — для регулярного догляду.
                     </p>
                 </div>
 

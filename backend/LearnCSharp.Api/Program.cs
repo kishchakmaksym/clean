@@ -1,5 +1,6 @@
 using LearnCSharp.Application;
 using LearnCSharp.Infrastructure;
+using LearnCSharp.Api.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +10,14 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
 builder.Services.AddOpenApi();
+
+builder.Services.Configure<MonobankOptions>(builder.Configuration.GetSection(MonobankOptions.SectionName));
+
+builder.Services.AddHttpClient("Monobank", client =>
+{
+    client.BaseAddress = new Uri("https://api.monobank.ua/");
+    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+});
 
 builder.Services.AddCors(options =>
 {

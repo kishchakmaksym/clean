@@ -11,7 +11,7 @@
 
 .support-fab-panel {
     width: min(21rem, calc(100vw - 2rem));
-    max-height: min(34rem, calc(100dvh - 6rem));
+    max-height: min(42rem, calc(100dvh - 5rem));
     display: grid;
     grid-template-rows: auto minmax(0, 1fr) auto;
     border-radius: 1.15rem;
@@ -440,8 +440,8 @@
 
 .support-chat-input--area {
     resize: none;
-    min-height: 9rem;
-    height: 9rem;
+    min-height: 18rem;
+    height: 18rem;
     font-family: inherit;
 }
 
@@ -693,8 +693,8 @@
 
 .support-chat-input--area {
     resize: none;
-    min-height: 9rem;
-    height: 9rem;
+    min-height: 18rem;
+    height: 18rem;
     font-family: inherit;
 }
 
@@ -706,6 +706,6 @@
 @media (max-width: 40rem) {
     .support-fab-panel {
         width: min(20rem, calc(100vw - 1.5rem));
-        max-height: min(32rem, calc(100dvh - 5rem));
+        max-height: min(40rem, calc(100dvh - 4rem));
     }
 }

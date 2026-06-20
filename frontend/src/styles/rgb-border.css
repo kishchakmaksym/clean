@@ -1,6 +1,7 @@
 .hero-panel,
 .glass-card,
-.review-form-card,
+.reviews-form-card,
+.reviews-list-card,
 .contact-copy,
 .contact-form,
 .auth-card,
@@ -13,7 +14,6 @@
 }
 
 .glass-card,
-.review-form-card,
 .contact-copy,
 .contact-form,
 .auth-card,

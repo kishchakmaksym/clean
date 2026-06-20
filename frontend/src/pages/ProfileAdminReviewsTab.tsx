@@ -10,6 +10,7 @@ import {
 } from "../api/reviews";
 import type { ReviewDto } from "../api/types";
 import ModalPortal from "../components/ModalPortal";
+import ReviewCardText from "../components/reviews/ReviewCardText";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import { ukraineLocalDateTimeToUtcIso, ukraineTodayInputValue } from "../utils/dateTime";
 import "./ReviewsPage.css";
@@ -17,44 +18,6 @@ import "./ReviewsPage.css";
 type ProfileAdminReviewsTabProps = {
     userId: string;
 };
-
-const REVIEW_PREVIEW_WORDS = 36;
-
-function countWords(text: string) {
-    return text.trim().split(/\s+/).filter(Boolean).length;
-}
-
-function truncateWords(text: string, maxWords: number) {
-    const words = text.trim().split(/\s+/).filter(Boolean);
-    if (words.length <= maxWords) {
-        return text;
-    }
-
-    return `${words.slice(0, maxWords).join(" ")}…`;
-}
-
-function ReviewText({ text }: { text: string }) {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const isLong = countWords(text) > REVIEW_PREVIEW_WORDS;
-
-    if (!isLong) {
-        return <p className="review-text">{text}</p>;
-    }
-
-    return (
-        <div className="review-text-block">
-            <p className="review-text">{isExpanded ? text : truncateWords(text, REVIEW_PREVIEW_WORDS)}</p>
-            <button
-                type="button"
-                className="review-toggle"
-                onClick={() => setIsExpanded((value) => !value)}
-                aria-expanded={isExpanded}
-            >
-                {isExpanded ? "Читати менше" : "Читати більше"}
-            </button>
-        </div>
-    );
-}
 
 export default function ProfileAdminReviewsTab({ userId }: ProfileAdminReviewsTabProps) {
     const [reviews, setReviews] = useState<ReviewDto[]>([]);
@@ -69,9 +32,10 @@ export default function ProfileAdminReviewsTab({ userId }: ProfileAdminReviewsTa
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
     const [pendingDeleteReview, setPendingDeleteReview] = useState<ReviewDto | null>(null);
+    const [readingReview, setReadingReview] = useState<ReviewDto | null>(null);
     const reviewsTopRef = useRef<HTMLDivElement>(null);
 
-    useBodyScrollLock(pendingDeleteReview !== null);
+    useBodyScrollLock(pendingDeleteReview !== null || readingReview !== null);
 
     const loadReviews = useCallback(async (options?: { silent?: boolean }) => {
         if (!options?.silent) {
@@ -107,6 +71,12 @@ export default function ProfileAdminReviewsTab({ userId }: ProfileAdminReviewsTa
         setErrors([]);
         setSuccessMessage("");
         setIsSubmitting(true);
+
+        if (rating < 1) {
+            setErrors(["Оберіть оцінку від 1 до 5 зірок."]);
+            setIsSubmitting(false);
+            return;
+        }
 
         try {
             const result = await createAdminReview({
@@ -167,52 +137,110 @@ export default function ProfileAdminReviewsTab({ userId }: ProfileAdminReviewsTa
         <div className="admin-reviews-panel">
             {pendingDeleteReview ? (
                 <ModalPortal>
-                    <div className="review-modal-backdrop" role="presentation" onClick={() => setPendingDeleteReview(null)}>
                     <div
-                        className="review-modal"
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="admin-delete-review-title"
-                        onClick={(event) => event.stopPropagation()}
+                        className="review-modal-backdrop"
+                        role="presentation"
+                        onClick={() => setPendingDeleteReview(null)}
                     >
-                        <h3 id="admin-delete-review-title">Видалити відгук?</h3>
-                        <p>
-                            Ви впевнені, що хочете видалити відгук від{" "}
-                            <strong>{pendingDeleteReview.authorName}</strong>?
-                        </p>
-                        <div className="review-modal-actions">
-                            <button
-                                type="button"
-                                className="secondary-button compact"
-                                onClick={() => setPendingDeleteReview(null)}
-                                disabled={deletingReviewId === pendingDeleteReview.id}
-                            >
-                                Скасувати
-                            </button>
-                            <button
-                                type="button"
-                                className="primary-button compact"
-                                disabled={deletingReviewId === pendingDeleteReview.id}
-                                onMouseDown={(event) => event.preventDefault()}
-                                onClick={(event) => {
-                                    event.stopPropagation();
-                                    void handleDeleteReview(pendingDeleteReview.id);
-                                }}
-                            >
-                                {deletingReviewId === pendingDeleteReview.id ? "Видалення…" : "Так, видалити"}
-                            </button>
+                        <div
+                            className="review-modal"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="admin-delete-review-title"
+                            onClick={(event) => event.stopPropagation()}
+                        >
+                            <h3 id="admin-delete-review-title">Видалити відгук?</h3>
+                            <p>
+                                Ви впевнені, що хочете видалити відгук від{" "}
+                                <strong>{pendingDeleteReview.authorName}</strong>?
+                            </p>
+                            <div className="review-modal-actions">
+                                <button
+                                    type="button"
+                                    className="secondary-button compact"
+                                    onClick={() => setPendingDeleteReview(null)}
+                                    disabled={deletingReviewId === pendingDeleteReview.id}
+                                >
+                                    Скасувати
+                                </button>
+                                <button
+                                    type="button"
+                                    className="primary-button compact"
+                                    disabled={deletingReviewId === pendingDeleteReview.id}
+                                    onMouseDown={(event) => event.preventDefault()}
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        void handleDeleteReview(pendingDeleteReview.id);
+                                    }}
+                                >
+                                    {deletingReviewId === pendingDeleteReview.id ? "Видалення…" : "Так, видалити"}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
                 </ModalPortal>
             ) : null}
 
-            <div className="review-form-card admin-reviews-form">
-                <h3>Додати відгук</h3>
+            {readingReview ? (
+                <ModalPortal>
+                    <div
+                        className="review-modal-backdrop"
+                        role="presentation"
+                        onClick={() => setReadingReview(null)}
+                    >
+                        <div
+                            className="review-modal review-read-modal"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="admin-read-review-title"
+                            onClick={(event) => event.stopPropagation()}
+                        >
+                            <div className="review-read-modal-head">
+                                <div>
+                                    <h3 id="admin-read-review-title">{readingReview.authorName}</h3>
+                                    <p className="review-read-modal-date">
+                                        {formatReviewDate(readingReview.createdAtUtc)}
+                                    </p>
+                                </div>
+                                <span
+                                    className="admin-review-stars"
+                                    aria-label={`Оцінка ${readingReview.rating} з 5`}
+                                >
+                                    {renderStars(readingReview.rating)}
+                                </span>
+                            </div>
+                            {readingReview.text.trim() ? (
+                                <div className="review-read-modal-body">
+                                    <p className="review-read-modal-text">{readingReview.text.trim()}</p>
+                                </div>
+                            ) : null}
+                            <div className="review-modal-actions">
+                                <button
+                                    type="button"
+                                    className="primary-button compact"
+                                    onClick={() => setReadingReview(null)}
+                                >
+                                    Закрити
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </ModalPortal>
+            ) : null}
 
-                <form className="review-form" onSubmit={(event) => void handleSubmit(event)} noValidate>
+            <section className="admin-reviews-form-card">
+                <h2 className="profile-sidebar-title">Додати відгук</h2>
+                <p className="admin-reviews-form-lead">
+                    Публікуйте відгук на сайті — вкажіть ім&apos;я клієнта, оцінку та дату.
+                </p>
+
+                <form
+                    className="profile-form profile-form-edit admin-reviews-form"
+                    onSubmit={(event) => void handleSubmit(event)}
+                    noValidate
+                >
                     {errors.length > 0 ? (
-                        <ul className="review-errors" role="alert">
+                        <ul className="profile-account-error admin-reviews-alert" role="alert">
                             {errors.map((error) => (
                                 <li key={error}>{error}</li>
                             ))}
@@ -220,29 +248,41 @@ export default function ProfileAdminReviewsTab({ userId }: ProfileAdminReviewsTa
                     ) : null}
 
                     {successMessage ? (
-                        <p className="review-success" role="status">
+                        <p className="profile-account-success admin-reviews-alert" role="status">
                             {successMessage}
                         </p>
                     ) : null}
 
-                    <label>
-                        <span>Ім&apos;я клієнта</span>
-                        <input
-                            value={authorName}
-                            onChange={(event) => setAuthorName(event.target.value)}
-                            placeholder="Наприклад, Олена"
-                            required
-                        />
-                    </label>
+                    <div className="admin-reviews-form-row">
+                        <label>
+                            <span>Ім&apos;я клієнта</span>
+                            <input
+                                value={authorName}
+                                onChange={(event) => setAuthorName(event.target.value)}
+                                placeholder="Наприклад, Олена"
+                                required
+                            />
+                        </label>
 
-                    <div>
-                        <span className="review-form-label">Оцінка</span>
-                        <div className="star-rating" role="radiogroup" aria-label="Оцінка від 1 до 5 зірок">
+                        <label>
+                            <span>Дата відгуку</span>
+                            <input
+                                type="date"
+                                value={reviewDate}
+                                onChange={(event) => setReviewDate(event.target.value)}
+                                required
+                            />
+                        </label>
+                    </div>
+
+                    <div className="admin-reviews-stars-field">
+                        <span className="admin-reviews-stars-label">Оцінка</span>
+                        <div className="admin-reviews-stars" role="radiogroup" aria-label="Оцінка від 1 до 5 зірок">
                             {[1, 2, 3, 4, 5].map((value) => (
                                 <button
                                     key={value}
                                     type="button"
-                                    className={`star-button${value <= rating ? " is-active" : ""}`}
+                                    className={`admin-reviews-star${value <= rating ? " admin-reviews-star--active" : ""}`}
                                     aria-label={`${value} зірок`}
                                     aria-pressed={value <= rating}
                                     onClick={() => setRating(value)}
@@ -258,59 +298,73 @@ export default function ProfileAdminReviewsTab({ userId }: ProfileAdminReviewsTa
                         <textarea
                             value={text}
                             onChange={(event) => setText(event.target.value)}
-                            placeholder="Текст відгуку для сайту…"
+                            placeholder="Текст для сайту… (необов'язково)"
                             rows={4}
-                            required
                         />
                     </label>
 
-                    <label>
-                        <span>Дата</span>
-                        <input
-                            type="date"
-                            value={reviewDate}
-                            onChange={(event) => setReviewDate(event.target.value)}
-                            required
-                        />
-                    </label>
-
-                    <button type="submit" className="primary-button" disabled={isSubmitting}>
-                        {isSubmitting ? "Додавання…" : "Додати відгук"}
+                    <button type="submit" className="primary-button admin-reviews-submit" disabled={isSubmitting}>
+                        {isSubmitting ? "Додавання…" : "Опублікувати відгук"}
                     </button>
                 </form>
-            </div>
+            </section>
 
-            <div ref={reviewsTopRef} className="admin-reviews-list">
-                {isLoading ? <p className="reviews-empty">Завантаження відгуків…</p> : null}
-                {loadError ? <p className="review-load-error">{loadError}</p> : null}
+            <section ref={reviewsTopRef} className="admin-reviews-list-card">
+                <div className="admin-reviews-list-head">
+                    <h3 className="profile-admin-payment-list-title">Опубліковані відгуки</h3>
+                    <span className="admin-reviews-count">{reviews.length}</span>
+                </div>
+
+                {isLoading ? <p className="admin-reviews-empty">Завантаження відгуків…</p> : null}
+                {loadError ? (
+                    <p className="profile-account-error admin-reviews-alert" role="alert">
+                        {loadError}
+                    </p>
+                ) : null}
 
                 {!isLoading && !loadError && reviews.length === 0 ? (
-                    <p className="reviews-empty">Поки що немає відгуків.</p>
+                    <p className="admin-reviews-empty">Поки що немає відгуків.</p>
                 ) : null}
 
                 {!isLoading && !loadError && reviews.length > 0 ? (
-                    <div className="reviews-grid">
+                    <div className="admin-reviews-list">
                         {reviews.map((review) => (
-                            <article key={review.id} className="glass-card info-card review-card">
-                                <div className="review-stars-display" aria-label={`Оцінка ${review.rating} з 5`}>
-                                    {renderStars(review.rating)}
+                            <article key={review.id} className="admin-review-card">
+                                <div className="admin-review-card-head">
+                                    <div className="admin-review-card-main">
+                                        <h4 className="admin-review-author">{review.authorName}</h4>
+                                        <p className="admin-review-date">{formatReviewDate(review.createdAtUtc)}</p>
+                                    </div>
+                                    <div className="admin-review-card-meta">
+                                        <span
+                                            className="admin-review-stars"
+                                            aria-label={`Оцінка ${review.rating} з 5`}
+                                        >
+                                            {renderStars(review.rating)}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            className="profile-admin-invoice-action admin-review-delete"
+                                            disabled={deletingReviewId === review.id}
+                                            onClick={() => setPendingDeleteReview(review)}
+                                        >
+                                            {deletingReviewId === review.id ? "Видалення…" : "Видалити"}
+                                        </button>
+                                    </div>
                                 </div>
-                                <h3>{review.authorName}</h3>
-                                <ReviewText text={review.text} />
-                                <p className="review-meta">{formatReviewDate(review.createdAtUtc)}</p>
-                                <button
-                                    type="button"
-                                    className="review-delete-button"
-                                    disabled={deletingReviewId === review.id}
-                                    onClick={() => setPendingDeleteReview(review)}
-                                >
-                                    {deletingReviewId === review.id ? "Видалення…" : "Видалити"}
-                                </button>
+                                <ReviewCardText
+                                    text={review.text}
+                                    onReadMore={() => setReadingReview(review)}
+                                    blockClassName="admin-review-text-block"
+                                    textClassName="admin-review-text"
+                                    clampClassName="admin-review-text--clamped"
+                                    toggleClassName="admin-review-toggle"
+                                />
                             </article>
                         ))}
                     </div>
                 ) : null}
-            </div>
+            </section>
         </div>
     );
 }

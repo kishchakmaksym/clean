@@ -54,7 +54,7 @@ public sealed class ReviewService(
             UserId = user.Id,
             AuthorName = user.Name,
             Rating = request.Rating,
-            Text = request.Text.Trim(),
+            Text = (request.Text ?? string.Empty).Trim(),
             CreatedAtUtc = DateTime.UtcNow
         };
 
@@ -101,7 +101,7 @@ public sealed class ReviewService(
             UserId = null,
             AuthorName = request.AuthorName.Trim(),
             Rating = request.Rating,
-            Text = request.Text.Trim(),
+            Text = (request.Text ?? string.Empty).Trim(),
             CreatedAtUtc = request.CreatedAtUtc.ToUniversalTime()
         };
 

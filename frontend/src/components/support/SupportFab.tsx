@@ -414,7 +414,7 @@ export default function SupportFab() {
                     </p>
                     <textarea
                         className="support-chat-input support-chat-input--area"
-                        rows={6}
+                        rows={12}
                         placeholder="Ваше питання…"
                         value={draft}
                         onChange={(event) => setDraft(event.target.value)}

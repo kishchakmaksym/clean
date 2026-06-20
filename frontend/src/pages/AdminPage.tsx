@@ -2,6 +2,8 @@ import { Navigate, useSearchParams } from "react-router-dom";
 
 import { normalizeUserRole } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
+import { useAdminTabBadges } from "../hooks/useAdminTabBadges";
+import { formatAdminBadgeCount } from "../utils/adminTabBadges";
 import ProfileAdminPaymentPanel from "./ProfileAdminPaymentPanel";
 import ProfileAdminReviewsTab from "./ProfileAdminReviewsTab";
 import ProfileAdminSupportTab from "./ProfileAdminSupportTab";
@@ -17,24 +19,28 @@ const ADMIN_TABS = [
         modifier: "admin-orders",
         label: "Замовлення",
         shortLabel: "Замовлення",
+        badgeKey: "orders" as const,
     },
     {
         id: "invoices",
         modifier: "admin-invoices",
         label: "Рахунки на оплату",
         shortLabel: "Рахунки",
+        badgeKey: "invoices" as const,
     },
     {
         id: "reviews",
         modifier: "admin-reviews",
         label: "Відгуки",
         shortLabel: "Відгуки",
+        badgeKey: "reviews" as const,
     },
     {
         id: "support",
         modifier: "admin-support",
         label: "Підтримка",
         shortLabel: "Підтримка",
+        badgeKey: "support" as const,
     },
 ] as const;
 
@@ -51,16 +57,18 @@ function parseAdminTab(value: string | null): AdminTabId {
 export default function AdminPage() {
     const { user } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
+    const activeTab = parseAdminTab(searchParams.get("tab"));
+    const isAdmin = Boolean(user && normalizeUserRole(user.role) === "Admin");
+    const tabBadges = useAdminTabBadges(isAdmin && user ? user.id : "", activeTab);
 
     if (!user) {
         return <Navigate to="/login?returnTo=%2Fadmin" replace />;
     }
 
-    if (normalizeUserRole(user.role) !== "Admin") {
+    if (!isAdmin) {
         return <Navigate to="/profile" replace />;
     }
 
-    const activeTab = parseAdminTab(searchParams.get("tab"));
     const activeTabConfig = ADMIN_TABS.find((tab) => tab.id === activeTab) ?? ADMIN_TABS[0];
 
     function switchTab(tabId: AdminTabId) {
@@ -76,7 +84,12 @@ export default function AdminPage() {
                     aria-label="Розділи адмін-панелі"
                 >
                     <span className="services-tabs-indicator" aria-hidden="true" />
-                    {ADMIN_TABS.map((tab) => (
+                    {ADMIN_TABS.map((tab) => {
+                        const badgeCount =
+                            "badgeKey" in tab ? tabBadges[tab.badgeKey] : 0;
+                        const badgeLabel = formatAdminBadgeCount(badgeCount);
+
+                        return (
                         <button
                             key={tab.id}
                             type="button"
@@ -85,10 +98,16 @@ export default function AdminPage() {
                             className={`services-tab${activeTab === tab.id ? " services-tab--active" : ""}`}
                             onClick={() => switchTab(tab.id)}
                         >
+                            {badgeLabel ? (
+                                <span className="admin-tab-badge" aria-label={`${badgeCount} нових`}>
+                                    {badgeLabel}
+                                </span>
+                            ) : null}
                             <span className="services-tab-label services-tab-label--full">{tab.label}</span>
                             <span className="services-tab-label services-tab-label--short">{tab.shortLabel}</span>
                         </button>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 

@@ -2,7 +2,6 @@ namespace LearnCSharp.Application.Validation;
 
 public static class ReviewValidator
 {
-    private const int MinTextLength = 10;
     private const int MaxTextLength = 2000;
 
     public static IReadOnlyList<string> ValidateCreate(Guid userId, int rating, string? text)
@@ -64,23 +63,11 @@ public static class ReviewValidator
             errors.Add("Оцінка має бути від 1 до 5 зірок.");
         }
 
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            errors.Add("Текст відгуку є обов'язковим.");
-        }
-        else
-        {
-            var trimmed = text.Trim();
+        var trimmed = (text ?? string.Empty).Trim();
 
-            if (trimmed.Length < MinTextLength)
-            {
-                errors.Add($"Відгук має містити щонайменше {MinTextLength} символів.");
-            }
-
-            if (trimmed.Length > MaxTextLength)
-            {
-                errors.Add($"Відгук не може перевищувати {MaxTextLength} символів.");
-            }
+        if (trimmed.Length > MaxTextLength)
+        {
+            errors.Add($"Відгук не може перевищувати {MaxTextLength} символів.");
         }
 
         return errors;

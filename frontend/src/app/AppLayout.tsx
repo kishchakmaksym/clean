@@ -134,7 +134,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     <div className="header-actions">
                         {isAdmin ? (
                             <NavLink to="/admin" end className={({ isActive }) => `header-admin${isActive ? " active" : ""}`}>
-                                <span className="header-admin-label header-admin-label--full">Адмін-панель</span>
+                                <span className="header-admin-label header-admin-label--full">Адмінка</span>
                                 <span className="header-admin-label header-admin-label--short">Адмін</span>
                             </NavLink>
                         ) : null}
@@ -191,7 +191,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                             {isAdmin
                                 ? renderAccountNavLink(
                                       "/admin",
-                                      "Адмін-панель",
+                                      "Адмінка",
                                       "header-mobile-link header-mobile-link--admin",
                                       closeMobileMenu,
                                   )

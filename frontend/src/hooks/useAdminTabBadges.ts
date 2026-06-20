@@ -1,0 +1,143 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+import { fetchOrders, type OrderDto } from "../api/orders";
+import { fetchAdminMonoInvoices, type AdminPaymentInvoiceDto } from "../api/payments";
+import { fetchReviews } from "../api/reviews";
+import { fetchAdminSupportTickets, type SupportTicketDto } from "../api/support";
+import type { ReviewDto } from "../api/types";
+import {
+    acknowledgeInvoicesTab,
+    acknowledgeOrdersTab,
+    acknowledgeReviewsTab,
+    acknowledgeSupportTab,
+    countPaidInvoiceBadge,
+    countPendingOrderBadge,
+    countReviewBadge,
+    countSupportBadge,
+    initializeAdminBadgeSnapshot,
+    loadAdminBadgeSnapshot,
+    type AdminBadgeSnapshot,
+} from "../utils/adminTabBadges";
+
+type AdminBadgeTab = "orders" | "invoices" | "reviews" | "support";
+
+export type AdminTabBadgeCounts = Record<AdminBadgeTab, number>;
+
+const POLL_INTERVAL_MS = 15_000;
+
+const emptySnapshot: AdminBadgeSnapshot = {
+    initialized: false,
+    pendingOrderIds: [],
+    paidInvoiceIds: [],
+    reviewIds: [],
+    supportUnread: {},
+};
+
+export function useAdminTabBadges(userId: string, activeTab: string) {
+    const [snapshot, setSnapshot] = useState<AdminBadgeSnapshot>(() =>
+        userId ? loadAdminBadgeSnapshot(userId) : emptySnapshot,
+    );
+    const [orders, setOrders] = useState<OrderDto[]>([]);
+    const [invoices, setInvoices] = useState<AdminPaymentInvoiceDto[]>([]);
+    const [reviews, setReviews] = useState<ReviewDto[]>([]);
+    const [tickets, setTickets] = useState<SupportTicketDto[]>([]);
+
+    const refresh = useCallback(async () => {
+        if (!userId) {
+            return;
+        }
+
+        try {
+            const [ordersData, invoicesResult, reviewsData, ticketsData] = await Promise.all([
+                fetchOrders(userId),
+                fetchAdminMonoInvoices(userId, false),
+                fetchReviews(),
+                fetchAdminSupportTickets(userId),
+            ]);
+            const invoicesData = invoicesResult.success ? (invoicesResult.invoices ?? []) : [];
+
+            setOrders(ordersData);
+            setInvoices(invoicesData);
+            setReviews(reviewsData);
+            setTickets(ticketsData.tickets);
+            setSnapshot((current) => {
+                if (current.initialized) {
+                    return current;
+                }
+
+                return initializeAdminBadgeSnapshot(
+                    ordersData,
+                    invoicesData,
+                    reviewsData,
+                    ticketsData.tickets,
+                    userId,
+                );
+            });
+        } catch {
+            // Keep previous counts on transient failures.
+        }
+    }, [userId]);
+
+    useEffect(() => {
+        if (!userId) {
+            return;
+        }
+
+        setSnapshot(loadAdminBadgeSnapshot(userId));
+        void refresh();
+
+        const intervalId = window.setInterval(() => {
+            void refresh();
+        }, POLL_INTERVAL_MS);
+
+        return () => {
+            window.clearInterval(intervalId);
+        };
+    }, [refresh, userId]);
+
+    useEffect(() => {
+        if (!userId) {
+            return;
+        }
+
+        if (activeTab === "orders") {
+            setSnapshot(acknowledgeOrdersTab(orders, userId));
+            return;
+        }
+
+        if (activeTab === "invoices") {
+            setSnapshot(acknowledgeInvoicesTab(invoices, userId));
+            return;
+        }
+
+        if (activeTab === "reviews") {
+            setSnapshot(acknowledgeReviewsTab(reviews, userId));
+            return;
+        }
+
+        if (activeTab === "support") {
+            setSnapshot(acknowledgeSupportTab(tickets, userId));
+        }
+    }, [activeTab, invoices, orders, reviews, tickets, userId]);
+
+    return useMemo<AdminTabBadgeCounts>(() => {
+        const zero: AdminTabBadgeCounts = { orders: 0, invoices: 0, reviews: 0, support: 0 };
+
+        if (!snapshot.initialized) {
+            return zero;
+        }
+
+        const counts: AdminTabBadgeCounts = {
+            orders: countPendingOrderBadge(orders, snapshot),
+            invoices: countPaidInvoiceBadge(invoices, snapshot),
+            reviews: countReviewBadge(reviews, snapshot),
+            support: countSupportBadge(tickets, snapshot),
+        };
+
+        if (activeTab in counts) {
+            counts[activeTab as AdminBadgeTab] = 0;
+        }
+
+        return counts;
+    }, [activeTab, invoices, orders, reviews, snapshot, tickets]);
+}

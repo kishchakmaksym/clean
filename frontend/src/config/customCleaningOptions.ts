@@ -19,13 +19,7 @@ export const customCleaningTypes = [
     { id: "regular", label: "Звичайне", basePerSqm: 18 },
     { id: "deep", label: "Генеральне", basePerSqm: 28 },
     { id: "express", label: "Експрес-прибирання", basePerSqm: 24 },
-    { id: "post-renovation", label: "Після ремонту", basePerSqm: 38 },
-    { id: "office", label: "Офіс", basePerSqm: 22 },
-    { id: "commercial", label: "Комерційне приміщення", basePerSqm: 26 },
-    { id: "move-out", label: "Перед здачею квартири", basePerSqm: 30 },
-    { id: "after-party", label: "Після вечірки", basePerSqm: 32 },
-    { id: "after-pets", label: "Після домашніх тварин", basePerSqm: 26 },
-    { id: "same-day", label: "Терміновий виїзд (день у день)", basePerSqm: 34 },
+    { id: "post-renovation", label: "Після ремонту", basePerSqm: 105 },
 ] as const;
 
 export const MIN_CUSTOM_ORDER_TOTAL = 1000;

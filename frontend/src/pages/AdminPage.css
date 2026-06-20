@@ -42,6 +42,35 @@
     width: min(100%, 52rem);
 }
 
+.admin-tabs-wrap .services-tab {
+    position: relative;
+}
+
+.admin-tab-badge {
+    position: absolute;
+    top: 0.2rem;
+    right: 0.25rem;
+    z-index: 2;
+    min-width: 1.15rem;
+    height: 1.15rem;
+    padding: 0 0.28rem;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.625rem;
+    font-weight: 800;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 2px var(--bg-alt);
+    pointer-events: none;
+}
+
+.services-tab--active .admin-tab-badge {
+    box-shadow: 0 0 0 2px var(--primary);
+}
+
 .services-tabs--admin-orders .services-tabs-indicator {
     left: var(--tab-pad);
     width: calc(100% / var(--tab-count) + var(--tab-slant));
@@ -191,14 +220,293 @@
 .admin-reviews-panel {
     display: grid;
     gap: 1rem;
+    min-width: 0;
+}
+
+.admin-reviews-form-card,
+.admin-reviews-list-card {
+    padding: clamp(1rem, 2.5vw, 1.35rem);
+    border-radius: 1.1rem;
+    background: var(--panel-bg);
+    border: 1px solid rgba(var(--primary-rgb), 0.22);
+    box-shadow: var(--panel-shadow);
+    min-width: 0;
+}
+
+.admin-reviews-form-card .profile-sidebar-title {
+    font-size: 1.125rem;
+    letter-spacing: 0.04em;
+    color: #0f172a;
+    margin-bottom: 0.35rem;
+}
+
+.admin-reviews-form-lead {
+    margin: 0 0 1rem;
+    font-size: 0.875rem;
+    color: #64748b;
+    line-height: 1.5;
 }
 
 .admin-reviews-form {
+    gap: 1rem;
+}
+
+.admin-reviews-form .profile-form-edit label span,
+.admin-reviews-stars-label {
+    font-size: 0.8125rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: none;
+    color: #0f172a;
+}
+
+.admin-reviews-form input,
+.admin-reviews-form textarea {
+    padding: 0.85rem 1rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #0f172a;
+    border-color: rgba(15, 23, 42, 0.14);
+    background: #fff;
+}
+
+.admin-reviews-form textarea {
+    resize: vertical;
+    min-height: 6.5rem;
+    line-height: 1.5;
+}
+
+.admin-reviews-form-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 0.85rem;
+}
+
+.admin-reviews-stars-field {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.admin-reviews-stars {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.admin-reviews-star {
+    width: 2.65rem;
+    height: 2.65rem;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    border-radius: 0.75rem;
+    background: #fff;
+    font-size: 1.35rem;
+    line-height: 1;
+    color: #cbd5e1;
+    cursor: pointer;
+    transition:
+        color 0.15s ease,
+        border-color 0.15s ease,
+        background 0.15s ease,
+        transform 0.15s ease;
+}
+
+.admin-reviews-star--active {
+    color: #f59e0b;
+    border-color: rgba(245, 158, 11, 0.45);
+    background: rgba(245, 158, 11, 0.08);
+}
+
+.admin-reviews-star:hover {
+    border-color: rgba(var(--primary-rgb), 0.35);
+    transform: translateY(-1px);
+}
+
+.admin-reviews-star:focus-visible {
+    outline: 2px solid rgba(var(--primary-rgb), 0.45);
+    outline-offset: 2px;
+}
+
+.admin-reviews-submit {
+    justify-self: start;
+    min-width: 11rem;
+}
+
+.admin-reviews-alert {
     margin: 0;
+    list-style: none;
+    padding: 0.75rem 0.9rem;
+    border-radius: 0.85rem;
+}
+
+.admin-reviews-list-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.85rem;
+}
+
+.admin-reviews-count {
+    min-width: 1.75rem;
+    height: 1.75rem;
+    padding: 0 0.45rem;
+    border-radius: 999px;
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary);
+    font-size: 0.75rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .admin-reviews-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.65rem;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+    align-items: start;
+}
+
+.admin-review-card {
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 0.9rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: var(--bg-alt);
+    height: fit-content;
+    align-self: start;
+}
+
+.admin-review-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.admin-review-card-main {
     min-width: 0;
+}
+
+.admin-review-author {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.admin-review-date {
+    margin: 0.2rem 0 0;
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+.admin-review-card-meta {
+    display: grid;
+    justify-items: end;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+.admin-review-stars {
+    font-size: 0.9375rem;
+    letter-spacing: 0.04em;
+    color: #f59e0b;
+    white-space: nowrap;
+}
+
+.admin-review-delete {
+    margin-top: 0;
+}
+
+.admin-review-text-block {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.admin-review-text {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.55;
+    color: #334155;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.admin-review-text--clamped {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.admin-review-toggle {
+    justify-self: start;
+    padding: 0;
+    min-height: 0;
+    border: none;
+    background: none;
+    color: var(--primary);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+}
+
+.admin-review-toggle:hover {
+    color: var(--primary-hover);
+}
+
+.admin-reviews-empty {
+    margin: 0;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--muted);
+    border-radius: 0.85rem;
+    border: 1px dashed rgba(15, 23, 42, 0.12);
+    background: rgba(15, 23, 42, 0.02);
+}
+
+@media (max-width: 56rem) {
+    .admin-reviews-list {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 40rem) {
+    .admin-reviews-form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-reviews-list {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-review-card-head {
+        flex-direction: column;
+    }
+
+    .admin-review-card-meta {
+        width: 100%;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        justify-items: stretch;
+    }
+
+    .admin-review-stars {
+        justify-self: start;
+    }
+
+    .admin-review-delete {
+        justify-self: end;
+    }
 }
 
 .admin-support-panel {

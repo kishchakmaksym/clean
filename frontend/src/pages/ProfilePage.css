@@ -482,14 +482,18 @@
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-    padding: 1rem 1.15rem 0.85rem;
+    gap: 0.65rem;
+    padding: 0.85rem 1rem 0.65rem;
+}
+
+.profile-order-headline {
+    min-width: 0;
+    flex: 1;
 }
 
 .profile-order-id {
     margin: 0;
-    font-size: 0.6875rem;
+    font-size: 0.625rem;
     font-weight: 800;
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -497,11 +501,11 @@
 }
 
 .profile-order-title {
-    margin: 0.25rem 0 0;
-    font-size: 1.05rem;
+    margin: 0.15rem 0 0;
+    font-size: 0.975rem;
     font-weight: 800;
     letter-spacing: -0.02em;
-    line-height: 1.25;
+    line-height: 1.3;
     color: var(--text);
 }
 
@@ -539,21 +543,26 @@
 .profile-order-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.45rem;
-    padding: 0 1.15rem 0.85rem;
+    gap: 0.35rem;
+    padding: 0 1rem 0.65rem;
 }
 
 .profile-order-chip {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    padding: 0.35rem 0.65rem;
+    gap: 0.3rem;
+    padding: 0.28rem 0.55rem;
     border-radius: var(--radius-pill);
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
     font-weight: 600;
-    color: var(--muted);
+    color: var(--text);
     background: var(--input-bg);
     border: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.profile-order-chip-label {
+    color: var(--muted);
+    font-weight: 600;
 }
 
 .profile-order-chip strong {
@@ -561,59 +570,134 @@
     color: var(--text);
 }
 
-.profile-order-meta {
+.profile-order-details {
     margin: 0;
-    padding: 0.85rem 1.15rem;
-    list-style: none;
+    flex: 1;
+    min-width: 0;
     display: grid;
-    gap: 0.45rem;
+    gap: 0.55rem;
+}
+
+.profile-order-detail {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.4rem;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+}
+
+.profile-order-detail dt {
+    margin: 0;
+    flex-shrink: 0;
+    font-weight: 700;
+    color: var(--muted);
+}
+
+.profile-order-detail dt::after {
+    content: ":";
+}
+
+.profile-order-detail dd {
+    margin: 0;
+    min-width: 0;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.profile-order-detail--empty dd {
+    font-weight: 500;
+    color: var(--muted);
+}
+
+.profile-order-bottom {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.65rem 1rem;
     border-top: 1px solid var(--divider);
     background: rgba(248, 250, 252, 0.65);
 }
 
-.profile-order-meta li {
+.profile-order-summary {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 0.75rem;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.2rem;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.profile-order-comment {
+    padding: 0 1rem 0.65rem;
+    display: grid;
+    gap: 0.45rem;
+}
+
+.profile-order-comment-toggle {
+    justify-self: start;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--primary);
+    font-family: inherit;
     font-size: 0.8125rem;
+    font-weight: 700;
+    line-height: 1.4;
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.profile-order-comment-toggle:hover {
+    color: var(--primary-hover);
+}
+
+.profile-order-comment-text {
+    margin: 0;
+    padding: 0.65rem 0.75rem;
+    border-radius: 0.65rem;
+    font-size: 0.8125rem;
+    line-height: 1.55;
+    color: var(--text);
+    background: rgba(var(--primary-rgb), 0.05);
+    border: 1px solid rgba(var(--primary-rgb), 0.12);
+    white-space: pre-wrap;
+}
+
+.profile-order-comment-empty {
+    margin: 0;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.45;
     color: var(--muted);
 }
 
-.profile-order-meta li span:last-child {
-    max-width: 62%;
-    text-align: right;
-    font-weight: 700;
-    color: var(--text);
-}
-
-.profile-order-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-    padding: 0.85rem 1.15rem;
-    border-top: 1px solid var(--divider);
+.profile-order-detail--comment dd {
+    white-space: pre-wrap;
 }
 
 .profile-order-price {
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     font-weight: 800;
     letter-spacing: -0.02em;
     color: var(--text);
+    line-height: 1.1;
 }
 
 .profile-order-date {
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
     font-weight: 600;
     color: var(--muted2);
+    white-space: nowrap;
+    line-height: 1.2;
 }
 
 .profile-order-actions {
     display: grid;
-    gap: 0.65rem;
-    padding: 0 1.15rem 1.15rem;
+    gap: 0.55rem;
+    padding: 0 1rem 0.85rem;
 }
 
 .profile-order-actions .profile-order-action {
@@ -622,8 +706,8 @@
 }
 
 .profile-order-action {
-    width: calc(100% - 2.3rem);
-    margin: 0 1.15rem 1.15rem;
+    width: calc(100% - 2rem);
+    margin: 0 1rem 0.85rem;
 }
 
 .profile-order-action--revert {
@@ -759,13 +843,14 @@
         flex-direction: column;
     }
 
-    .profile-order-meta li span:last-child {
-        max-width: 100%;
+    .profile-order-bottom {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
     }
 
-    .profile-order-footer {
-        flex-direction: column;
-        align-items: flex-start;
+    .profile-order-summary {
+        align-self: flex-end;
     }
 }
 

@@ -73,6 +73,7 @@ export default function ProfileOrdersTab() {
     const [paymentSucceeded, setPaymentSucceeded] = useState(false);
     const [activeStaffTab, setActiveStaffTab] = useState<OrderStatus>("PendingConfirmation");
     const [orderIdSearch, setOrderIdSearch] = useState("");
+    const [expandedOrderComments, setExpandedOrderComments] = useState<Record<string, boolean>>({});
 
     const loadOrders = useCallback(async (options?: { silent?: boolean }) => {
         if (!user) {
@@ -309,23 +310,33 @@ export default function ProfileOrdersTab() {
 
     function renderOrderCard(order: OrderDto) {
         const isUpdating = updatingOrderId === order.id;
-        const metaItems: { label: string; value: string }[] = [];
+        const detailItems: { label: string; value: string }[] = [];
 
         if (isStaff) {
-            metaItems.push({ label: "Клієнт", value: order.customerName });
-        }
-
-        if (order.selectedAddons.length > 0) {
-            metaItems.push({ label: "Додатково", value: order.selectedAddons.join(", ") });
-        }
-
-        if (order.notes) {
-            metaItems.push({ label: "Коментар", value: order.notes });
+            detailItems.push({ label: "Клієнт", value: order.customerName });
         }
 
         if (order.address) {
-            metaItems.push({ label: "Адреса", value: order.address });
+            detailItems.push({ label: "Адреса", value: order.address });
         }
+
+        detailItems.push({
+            label: "Додаткові послуги",
+            value:
+                order.selectedAddons.length > 0
+                    ? order.selectedAddons.join(" · ")
+                    : "нема додаткових послуг",
+        });
+
+        if (isStaff) {
+            detailItems.push({
+                label: "Коментар",
+                value: order.notes?.trim() || "коментар відсутній",
+            });
+        }
+
+        const hasComment = Boolean(order.notes?.trim());
+        const isCommentExpanded = expandedOrderComments[order.id] ?? false;
 
         return (
             <article
@@ -333,7 +344,7 @@ export default function ProfileOrdersTab() {
                 className={`profile-order-card hero-panel${isUpdating ? " profile-order-card--updating" : ""}`}
             >
                 <div className="profile-order-top">
-                    <div>
+                    <div className="profile-order-headline">
                         <p className="profile-order-id">№ {order.id.slice(0, 8).toUpperCase()}</p>
                         <h3 className="profile-order-title">{order.serviceTitle}</h3>
                     </div>
@@ -343,42 +354,87 @@ export default function ProfileOrdersTab() {
                 <div className="profile-order-chips">
                     {order.areaSqm ? (
                         <span className="profile-order-chip">
-                            Площа <strong>{order.areaSqm} м²</strong>
+                            <span className="profile-order-chip-label">Площа</span>
+                            <strong>{order.areaSqm} м²</strong>
                         </span>
                     ) : null}
                     {order.rooms ? (
                         <span className="profile-order-chip">
-                            Кімнати <strong>{order.rooms}</strong>
+                            <span className="profile-order-chip-label">Кімнати</span>
+                            <strong>{order.rooms}</strong>
                         </span>
                     ) : null}
                     {order.bathrooms ? (
                         <span className="profile-order-chip">
-                            Санвузли <strong>{order.bathrooms}</strong>
+                            <span className="profile-order-chip-label">Санвузли</span>
+                            <strong>{order.bathrooms}</strong>
                         </span>
                     ) : null}
                     <span className="profile-order-chip">
-                        Час <strong>{order.timeSlotLabel}</strong>
+                        <span className="profile-order-chip-label">Бажаний час</span>
+                        <strong>{order.timeSlotLabel}</strong>
                     </span>
                     <span className="profile-order-chip">
-                        Оплата <strong>{paymentMethodLabels[order.paymentMethod]}</strong>
+                        <span className="profile-order-chip-label">Спосіб оплати</span>
+                        <strong>{paymentMethodLabels[order.paymentMethod]}</strong>
                     </span>
                 </div>
 
-                {metaItems.length > 0 ? (
-                    <ul className="profile-order-meta">
-                        {metaItems.map((item) => (
-                            <li key={item.label}>
-                                <span>{item.label}</span>
-                                <span>{item.value}</span>
-                            </li>
+                <div className="profile-order-bottom">
+                    <dl className="profile-order-details">
+                        {detailItems.map((item) => (
+                            <div
+                                key={item.label}
+                                className={`profile-order-detail${
+                                    item.label === "Додаткові послуги" && order.selectedAddons.length === 0
+                                        ? " profile-order-detail--empty"
+                                        : item.label === "Коментар"
+                                          ? ` profile-order-detail--comment${
+                                                !hasComment ? " profile-order-detail--empty" : ""
+                                            }`
+                                          : ""
+                                }`}
+                            >
+                                <dt>{item.label}</dt>
+                                <dd>{item.value}</dd>
+                            </div>
                         ))}
-                    </ul>
-                ) : null}
+                    </dl>
 
-                <div className="profile-order-footer">
-                    <span className="profile-order-price">{formatPrice(order.payableAmount)}</span>
-                    <span className="profile-order-date">{formatDate(order.createdAtUtc)}</span>
+                    <div className="profile-order-summary">
+                        <span className="profile-order-price">{formatPrice(order.payableAmount)}</span>
+                        <time className="profile-order-date" dateTime={order.createdAtUtc}>
+                            {formatDate(order.createdAtUtc)}
+                        </time>
+                    </div>
                 </div>
+
+                {!isStaff ? (
+                    <div className="profile-order-comment">
+                        {hasComment ? (
+                            <>
+                                <button
+                                    type="button"
+                                    className="profile-order-comment-toggle"
+                                    onClick={() =>
+                                        setExpandedOrderComments((current) => ({
+                                            ...current,
+                                            [order.id]: !current[order.id],
+                                        }))
+                                    }
+                                    aria-expanded={isCommentExpanded}
+                                >
+                                    {isCommentExpanded ? "Сховати коментар" : "Прочитати коментар"}
+                                </button>
+                                {isCommentExpanded ? (
+                                    <p className="profile-order-comment-text">{order.notes}</p>
+                                ) : null}
+                            </>
+                        ) : (
+                            <p className="profile-order-comment-empty">Коментар відсутній</p>
+                        )}
+                    </div>
+                ) : null}
 
                 {renderOrderActions(order, isUpdating)}
             </article>

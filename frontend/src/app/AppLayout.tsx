@@ -22,6 +22,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
     const location = useLocation();
     const navigate = useNavigate();
 
+    function handleHomeNavClick(event: React.MouseEvent<HTMLAnchorElement>) {
+        if (location.pathname !== "/") {
+            return;
+        }
+
+        event.preventDefault();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
     function handleServicesNavClick(event: React.MouseEvent<HTMLAnchorElement>) {
         if (location.pathname !== "/services") {
             return;
@@ -41,6 +50,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                         to="/"
                         className="header-logo"
                         aria-label="Smart Clean — головна"
+                        onClick={handleHomeNavClick}
                         onContextMenu={(event) => event.preventDefault()}
                         onDragStart={(event) => event.preventDefault()}
                     >
@@ -61,6 +71,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
                                     to="/services"
                                     className="header-link"
                                     onClick={handleServicesNavClick}
+                                >
+                                    {item.label}
+                                </NavLink>
+                            ) : item.to === "/" ? (
+                                <NavLink
+                                    key={item.to}
+                                    to="/"
+                                    className="header-link"
+                                    onClick={handleHomeNavClick}
                                 >
                                     {item.label}
                                 </NavLink>
@@ -104,6 +123,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                             to="/"
                             className="footer-logo"
                             aria-label="Smart Clean — головна"
+                            onClick={handleHomeNavClick}
                             onContextMenu={(event) => event.preventDefault()}
                             onDragStart={(event) => event.preventDefault()}
                         >
@@ -126,6 +146,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
                                     to="/services"
                                     className="footer-link"
                                     onClick={handleServicesNavClick}
+                                >
+                                    {item.label}
+                                </NavLink>
+                            ) : item.to === "/" ? (
+                                <NavLink
+                                    key={item.to}
+                                    to="/"
+                                    className="footer-link"
+                                    onClick={handleHomeNavClick}
                                 >
                                     {item.label}
                                 </NavLink>

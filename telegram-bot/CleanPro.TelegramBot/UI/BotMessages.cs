@@ -40,12 +40,10 @@ public static class BotMessages
             {payment} · *{order.PayableAmount:N0} ₴*
 
             👷 Виконавець: {assignee}
-            """;
 
-        if (!string.IsNullOrWhiteSpace(order.Notes))
-        {
-            text += $"\n💬 _{Escape(order.Notes)}_";
-        }
+            💬 *Коментар:*
+            _{Escape(string.IsNullOrWhiteSpace(order.Notes) ? "коментар відсутній" : order.Notes)}_
+            """;
 
         if (showActionsHint)
         {

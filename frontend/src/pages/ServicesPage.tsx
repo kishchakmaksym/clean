@@ -22,6 +22,7 @@ import {
     type CustomExtraItem,
 } from "../config/customCleaningOptions";
 import OrderAddressSelector from "../components/profile/OrderAddressSelector";
+import AutoResizeTextarea from "../components/AutoResizeTextarea";
 import { useAuth } from "../auth/AuthContext";
 import "./HomePage.css";
 import "./ServicesPage.css";
@@ -526,61 +527,179 @@ type CustomExtrasSelectorProps = {
 };
 
 function CustomExtrasSelector({ quantities, onToggle, onQuantityChange }: CustomExtrasSelectorProps) {
+    const [openCategoryId, setOpenCategoryId] = useState<string | null>(null);
+
+    function toggleCategory(categoryId: string) {
+        setOpenCategoryId((current) => (current === categoryId ? null : categoryId));
+    }
+
     return (
         <div className="services-extras-categories">
-            {customExtraCategories.map((category) => (
-                <fieldset key={category.id} className="services-extras services-extras--group">
-                    <legend>{category.title}</legend>
-                    <div className="services-extras-grid">
-                        {category.items.map((extra) => {
-                            const quantity = quantities[extra.id] ?? 0;
-                            const isSelected = quantity > 0;
-                            const usesQuantity = customExtraUsesQuantity(extra);
+            {customExtraCategories.map((category) => {
+                const isOpen = openCategoryId === category.id;
+                const selectedCount = category.items.filter(
+                    (extra) => (quantities[extra.id] ?? 0) > 0,
+                ).length;
 
-                            return (
-                                <div key={extra.id} className="services-extra-row">
-                                    <label className="services-extra-option">
-                                        <input
-                                            type="checkbox"
-                                            checked={isSelected}
-                                            onChange={() => onToggle(extra)}
-                                        />
-                                        <span className="services-extra-copy">
-                                            <span>{extra.label}</span>
-                                            <span className="services-extra-price">
-                                                {formatCustomExtraRate(extra)}
-                                                {extra.priceConfirmed ? (
-                                                    <span
-                                                        className="services-extra-price-dot"
-                                                        title="Ціну вже задано"
-                                                        aria-label="Ціну вже задано"
+                return (
+                    <div
+                        key={category.id}
+                        className={`services-extras services-extras--group services-extras-accordion${
+                            isOpen ? " services-extras-accordion--open" : ""
+                        }`}
+                    >
+                        <button
+                            type="button"
+                            className="services-extras-accordion-trigger"
+                            aria-expanded={isOpen}
+                            onClick={() => toggleCategory(category.id)}
+                        >
+                            <span>{category.title}</span>
+                            {selectedCount > 0 ? (
+                                <span className="services-extras-accordion-badge">{selectedCount}</span>
+                            ) : null}
+                            <span className="services-extras-accordion-icon" aria-hidden="true" />
+                        </button>
+
+                        {isOpen ? (
+                            <div className="services-extras-accordion-panel">
+                                <div className="services-extras-grid">
+                                    {category.items.map((extra) => {
+                                        const quantity = quantities[extra.id] ?? 0;
+                                        const isSelected = quantity > 0;
+                                        const usesQuantity = customExtraUsesQuantity(extra);
+
+                                        return (
+                                            <div key={extra.id} className="services-extra-row">
+                                                <label className="services-extra-option">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={isSelected}
+                                                        onChange={() => onToggle(extra)}
                                                     />
+                                                    <span className="services-extra-copy">
+                                                        <span>{extra.label}</span>
+                                                        <span className="services-extra-price">
+                                                            {formatCustomExtraRate(extra)}
+                                                            {extra.priceConfirmed ? (
+                                                                <span
+                                                                    className="services-extra-price-dot"
+                                                                    title="Ціну вже задано"
+                                                                    aria-label="Ціну вже задано"
+                                                                />
+                                                            ) : null}
+                                                        </span>
+                                                    </span>
+                                                </label>
+                                                {usesQuantity && isSelected ? (
+                                                    <label className="services-extra-qty">
+                                                        <span>{getCustomExtraQuantityLabel(extra)}</span>
+                                                        <input
+                                                            type="number"
+                                                            min={1}
+                                                            max={99}
+                                                            value={quantity}
+                                                            onChange={(event) =>
+                                                                onQuantityChange(extra.id, event.target.value)
+                                                            }
+                                                            inputMode="numeric"
+                                                            aria-label={`${getCustomExtraQuantityLabel(extra)}: ${extra.label}`}
+                                                        />
+                                                    </label>
                                                 ) : null}
-                                            </span>
-                                        </span>
-                                    </label>
-                                    {usesQuantity && isSelected ? (
-                                        <label className="services-extra-qty">
-                                            <span>{getCustomExtraQuantityLabel(extra)}</span>
-                                            <input
-                                                type="number"
-                                                min={1}
-                                                max={99}
-                                                value={quantity}
-                                                onChange={(event) =>
-                                                    onQuantityChange(extra.id, event.target.value)
-                                                }
-                                                inputMode="numeric"
-                                                aria-label={`${getCustomExtraQuantityLabel(extra)}: ${extra.label}`}
-                                            />
-                                        </label>
-                                    ) : null}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                            );
-                        })}
+                            </div>
+                        ) : null}
                     </div>
-                </fieldset>
-            ))}
+                );
+            })}
+        </div>
+    );
+}
+
+type AdditionalServicesSectionProps = CustomExtrasSelectorProps & {
+    packageAddons?: readonly FixedPackageItem[];
+    selectedPackageAddons?: string[];
+    onTogglePackageAddon?: (id: string) => void;
+};
+
+function AdditionalServicesSection({
+    quantities,
+    onToggle,
+    onQuantityChange,
+    packageAddons = [],
+    selectedPackageAddons = [],
+    onTogglePackageAddon,
+}: AdditionalServicesSectionProps) {
+    const [isOpen, setIsOpen] = useState(false);
+    const selectedCount = useMemo(() => {
+        const customExtrasCount = allCustomExtras.filter(
+            (extra) => (quantities[extra.id] ?? 0) > 0,
+        ).length;
+        const packageAddonsCount = packageAddons.filter((item) =>
+            selectedPackageAddons.includes(item.id),
+        ).length;
+
+        return customExtrasCount + packageAddonsCount;
+    }, [packageAddons, quantities, selectedPackageAddons]);
+
+    return (
+        <div
+            className={`services-extras-section${isOpen ? " services-extras-section--open" : ""}`}
+        >
+            <button
+                type="button"
+                className="services-extras-section-trigger"
+                aria-expanded={isOpen}
+                onClick={() => setIsOpen((current) => !current)}
+            >
+                <span>Додаткові послуги</span>
+                {selectedCount > 0 ? (
+                    <span className="services-extras-section-badge">{selectedCount}</span>
+                ) : null}
+                <span className="services-extras-section-icon" aria-hidden="true" />
+            </button>
+
+            {isOpen ? (
+                <div className="services-extras-section-panel">
+                    {packageAddons.length > 0 && onTogglePackageAddon ? (
+                        <div className="services-package-addons-block">
+                            <p className="services-package-addons-title">Можна додати</p>
+                            <div className="services-extras-grid">
+                                {packageAddons.map((item) => {
+                                    const isSelected = selectedPackageAddons.includes(item.id);
+
+                                    return (
+                                        <label
+                                            key={item.id}
+                                            className={`services-extra-option${isSelected ? " services-extra-option--on" : ""}`}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={isSelected}
+                                                onChange={() => onTogglePackageAddon(item.id)}
+                                            />
+                                            <span className="services-extra-copy">
+                                                <span>{item.label}</span>
+                                                <span>{getPackageItemPriceHint(item)}</span>
+                                            </span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ) : null}
+
+                    <CustomExtrasSelector
+                        quantities={quantities}
+                        onToggle={onToggle}
+                        onQuantityChange={onQuantityChange}
+                    />
+                </div>
+            ) : null}
         </div>
     );
 }
@@ -1225,12 +1344,13 @@ export default function ServicesPage() {
         setSearchParams((current) => {
             const next = new URLSearchParams(current);
             next.set("tab", tab);
-            if (tab !== "fixed") {
-                next.delete("service");
-            }
+            next.delete("service");
             return next;
         });
         setCheckoutError("");
+        window.requestAnimationFrame(() => {
+            scrollToServicesSection(servicesTopRef.current);
+        });
     }
 
     function confirmCheckoutOrder() {
@@ -1419,44 +1539,16 @@ export default function ServicesPage() {
                                         </div>
                                     </fieldset>
 
-                                    {selectedService.packageItems.some((item) => !item.defaultSelected) ? (
-                                        <fieldset className="services-extras">
-                                            <legend>Можна додати</legend>
-                                            <div className="services-extras-grid">
-                                                {selectedService.packageItems
-                                                    .filter((item) => !item.defaultSelected)
-                                                    .map((item) => {
-                                                        const isSelected = fixedSelectedAddons.includes(item.id);
-
-                                                        return (
-                                                            <label
-                                                                key={item.id}
-                                                                className={`services-extra-option${isSelected ? " services-extra-option--on" : ""}`}
-                                                            >
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={isSelected}
-                                                                    onChange={() => toggleFixedAddon(item.id)}
-                                                                />
-                                                                <span className="services-extra-copy">
-                                                                    <span>{item.label}</span>
-                                                                    <span>{getPackageItemPriceHint(item)}</span>
-                                                                </span>
-                                                            </label>
-                                                        );
-                                                    })}
-                                            </div>
-                                        </fieldset>
-                                    ) : null}
-
-                                    <fieldset className="services-extras">
-                                        <legend>Додаткові послуги</legend>
-                                        <CustomExtrasSelector
-                                            quantities={fixedExtraQuantities}
-                                            onToggle={toggleFixedExtra}
-                                            onQuantityChange={setFixedExtraQuantity}
-                                        />
-                                    </fieldset>
+                                    <AdditionalServicesSection
+                                        quantities={fixedExtraQuantities}
+                                        onToggle={toggleFixedExtra}
+                                        onQuantityChange={setFixedExtraQuantity}
+                                        packageAddons={selectedService.packageItems.filter(
+                                            (item) => !item.defaultSelected,
+                                        )}
+                                        selectedPackageAddons={fixedSelectedAddons}
+                                        onTogglePackageAddon={toggleFixedAddon}
+                                    />
 
                                     <OrderAddressSelector
                                         addresses={savedAddresses}
@@ -1472,10 +1564,10 @@ export default function ServicesPage() {
                                         onChange={setCleaningTimeSlot}
                                     />
 
-                                    <label className="services-field">
+                                    <label className="services-field services-field--comment">
                                         <span>Коментар</span>
-                                        <textarea
-                                            rows={3}
+                                        <AutoResizeTextarea
+                                            className="services-comment-field"
                                             placeholder="Доступ до приміщення, особливі побажання..."
                                             value={fixedNotes}
                                             onChange={(event) => setFixedNotes(event.target.value)}
@@ -1544,8 +1636,8 @@ export default function ServicesPage() {
                     ) : (
                         <>
                             <p className="services-panel-lead">
-                                Оберіть тип прибирання — натисніть «Розрахувати вартість», щоб побачити
-                                орієнтовну суму та оформити замовлення.
+                                Оберіть тип прибирання — натисніть «Переглянути склад пакета», щоб побачити
+                                деталі, або «Розрахувати вартість», щоб оформити замовлення.
                             </p>
 
                             <div className="services-grid services-grid--categories">
@@ -1595,35 +1687,13 @@ export default function ServicesPage() {
 
                                         <p className="services-card-text">{service.text}</p>
 
-                                        <div className="services-category-body">
-                                            <p className="services-category-includes-title">Склад пакета</p>
-                                            <div className="services-package-preview-groups">
-                                                {getPackageItemGroups(
-                                                    service.packageItems.filter((item) => item.defaultSelected),
-                                                ).map((section) => (
-                                                    <div
-                                                        key={section.title ?? "default"}
-                                                        className="services-package-preview-section"
-                                                    >
-                                                        {section.title ? (
-                                                            <p className="services-package-preview-section-title">
-                                                                {section.title}
-                                                            </p>
-                                                        ) : null}
-                                                        <ul className="services-package-preview">
-                                                            {section.items.map((item) => (
-                                                                <li
-                                                                    key={item.id}
-                                                                    className="services-package-preview-item"
-                                                                >
-                                                                    {item.label}
-                                                                </li>
-                                                            ))}
-                                                        </ul>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
+                                        <button
+                                            type="button"
+                                            className="services-package-link"
+                                            onClick={() => openFixedService(service.id)}
+                                        >
+                                            Переглянути склад пакета
+                                        </button>
 
                                         <div className="services-category-foot">
                                             <div className="services-category-duration">
@@ -1812,7 +1882,7 @@ export default function ServicesPage() {
                                 </div>
                             </fieldset>
 
-                            <CustomExtrasSelector
+                            <AdditionalServicesSection
                                 quantities={extraQuantities}
                                 onToggle={toggleExtra}
                                 onQuantityChange={setExtraQuantity}
@@ -1832,10 +1902,10 @@ export default function ServicesPage() {
                                 onChange={setCleaningTimeSlot}
                             />
 
-                            <label className="services-field">
+                            <label className="services-field services-field--comment">
                                 <span>Коментар</span>
-                                <textarea
-                                    rows={3}
+                                <AutoResizeTextarea
+                                    className="services-comment-field"
                                     placeholder="Особливі побажання, доступ до приміщення..."
                                     value={notes}
                                     onChange={(event) => setNotes(event.target.value)}

@@ -57,6 +57,7 @@ type FixedPackageItem = {
     label: string;
     defaultSelected: boolean;
     adjustment: number;
+    group?: string;
 };
 
 type FixedServiceCategory = {
@@ -78,9 +79,9 @@ const fixedServiceCategories: readonly FixedServiceCategory[] = [
         title: "Експрес-прибирання",
         text: "Швидке наведення ладу — підлога, поверхні, дзеркала та сміття без генерального навантаження.",
         duration: "1–2 год",
-        basePerSqm: 25,
+        basePerSqm: 35,
         sqmTierThreshold: 50,
-        sqmTierRate: 20,
+        sqmTierRate: 30,
         packageItems: [
             { id: "vacuum", label: "Пропилососити підлогу", defaultSelected: true, adjustment: 0 },
             { id: "mop", label: "Швидко помити підлогу", defaultSelected: true, adjustment: 0 },
@@ -92,6 +93,84 @@ const fixedServiceCategories: readonly FixedServiceCategory[] = [
             { id: "fridge", label: "Холодильник", defaultSelected: false, adjustment: 180 },
             { id: "kitchen", label: "Вологе прибирання кухні", defaultSelected: false, adjustment: 200 },
             { id: "bathroom", label: "Санвузол", defaultSelected: false, adjustment: 180 },
+        ],
+    },
+    {
+        id: "basic-clean",
+        title: "Базове прибирання",
+        text: "Повний базовий цикл для квартири — усе необхідне для охайного результату.",
+        duration: "2–3 год",
+        basePerSqm: 45,
+        sqmTierThreshold: 50,
+        sqmTierRate: 40,
+        packageItems: [
+            { id: "room-dust", label: "Видалення пилу з усіх доступних поверхонь", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "room-sills", label: "Протирання підвіконь", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "room-vacuum", label: "Пилососіння підлоги та килимів", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "room-mop", label: "Вологе миття підлоги", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "room-mirrors", label: "Протирання дзеркал", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "room-doors", label: "Протирання дверей і ручок", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "room-tidy", label: "Легке впорядкування речей на відкритих поверхнях", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "room-trash", label: "Винесення сміття", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "kit-counter", label: "Протирання стільниці", defaultSelected: true, adjustment: 0, group: "Кухня" },
+            { id: "kit-sink", label: "Миття раковини та змішувача", defaultSelected: true, adjustment: 0, group: "Кухня" },
+            { id: "kit-stove", label: "Очищення варильної поверхні", defaultSelected: true, adjustment: 0, group: "Кухня" },
+            { id: "kit-appliances", label: "Зовнішнє очищення холодильника, мікрохвильовки та іншої техніки", defaultSelected: true, adjustment: 0, group: "Кухня" },
+            { id: "kit-facades", label: "Протирання фасадів кухні", defaultSelected: true, adjustment: 0, group: "Кухня" },
+            { id: "kit-table", label: "Протирання обіднього столу", defaultSelected: true, adjustment: 0, group: "Кухня" },
+            { id: "bath-toilet", label: "Миття унітаза", defaultSelected: true, adjustment: 0, group: "Санвузол" },
+            { id: "bath-sink", label: "Миття раковини", defaultSelected: true, adjustment: 0, group: "Санвузол" },
+            { id: "bath-tub", label: "Очищення ванни або душової кабіни", defaultSelected: true, adjustment: 0, group: "Санвузол" },
+            { id: "bath-faucets", label: "Очищення змішувачів", defaultSelected: true, adjustment: 0, group: "Санвузол" },
+            { id: "bath-mirrors", label: "Протирання дзеркал", defaultSelected: true, adjustment: 0, group: "Санвузол" },
+            { id: "bath-bags", label: "Заміна сміттєвих пакетів", defaultSelected: true, adjustment: 0, group: "Санвузол" },
+        ],
+    },
+    {
+        id: "deep-clean",
+        title: "Генеральне прибирання",
+        text: "Глибоке прибирання всієї квартири — кімнати, кухня, санвузол і важкодоступні зони.",
+        duration: "4–8 год",
+        basePerSqm: 75,
+        sqmTierThreshold: 50,
+        sqmTierRate: 70,
+        packageItems: [
+            { id: "gen-room-dust", label: "Видалення пилу з усіх поверхонь", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "gen-room-sills", label: "Протирання підвіконь", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "gen-room-vacuum", label: "Пилососіння підлоги та килимів", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "gen-room-mop", label: "Вологе миття підлоги", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "gen-room-baseboards", label: "Протирання плінтусів", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "gen-room-doors", label: "Очищення дверей і дверних ручок", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "gen-room-switches", label: "Очищення вимикачів і розеток", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "gen-room-mirrors", label: "Протирання дзеркал", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "gen-room-furniture", label: "Очищення меблів зовні", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "gen-room-cabinets", label: "Очищення фасадів шаф", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "gen-room-hard-reach", label: "Видалення пилу з важкодоступних місць", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "gen-room-trash", label: "Винесення сміття", defaultSelected: true, adjustment: 0, group: "Кімнати" },
+            { id: "gen-kit-counter", label: "Очищення стільниці", defaultSelected: true, adjustment: 0, group: "Кухня" },
+            { id: "gen-kit-sink", label: "Миття раковини та змішувача", defaultSelected: true, adjustment: 0, group: "Кухня" },
+            { id: "gen-kit-stove", label: "Очищення варильної поверхні", defaultSelected: true, adjustment: 0, group: "Кухня" },
+            { id: "gen-kit-hood", label: "Миття витяжки зовні", defaultSelected: true, adjustment: 0, group: "Кухня" },
+            { id: "gen-kit-facades", label: "Очищення фасадів кухні", defaultSelected: true, adjustment: 0, group: "Кухня" },
+            { id: "gen-kit-backsplash", label: "Очищення кухонного фартуха", defaultSelected: true, adjustment: 0, group: "Кухня" },
+            { id: "gen-kit-fridge", label: "Миття холодильника зовні", defaultSelected: true, adjustment: 0, group: "Кухня" },
+            { id: "gen-kit-microwave", label: "Миття мікрохвильової печі зовні", defaultSelected: true, adjustment: 0, group: "Кухня" },
+            { id: "gen-kit-oven", label: "Очищення духовки зовні", defaultSelected: true, adjustment: 0, group: "Кухня" },
+            { id: "gen-kit-table", label: "Очищення столу та стільців", defaultSelected: true, adjustment: 0, group: "Кухня" },
+            { id: "gen-bath-toilet", label: "Очищення унітаза", defaultSelected: true, adjustment: 0, group: "Санвузол" },
+            { id: "gen-bath-sink", label: "Очищення раковини", defaultSelected: true, adjustment: 0, group: "Санвузол" },
+            { id: "gen-bath-tub", label: "Очищення ванни або душової кабіни", defaultSelected: true, adjustment: 0, group: "Санвузол" },
+            { id: "gen-bath-lime", label: "Видалення вапняного нальоту", defaultSelected: true, adjustment: 0, group: "Санвузол" },
+            { id: "gen-bath-faucets", label: "Очищення змішувачів", defaultSelected: true, adjustment: 0, group: "Санвузол" },
+            { id: "gen-bath-mirrors", label: "Протирання дзеркал", defaultSelected: true, adjustment: 0, group: "Санвузол" },
+            { id: "gen-bath-tile", label: "Очищення плитки", defaultSelected: true, adjustment: 0, group: "Санвузол" },
+            { id: "gen-bath-plumbing", label: "Очищення сантехніки", defaultSelected: true, adjustment: 0, group: "Санвузол" },
+            { id: "gen-bath-trash", label: "Винесення сміття", defaultSelected: true, adjustment: 0, group: "Санвузол" },
+            { id: "gen-extra-windows", label: "Миття вікон зсередини", defaultSelected: false, adjustment: 300, group: "Додатково" },
+            { id: "gen-extra-lights", label: "Протирання освітлювальних приладів", defaultSelected: false, adjustment: 180, group: "Додатково" },
+            { id: "gen-extra-radiators", label: "Очищення радіаторів", defaultSelected: false, adjustment: 200, group: "Додатково" },
+            { id: "gen-extra-cornices", label: "Очищення карнизів", defaultSelected: false, adjustment: 150, group: "Додатково" },
+            { id: "gen-extra-appliances", label: "Протирання побутової техніки зовні", defaultSelected: false, adjustment: 160, group: "Додатково" },
         ],
     },
     {
@@ -117,20 +196,6 @@ const fixedServiceCategories: readonly FixedServiceCategory[] = [
             { id: "bathroom", label: "Санвузол і дзеркала", defaultSelected: true, adjustment: 0 },
             { id: "floor", label: "Пилосос і миття підлоги", defaultSelected: true, adjustment: 0 },
             { id: "windows", label: "Миття вікон", defaultSelected: false, adjustment: 250 },
-        ],
-    },
-    {
-        id: "basic-clean",
-        title: "Базове прибирання",
-        text: "Повний базовий цикл для квартири — усе необхідне для охайного результату.",
-        duration: "2–3 год",
-        flatPrice: 5,
-        packageItems: [
-            { id: "rooms", label: "Прибирання всіх кімнат", defaultSelected: true, adjustment: 0 },
-            { id: "kitchen", label: "Кухня: плита, стільниці, фартух", defaultSelected: true, adjustment: 0 },
-            { id: "bathroom", label: "Санвузол і дзеркала", defaultSelected: true, adjustment: 0 },
-            { id: "floor", label: "Пилосос і миття підлоги", defaultSelected: true, adjustment: 0 },
-            { id: "fridge", label: "Холодильник", defaultSelected: false, adjustment: 180 },
         ],
     },
     {
@@ -596,6 +661,25 @@ function getPackageItemPriceHint(item: FixedPackageItem) {
     }
 
     return `+${formatPrice(item.adjustment)}`;
+}
+
+function getPackageItemGroups(items: readonly FixedPackageItem[]) {
+    const order: string[] = [];
+    const map = new Map<string, FixedPackageItem[]>();
+
+    for (const item of items) {
+        const key = item.group ?? "";
+        if (!map.has(key)) {
+            map.set(key, []);
+            order.push(key);
+        }
+        map.get(key)!.push(item);
+    }
+
+    return order.map((key) => ({
+        title: key || null,
+        items: map.get(key)!,
+    }));
 }
 
 export default function ServicesPage() {
@@ -1262,10 +1346,11 @@ export default function ServicesPage() {
                                             ) : selectedService.sqmTierThreshold != null &&
                                               selectedService.sqmTierRate != null ? (
                                                 <>
-                                                    {formatPrice(selectedService.basePerSqm ?? 0)}{" "}
-                                                    <span>/ м² до {selectedService.sqmTierThreshold} м²</span>
+                                                    {formatPrice(selectedService.sqmTierRate)}{" "}
+                                                    <span>/ м²</span>
                                                     <span className="services-category-rate-tier">
-                                                        {formatPrice(selectedService.sqmTierRate)} / м² далі
+                                                        {formatPrice(selectedService.basePerSqm ?? 0)} до{" "}
+                                                        {selectedService.sqmTierThreshold} м², далі
                                                     </span>
                                                 </>
                                             ) : (
@@ -1295,21 +1380,42 @@ export default function ServicesPage() {
 
                                     <fieldset className="services-extras">
                                         <legend>В пакеті</legend>
-                                        <div className="services-extras-grid">
-                                            {selectedService.packageItems
-                                                .filter((item) => item.defaultSelected)
-                                                .map((item) => (
-                                                    <div
-                                                        key={item.id}
-                                                        className="services-extra-option services-extra-option--locked services-extra-option--on"
-                                                    >
-                                                        <input type="checkbox" checked disabled readOnly />
-                                                        <span className="services-extra-copy">
-                                                            <span>{item.label}</span>
-                                                            <span className="services-extra-included">в пакеті</span>
-                                                        </span>
+                                        <div className="services-package-form-groups">
+                                            {getPackageItemGroups(
+                                                selectedService.packageItems.filter((item) => item.defaultSelected),
+                                            ).map((section) => (
+                                                <div
+                                                    key={section.title ?? "default"}
+                                                    className="services-package-form-group"
+                                                >
+                                                    {section.title ? (
+                                                        <p className="services-package-form-group-title">
+                                                            {section.title}
+                                                        </p>
+                                                    ) : null}
+                                                    <div className="services-extras-grid">
+                                                        {section.items.map((item) => (
+                                                            <div
+                                                                key={item.id}
+                                                                className="services-extra-option services-extra-option--locked services-extra-option--on"
+                                                            >
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked
+                                                                    disabled
+                                                                    readOnly
+                                                                />
+                                                                <span className="services-extra-copy">
+                                                                    <span>{item.label}</span>
+                                                                    <span className="services-extra-included">
+                                                                        в пакеті
+                                                                    </span>
+                                                                </span>
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                ))}
+                                                </div>
+                                            ))}
                                         </div>
                                     </fieldset>
 
@@ -1447,7 +1553,13 @@ export default function ServicesPage() {
                                     <article key={service.id} className="services-card services-card--category hero-panel">
                                         <div className="services-category-head">
                                             <h2 className="services-card-title">{service.title}</h2>
-                                            <p className="services-category-price">
+                                            <p
+                                                className={`services-category-price${
+                                                    service.sqmTierThreshold != null && service.sqmTierRate != null
+                                                        ? " services-category-price--tiered"
+                                                        : ""
+                                                }`}
+                                            >
                                                 {service.flatPrice != null ? (
                                                     <>
                                                         <span className="services-category-price-amount">
@@ -1457,14 +1569,17 @@ export default function ServicesPage() {
                                                     </>
                                                 ) : service.sqmTierThreshold != null && service.sqmTierRate != null ? (
                                                     <>
-                                                        <span className="services-category-price-amount">
-                                                            {formatPrice(service.basePerSqm ?? 0)}
-                                                        </span>
-                                                        <span className="services-category-price-unit">
-                                                            / м² до {service.sqmTierThreshold} м²
+                                                        <span className="services-category-price-main">
+                                                            <span className="services-category-price-amount services-category-price-amount--accent">
+                                                                {formatPrice(service.sqmTierRate)}
+                                                            </span>
+                                                            <span className="services-category-price-unit services-category-price-unit--accent">
+                                                                / м²
+                                                            </span>
                                                         </span>
                                                         <span className="services-category-price-tier">
-                                                            {formatPrice(service.sqmTierRate)} / м² далі
+                                                            {formatPrice(service.basePerSqm ?? 0)} до{" "}
+                                                            {service.sqmTierThreshold} м², далі
                                                         </span>
                                                     </>
                                                 ) : (
@@ -1482,16 +1597,32 @@ export default function ServicesPage() {
 
                                         <div className="services-category-body">
                                             <p className="services-category-includes-title">Склад пакета</p>
-                                            <ul className="services-package-preview">
-                                                {service.packageItems.map((item) => (
-                                                    <li
-                                                        key={item.id}
-                                                        className={`services-package-preview-item${item.defaultSelected ? "" : " services-package-preview-item--extra"}`}
+                                            <div className="services-package-preview-groups">
+                                                {getPackageItemGroups(
+                                                    service.packageItems.filter((item) => item.defaultSelected),
+                                                ).map((section) => (
+                                                    <div
+                                                        key={section.title ?? "default"}
+                                                        className="services-package-preview-section"
                                                     >
-                                                        {item.label}
-                                                    </li>
+                                                        {section.title ? (
+                                                            <p className="services-package-preview-section-title">
+                                                                {section.title}
+                                                            </p>
+                                                        ) : null}
+                                                        <ul className="services-package-preview">
+                                                            {section.items.map((item) => (
+                                                                <li
+                                                                    key={item.id}
+                                                                    className="services-package-preview-item"
+                                                                >
+                                                                    {item.label}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
                                                 ))}
-                                            </ul>
+                                            </div>
                                         </div>
 
                                         <div className="services-category-foot">

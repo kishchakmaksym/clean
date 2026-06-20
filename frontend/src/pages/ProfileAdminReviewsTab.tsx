@@ -5,7 +5,7 @@ import {
     deleteAdminReview,
     fetchReviews,
     formatReviewDate,
-    mergeReviewAtTop,
+    prependReview,
     renderStars,
 } from "../api/reviews";
 import type { ReviewDto } from "../api/types";
@@ -60,9 +60,9 @@ export default function ProfileAdminReviewsTab({ userId }: ProfileAdminReviewsTa
     }, [loadReviews]);
 
     const showNewReviewAtTop = useCallback((review: ReviewDto) => {
-        setReviews((current) => mergeReviewAtTop(current, review));
+        setReviews((current) => prependReview(current, review));
         requestAnimationFrame(() => {
-            reviewsTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+            reviewsTopRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
         });
     }, []);
 

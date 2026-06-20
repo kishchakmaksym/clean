@@ -37,8 +37,8 @@
 }
 
 .admin-tabs-wrap .services-tabs {
-    --tab-count: 4;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    --tab-count: 5;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     width: min(100%, 52rem);
 }
 
@@ -94,6 +94,13 @@
 
 .services-tabs--admin-support .services-tabs-indicator {
     left: calc(100% / var(--tab-count) * 3 - var(--tab-slant));
+    width: calc(100% / var(--tab-count) + var(--tab-slant) * 2);
+    clip-path: polygon(var(--tab-slant) 0, calc(100% - var(--tab-slant)) 0, 100% 100%, 0 100%);
+    border-radius: 0;
+}
+
+.services-tabs--admin-vacancies .services-tabs-indicator {
+    left: calc(100% / var(--tab-count) * 4 - var(--tab-slant));
     width: calc(100% / var(--tab-count) + var(--tab-slant));
     clip-path: polygon(0 0, 100% 0, 100% 100%, var(--tab-slant) 100%);
     border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
@@ -367,18 +374,17 @@
     max-height: none;
     overflow: visible;
     padding-right: 0;
-    align-items: start;
 }
 
 .admin-review-card {
     display: grid;
-    gap: 0.4rem;
-    padding: 0.65rem 0.75rem;
+    grid-template-rows: auto 1fr;
+    gap: 0.55rem;
+    padding: 0.85rem 0.9rem;
     border-radius: 0.9rem;
     border: 1px solid rgba(15, 23, 42, 0.08);
     background: var(--bg-alt);
-    height: fit-content;
-    align-self: start;
+    min-height: 100%;
 }
 
 .admin-review-card-head {
@@ -425,7 +431,9 @@
 
 .admin-review-text-block {
     display: grid;
+    grid-template-rows: minmax(calc(0.875rem * 1.55 * 3), 1fr) auto;
     gap: 0.35rem;
+    min-height: calc(0.875rem * 1.55 * 3 + 0.35rem + 1.25rem);
 }
 
 .admin-review-text {
@@ -435,6 +443,7 @@
     color: #334155;
     overflow-wrap: anywhere;
     word-break: break-word;
+    min-height: calc(0.875rem * 1.55 * 3);
 }
 
 .admin-review-text--clamped {
@@ -447,7 +456,7 @@
 .admin-review-toggle {
     justify-self: start;
     padding: 0;
-    min-height: 0;
+    min-height: 1.25rem;
     border: none;
     background: none;
     color: var(--primary);
@@ -461,6 +470,11 @@
 
 .admin-review-toggle:hover {
     color: var(--primary-hover);
+}
+
+.admin-review-toggle--placeholder {
+    visibility: hidden;
+    pointer-events: none;
 }
 
 .admin-reviews-empty {
@@ -779,4 +793,168 @@
         font-size: 0.75rem;
         padding: 0.72rem 0.35rem;
     }
+}
+
+.admin-vacancies-panel {
+    display: grid;
+    gap: 1rem;
+    padding: clamp(1rem, 2.5vw, 1.35rem);
+    border-radius: 1.1rem;
+    background: var(--panel-bg);
+    border: 1px solid rgba(var(--primary-rgb), 0.12);
+}
+
+.admin-vacancies-head h2 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.admin-vacancies-head p,
+.admin-vacancies-meta {
+    margin: 0.35rem 0 0;
+    font-size: 0.8125rem;
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.admin-vacancies-error {
+    margin: 0;
+    color: #dc2626;
+    font-size: 0.875rem;
+}
+
+.admin-vacancies-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.admin-vacancy-card {
+    display: grid;
+    gap: 0.65rem;
+    padding: 0.85rem 0.95rem;
+    border-radius: 0.95rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: var(--bg-alt);
+}
+
+.admin-vacancy-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.admin-vacancy-card-top h3 {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.admin-vacancy-preview {
+    margin: 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: #334155;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.admin-vacancy-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.admin-vacancy-actions select {
+    border: 1px solid rgba(var(--primary-rgb), 0.2);
+    border-radius: 999px;
+    padding: 0.35rem 0.65rem;
+    font: inherit;
+    font-size: 0.8125rem;
+    background: #fff;
+    color: var(--text);
+}
+
+.admin-vacancy-status {
+    flex-shrink: 0;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.admin-vacancy-status--new {
+    background: rgba(59, 130, 246, 0.14);
+    color: #1d4ed8;
+}
+
+.admin-vacancy-status--contacted {
+    background: rgba(245, 158, 11, 0.16);
+    color: #b45309;
+}
+
+.admin-vacancy-status--accepted {
+    background: rgba(34, 197, 94, 0.14);
+    color: #15803d;
+}
+
+.admin-vacancy-status--rejected {
+    background: rgba(239, 68, 68, 0.12);
+    color: #b91c1c;
+}
+
+.admin-vacancy-modal {
+    width: min(100%, 32rem);
+}
+
+.admin-vacancy-modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.admin-vacancy-modal-head h3 {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 800;
+}
+
+.admin-vacancy-details {
+    margin: 0;
+    display: grid;
+    gap: 0.85rem;
+}
+
+.admin-vacancy-details div {
+    display: grid;
+    gap: 0.25rem;
+}
+
+.admin-vacancy-details dt {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.admin-vacancy-details dd {
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: var(--text);
+    white-space: pre-wrap;
 }

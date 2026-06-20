@@ -19,22 +19,17 @@ export default function ReviewCardText({
 }: ReviewCardTextProps) {
     const trimmed = text.trim();
     const textRef = useRef<HTMLParagraphElement>(null);
-    const [isClamped, setIsClamped] = useState(false);
+    const [isTruncated, setIsTruncated] = useState(false);
 
     useLayoutEffect(() => {
         const element = textRef.current;
         if (!element || !trimmed) {
-            setIsClamped(false);
+            setIsTruncated(false);
             return;
         }
 
-        element.classList.add(clampClassName);
-        const truncated = element.scrollHeight > element.clientHeight + 1;
-        if (!truncated) {
-            element.classList.remove(clampClassName);
-        }
-        setIsClamped(truncated);
-    }, [clampClassName, trimmed]);
+        setIsTruncated(element.scrollHeight > element.clientHeight + 1);
+    }, [trimmed]);
 
     if (!trimmed) {
         return null;
@@ -42,17 +37,18 @@ export default function ReviewCardText({
 
     return (
         <div className={blockClassName}>
-            <p
-                ref={textRef}
-                className={`${textClassName}${isClamped ? ` ${clampClassName}` : ""}`}
-            >
+            <p ref={textRef} className={`${textClassName} ${clampClassName}`}>
                 {trimmed}
             </p>
-            {isClamped ? (
-                <button type="button" className={toggleClassName} onClick={onReadMore}>
-                    Читати повністю
-                </button>
-            ) : null}
+            <button
+                type="button"
+                className={`${toggleClassName}${isTruncated ? "" : ` ${toggleClassName}--placeholder`}`}
+                onClick={onReadMore}
+                tabIndex={isTruncated ? 0 : -1}
+                aria-hidden={!isTruncated}
+            >
+                Читати повністю
+            </button>
         </div>
     );
 }

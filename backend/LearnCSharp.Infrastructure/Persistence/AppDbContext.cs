@@ -37,6 +37,10 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<SupportOutboxMessage> SupportOutboxMessages => Set<SupportOutboxMessage>();
 
+    public DbSet<JobApplication> JobApplications => Set<JobApplication>();
+
+    public DbSet<HiringOutboxMessage> HiringOutboxMessages => Set<HiringOutboxMessage>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<User>(entity =>
@@ -380,6 +384,40 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(message => message.PayloadJson)
                 .HasMaxLength(8000)
                 .IsRequired();
+        });
+
+        modelBuilder.Entity<JobApplication>(entity =>
+        {
+            entity.HasKey(application => application.Id);
+
+            entity.Property(application => application.FullName)
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(application => application.Phone)
+                .HasMaxLength(20)
+                .IsRequired();
+
+            entity.Property(application => application.Experience)
+                .HasMaxLength(2000)
+                .IsRequired();
+
+            entity.Property(application => application.About)
+                .HasMaxLength(2000)
+                .IsRequired();
+
+            entity.HasIndex(application => application.Status);
+            entity.HasIndex(application => application.CreatedAtUtc);
+        });
+
+        modelBuilder.Entity<HiringOutboxMessage>(entity =>
+        {
+            entity.HasKey(message => message.Id);
+
+            entity.HasOne(message => message.Application)
+                .WithMany()
+                .HasForeignKey(message => message.ApplicationId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

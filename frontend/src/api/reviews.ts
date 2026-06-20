@@ -14,7 +14,7 @@ export function sortReviewsByNewest(reviews: ReviewDto[]) {
     });
 }
 
-export function mergeReviewAtTop(reviews: ReviewDto[], review: ReviewDto) {
+export function prependReview(reviews: ReviewDto[], review: ReviewDto): ReviewDto[] {
     const normalized: ReviewDto = {
         ...review,
         id: String(review.id),
@@ -25,7 +25,11 @@ export function mergeReviewAtTop(reviews: ReviewDto[], review: ReviewDto) {
     };
 
     const withoutDuplicate = reviews.filter((item) => item.id !== normalized.id);
-    return sortReviewsByNewest([normalized, ...withoutDuplicate]);
+    return [normalized, ...withoutDuplicate];
+}
+
+export function mergeReviewAtTop(reviews: ReviewDto[], review: ReviewDto) {
+    return sortReviewsByNewest(prependReview(reviews, review));
 }
 
 export function getAverageReviewRating(reviews: ReviewDto[]): number | null {

@@ -15,6 +15,7 @@ public static class DependencyInjection
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<ITelegramStaffService, TelegramStaffService>();
         services.AddScoped<ISupportTicketService, SupportTicketService>();
+        services.AddScoped<IJobApplicationService, JobApplicationService>();
         services.AddSingleton<LocalStreetIndex>();
         services.AddSingleton<IStreetSearchService, StreetSearchService>();
         services.AddMemoryCache();

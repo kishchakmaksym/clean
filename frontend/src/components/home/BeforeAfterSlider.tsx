@@ -1,347 +1,475 @@
 import {
-    type CSSProperties,
-    type PointerEvent,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
+  type CSSProperties,
+  type PointerEvent,
+  type TransitionEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
 } from "react";
 
 import "./BeforeAfterSlider.css";
 
 type ComparisonPair = {
-    id: string;
-    before: string;
-    after: string;
-    label: string;
+  id: string;
+
+  before: string;
+
+  after: string;
+
+  label: string;
 };
 
 const COMPARISONS: ComparisonPair[] = [
-    {
-        id: "room-1",
-        before: "/1.png",
-        after: "/2.png",
-        label: "Кімната",
-    },
-    {
-        id: "room-2",
-        before: "/3.png",
-        after: "/4.png",
-        label: "Житлова зона",
-    },
-    {
-        id: "bedroom",
-        before: "/5.png",
-        after: "/6.png",
-        label: "Спальня",
-    },
-    {
-        id: "kitchen",
-        before: "/7.png",
-        after: "/8.png",
-        label: "Кухня",
-    },
-    {
-        id: "bathroom",
-        before: "/9.png",
-        after: "/10.png",
-        label: "Ванна",
-    },
+  {
+    id: "room-1",
+
+    before: "/1.png",
+
+    after: "/2.png",
+
+    label: "Кімната",
+  },
+
+  {
+    id: "room-2",
+
+    before: "/3.png",
+
+    after: "/4.png",
+
+    label: "Житлова зона",
+  },
+
+  {
+    id: "bedroom",
+
+    before: "/5.png",
+
+    after: "/6.png",
+
+    label: "Спальня",
+  },
+
+  {
+    id: "kitchen",
+
+    before: "/7.png",
+
+    after: "/8.png",
+
+    label: "Кухня",
+  },
+
+  {
+    id: "bathroom",
+
+    before: "/9.png",
+
+    after: "/10.png",
+
+    label: "Ванна",
+  },
 ];
 
+const SLIDE_COUNT = COMPARISONS.length;
+
 function clamp(value: number, min: number, max: number) {
-    return Math.min(max, Math.max(min, value));
+  return Math.min(max, Math.max(min, value));
+}
+
+function getLogicalIndex(trackIndex: number) {
+  if (trackIndex <= 0) {
+    return SLIDE_COUNT - 1;
+  }
+
+  if (trackIndex >= SLIDE_COUNT + 1) {
+    return 0;
+  }
+
+  return trackIndex - 1;
 }
 
 export default function BeforeAfterSlider() {
-    const [pairIndex, setPairIndex] = useState(0);
-    const [position, setPosition] = useState(50);
-    const [isDragging, setIsDragging] = useState(false);
+  const extendedSlides = useMemo(
+    () => [COMPARISONS[SLIDE_COUNT - 1]!, ...COMPARISONS, COMPARISONS[0]!],
 
-    const viewportRef = useRef<HTMLDivElement>(null);
-    const sliderRef = useRef<HTMLDivElement>(null);
-    const beforeImgRef = useRef<HTMLImageElement>(null);
-    const dividerRef = useRef<HTMLDivElement>(null);
-    const positionRef = useRef(50);
-    const frameRef = useRef(0);
-    const introFrameRef = useRef(0);
-    const stepDirectionRef = useRef(1);
+    [],
+  );
 
-    const lastIndex = COMPARISONS.length - 1;
+  const [trackIndex, setTrackIndex] = useState(1);
 
-    const applyPosition = useCallback((next: number, syncState = false) => {
-        const clamped = clamp(next, 0, 100);
-        positionRef.current = clamped;
+  const [transitionEnabled, setTransitionEnabled] = useState(true);
 
-        if (beforeImgRef.current) {
-            beforeImgRef.current.style.clipPath = `inset(0 ${100 - clamped}% 0 0)`;
-        }
+  const [position, setPosition] = useState(50);
 
-        if (dividerRef.current) {
-            dividerRef.current.style.left = `${clamped}%`;
-        }
+  const [isDragging, setIsDragging] = useState(false);
 
-        if (syncState) {
-            setPosition(clamped);
-        }
-    }, []);
+  const viewportRef = useRef<HTMLDivElement>(null);
 
-    const syncViewportWidth = useCallback(() => {
-        const viewport = viewportRef.current;
-        if (!viewport) {
-            return;
-        }
+  const trackRef = useRef<HTMLDivElement>(null);
 
-        viewport.style.setProperty("--ba-slide-w", `${viewport.clientWidth}px`);
-    }, []);
+  const sliderRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        syncViewportWidth();
-        applyPosition(50, true);
-    }, [applyPosition, pairIndex, syncViewportWidth]);
+  const beforeImgRef = useRef<HTMLImageElement>(null);
 
-    useEffect(() => {
-        const viewport = viewportRef.current;
-        if (!viewport) {
-            return;
-        }
+  const dividerRef = useRef<HTMLDivElement>(null);
 
-        syncViewportWidth();
-        const observer = new ResizeObserver(syncViewportWidth);
-        observer.observe(viewport);
+  const positionRef = useRef(50);
 
-        return () => observer.disconnect();
-    }, [syncViewportWidth]);
+  const frameRef = useRef(0);
 
-    useEffect(() => {
-        const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-        if (reducedMotion.matches) {
-            return;
-        }
+  const introFrameRef = useRef(0);
 
-        const start = performance.now();
-        const duration = 1450;
-        const amplitude = 26;
+  const isJumpingRef = useRef(false);
 
-        const animate = (now: number) => {
-            const progress = Math.min((now - start) / duration, 1);
-            const envelope = Math.sin(progress * Math.PI);
-            const sweep = Math.sin(progress * Math.PI * 2) * envelope;
-            applyPosition(50 + sweep * amplitude);
+  const pairIndex = getLogicalIndex(trackIndex);
 
-            if (progress < 1) {
-                introFrameRef.current = requestAnimationFrame(animate);
-            } else {
-                applyPosition(50, true);
-            }
-        };
+  const applyPosition = useCallback((next: number, syncState = false) => {
+    const clamped = clamp(next, 0, 100);
 
+    positionRef.current = clamped;
+
+    if (beforeImgRef.current) {
+      beforeImgRef.current.style.clipPath = `inset(0 ${100 - clamped}% 0 0)`;
+    }
+
+    if (dividerRef.current) {
+      dividerRef.current.style.left = `${clamped}%`;
+    }
+
+    if (syncState) {
+      setPosition(clamped);
+    }
+  }, []);
+
+  const syncViewportWidth = useCallback(() => {
+    const viewport = viewportRef.current;
+
+    if (!viewport) {
+      return;
+    }
+
+    viewport.style.setProperty("--ba-slide-w", `${viewport.clientWidth}px`);
+  }, []);
+
+  const resetSliderPosition = useCallback(() => {
+    setPosition(50);
+
+    positionRef.current = 50;
+  }, []);
+
+  useEffect(() => {
+    syncViewportWidth();
+
+    applyPosition(50, true);
+  }, [applyPosition, syncViewportWidth, trackIndex]);
+
+  useEffect(() => {
+    const viewport = viewportRef.current;
+
+    if (!viewport) {
+      return;
+    }
+
+    syncViewportWidth();
+
+    const observer = new ResizeObserver(syncViewportWidth);
+
+    observer.observe(viewport);
+
+    return () => observer.disconnect();
+  }, [syncViewportWidth]);
+
+  useEffect(() => {
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    if (reducedMotion.matches) {
+      return;
+    }
+
+    const start = performance.now();
+
+    const duration = 1450;
+
+    const amplitude = 26;
+
+    const animate = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1);
+
+      const envelope = Math.sin(progress * Math.PI);
+
+      const sweep = Math.sin(progress * Math.PI * 2) * envelope;
+
+      applyPosition(50 + sweep * amplitude);
+
+      if (progress < 1) {
         introFrameRef.current = requestAnimationFrame(animate);
-
-        return () => cancelAnimationFrame(introFrameRef.current);
-    }, [applyPosition, pairIndex]);
-
-    const schedulePosition = useCallback(
-        (clientX: number) => {
-            const slider = sliderRef.current;
-            if (!slider) {
-                return;
-            }
-
-            cancelAnimationFrame(frameRef.current);
-            frameRef.current = requestAnimationFrame(() => {
-                const rect = slider.getBoundingClientRect();
-                if (rect.width <= 0) {
-                    return;
-                }
-
-                const next = ((clientX - rect.left) / rect.width) * 100;
-                applyPosition(next);
-            });
-        },
-        [applyPosition],
-    );
-
-    const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
-        cancelAnimationFrame(introFrameRef.current);
-        event.currentTarget.setPointerCapture(event.pointerId);
-        setIsDragging(true);
-        schedulePosition(event.clientX);
+      } else {
+        applyPosition(50, true);
+      }
     };
 
-    const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
-        if (!isDragging) {
-            return;
+    introFrameRef.current = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(introFrameRef.current);
+  }, [applyPosition, pairIndex]);
+
+  const schedulePosition = useCallback(
+    (clientX: number) => {
+      const slider = sliderRef.current;
+
+      if (!slider) {
+        return;
+      }
+
+      cancelAnimationFrame(frameRef.current);
+
+      frameRef.current = requestAnimationFrame(() => {
+        const rect = slider.getBoundingClientRect();
+
+        if (rect.width <= 0) {
+          return;
         }
 
-        schedulePosition(event.clientX);
-    };
+        const next = ((clientX - rect.left) / rect.width) * 100;
 
-    const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
-        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-            event.currentTarget.releasePointerCapture(event.pointerId);
-        }
+        applyPosition(next);
+      });
+    },
 
-        setIsDragging(false);
-        applyPosition(positionRef.current, true);
-    };
+    [applyPosition],
+  );
 
-    const goToPair = (nextIndex: number) => {
-        const clampedIndex = clamp(nextIndex, 0, lastIndex);
-        setPairIndex(clampedIndex);
-        setPosition(50);
-        positionRef.current = 50;
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    cancelAnimationFrame(introFrameRef.current);
 
-        if (clampedIndex <= 0) {
-            stepDirectionRef.current = 1;
-        } else if (clampedIndex >= lastIndex) {
-            stepDirectionRef.current = -1;
-        }
-    };
+    event.currentTarget.setPointerCapture(event.pointerId);
 
-    const goToPrev = () => {
-        if (pairIndex <= 0) {
-            stepDirectionRef.current = 1;
-            goToPair(1);
-            return;
-        }
+    setIsDragging(true);
 
-        goToPair(pairIndex - 1);
-    };
+    schedulePosition(event.clientX);
+  };
 
-    const goToNext = () => {
-        if (pairIndex >= lastIndex) {
-            stepDirectionRef.current = -1;
-            goToPair(lastIndex - 1);
-            return;
-        }
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) {
+      return;
+    }
 
-        goToPair(pairIndex + 1);
-    };
+    schedulePosition(event.clientX);
+  };
 
-    return (
-        <div className="ba-slider-wrap">
-            <div className="ba-slider-head">
-                <span className="badge hero-badge">Результат</span>
-                <h2 className="ba-slider-title">До і після прибирання</h2>
-                <p className="ba-slider-lead">
-                    Перетягніть повзунок — побачите різницю, яку ми залишаємо після кожного візиту.
-                </p>
-            </div>
+  const handlePointerUp = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
 
-            <div className="ba-slider-stage">
-                <button
-                    type="button"
-                    className="ba-stage-arrow ba-stage-arrow--prev"
-                    onClick={goToPrev}
-                    aria-label="Попередній приклад"
+    setIsDragging(false);
+
+    applyPosition(positionRef.current, true);
+  };
+
+  const jumpWithoutTransition = useCallback(
+    (nextTrackIndex: number) => {
+      isJumpingRef.current = true;
+
+      setTransitionEnabled(false);
+
+      setTrackIndex(nextTrackIndex);
+
+      resetSliderPosition();
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setTransitionEnabled(true);
+
+          isJumpingRef.current = false;
+        });
+      });
+    },
+    [resetSliderPosition],
+  );
+
+  const handleTrackTransitionEnd = (event: TransitionEvent<HTMLDivElement>) => {
+    if (isJumpingRef.current || event.propertyName !== "transform") {
+      return;
+    }
+
+    if (event.currentTarget !== trackRef.current) {
+      return;
+    }
+
+    if (trackIndex === 0) {
+      jumpWithoutTransition(SLIDE_COUNT);
+
+      return;
+    }
+
+    if (trackIndex === SLIDE_COUNT + 1) {
+      jumpWithoutTransition(1);
+    }
+  };
+
+  const goToPair = (nextIndex: number) => {
+    const clampedIndex = clamp(nextIndex, 0, SLIDE_COUNT - 1);
+
+    setTrackIndex(clampedIndex + 1);
+
+    resetSliderPosition();
+  };
+
+  const goToPrev = () => {
+    if (!transitionEnabled) {
+      return;
+    }
+
+    setTrackIndex((current) => current - 1);
+
+    resetSliderPosition();
+  };
+
+  const goToNext = () => {
+    if (!transitionEnabled) {
+      return;
+    }
+
+    setTrackIndex((current) => current + 1);
+
+    resetSliderPosition();
+  };
+
+  return (
+    <div className="ba-slider-wrap">
+      <div className="ba-slider-head">
+        <span className="badge hero-badge">Результат</span>
+
+        <h2 className="ba-slider-title">До і після прибирання</h2>
+
+        <p className="ba-slider-lead">
+          Перетягніть повзунок — побачите різницю, яку ми залишаємо після
+          кожного візиту.
+        </p>
+      </div>
+
+      <div className="ba-slider-stage">
+        <button
+          type="button"
+          className="ba-stage-arrow ba-stage-arrow--prev"
+          onClick={goToPrev}
+          aria-label="Попередній приклад"
+        >
+          ‹
+        </button>
+
+        <div ref={viewportRef} className="ba-carousel-viewport">
+          <div
+            ref={trackRef}
+            className={`ba-carousel-track${transitionEnabled ? "" : " ba-carousel-track--instant"}`}
+            style={{ "--ba-index": trackIndex } as CSSProperties}
+            onTransitionEnd={handleTrackTransitionEnd}
+          >
+            {extendedSlides.map((item, index) => {
+              const isActive = index === trackIndex;
+
+              return (
+                <div
+                  key={`${item.id}-${index}`}
+                  className={`ba-slide${isActive ? " ba-slide--active" : ""}`}
+                  aria-hidden={!isActive}
                 >
-                    ‹
-                </button>
-
-                <div ref={viewportRef} className="ba-carousel-viewport">
-                    <div
-                        className="ba-carousel-track"
-                        style={{ "--ba-index": pairIndex } as CSSProperties}
-                    >
-                        {COMPARISONS.map((item, index) => {
-                            const isActive = index === pairIndex;
-
-                            return (
-                                <div
-                                    key={item.id}
-                                    className={`ba-slide${isActive ? " ba-slide--active" : ""}`}
-                                    aria-hidden={!isActive}
-                                >
-                                    <div
-                                        ref={isActive ? sliderRef : undefined}
-                                        className={`ba-slider${isActive && isDragging ? " ba-slider--dragging" : ""}`}
-                                        onPointerDown={isActive ? handlePointerDown : undefined}
-                                        onPointerMove={isActive ? handlePointerMove : undefined}
-                                        onPointerUp={isActive ? handlePointerUp : undefined}
-                                        onPointerCancel={isActive ? handlePointerUp : undefined}
-                                    >
-                                        <img
-                                            className="ba-photo ba-photo--after"
-                                            src={item.after}
-                                            alt={`${item.label} після прибирання`}
-                                            draggable={false}
-                                            loading={isActive ? "eager" : "lazy"}
-                                        />
-
-                                        <img
-                                            ref={isActive ? beforeImgRef : undefined}
-                                            className="ba-photo ba-photo--before"
-                                            src={item.before}
-                                            alt={`${item.label} до прибирання`}
-                                            draggable={false}
-                                            loading={isActive ? "eager" : "lazy"}
-                                        />
-
-                                        {isActive ? (
-                                            <>
-                                                <span className="ba-label ba-label--before">До</span>
-                                                <span className="ba-label ba-label--after">Після</span>
-
-                                                <div ref={dividerRef} className="ba-divider">
-                                                    <span className="ba-handle" />
-                                                </div>
-
-                                                <input
-                                                    className="ba-range"
-                                                    type="range"
-                                                    min={0}
-                                                    max={100}
-                                                    step={0.1}
-                                                    value={position}
-                                                    onChange={(event) =>
-                                                        applyPosition(Number(event.target.value), true)
-                                                    }
-                                                    aria-label="Порівняння до і після прибирання"
-                                                />
-                                            </>
-                                        ) : null}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                <button
-                    type="button"
-                    className="ba-stage-arrow ba-stage-arrow--next"
-                    onClick={goToNext}
-                    aria-label="Наступний приклад"
-                >
-                    ›
-                </button>
-            </div>
-
-            <p className="ba-slider-hint">
-                <span className="ba-slider-hint-arrow" aria-hidden="true">
-                    ↔
-                </span>
-                Тягни повзунок на фото
-            </p>
-
-            <div className="ba-dots" role="tablist" aria-label="Приклади прибирання">
-                {COMPARISONS.map((item, index) => (
-                    <button
-                        key={item.id}
-                        type="button"
-                        role="tab"
-                        className={`ba-dot${index === pairIndex ? " ba-dot--active" : ""}`}
-                        aria-selected={index === pairIndex}
-                        aria-label={item.label}
-                        onClick={() => goToPair(index)}
+                  <div
+                    ref={isActive ? sliderRef : undefined}
+                    className={`ba-slider${isActive && isDragging ? " ba-slider--dragging" : ""}`}
+                    onPointerDown={isActive ? handlePointerDown : undefined}
+                    onPointerMove={isActive ? handlePointerMove : undefined}
+                    onPointerUp={isActive ? handlePointerUp : undefined}
+                    onPointerCancel={isActive ? handlePointerUp : undefined}
+                  >
+                    <img
+                      className="ba-photo ba-photo--after"
+                      src={item.after}
+                      alt={`${item.label} після прибирання`}
+                      draggable={false}
+                      loading={isActive ? "eager" : "lazy"}
                     />
-                ))}
-            </div>
 
-            <p className="ba-privacy-note">
-                Приклади на сайті — лише за згодою клієнтів. Без вашої попередньої згоди ми не здійснюємо фотозйомку та не публікуємо зображення вашого приміщення.
-            </p>
+                    <img
+                      ref={isActive ? beforeImgRef : undefined}
+                      className="ba-photo ba-photo--before"
+                      src={item.before}
+                      alt={`${item.label} до прибирання`}
+                      draggable={false}
+                      loading={isActive ? "eager" : "lazy"}
+                    />
+
+                    {isActive ? (
+                      <>
+                        <span className="ba-label ba-label--before">До</span>
+
+                        <span className="ba-label ba-label--after">Після</span>
+
+                        <div ref={dividerRef} className="ba-divider">
+                          <span className="ba-handle" />
+                        </div>
+
+                        <input
+                          className="ba-range"
+                          type="range"
+                          min={0}
+                          max={100}
+                          step={0.1}
+                          value={position}
+                          onChange={(event) =>
+                            applyPosition(Number(event.target.value), true)
+                          }
+                          aria-label="Порівняння до і після прибирання"
+                        />
+                      </>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-    );
+
+        <button
+          type="button"
+          className="ba-stage-arrow ba-stage-arrow--next"
+          onClick={goToNext}
+          aria-label="Наступний приклад"
+        >
+          ›
+        </button>
+      </div>
+
+      <p className="ba-slider-hint">
+        <span className="ba-slider-hint-arrow" aria-hidden="true">
+          ↔
+        </span>
+        Тягни повзунок на фото
+      </p>
+
+      <div className="ba-dots" role="tablist" aria-label="Приклади прибирання">
+        {COMPARISONS.map((item, index) => (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            className={`ba-dot${index === pairIndex ? " ba-dot--active" : ""}`}
+            aria-selected={index === pairIndex}
+            aria-label={item.label}
+            onClick={() => goToPair(index)}
+          />
+        ))}
+      </div>
+
+      <p className="ba-privacy-note">
+        Приклади на сайті — лише за згодою клієнтів. Без вашої попередньої згоди
+        ми не здійснюємо фотозйомку та не публікуємо зображення вашого
+        приміщення.
+      </p>
+    </div>
+  );
 }

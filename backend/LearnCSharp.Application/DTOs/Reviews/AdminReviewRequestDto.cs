@@ -8,7 +8,7 @@ public sealed class AdminReviewRequestDto
 
     public required int Rating { get; init; }
 
-    public required string Text { get; init; }
+    public string? Text { get; init; }
 
     public required DateTime CreatedAtUtc { get; init; }
 }

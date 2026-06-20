@@ -5,7 +5,7 @@ import {
     createReview,
     fetchReviews,
     formatReviewDate,
-    mergeReviewAtTop,
+    prependReview,
     renderStars,
 } from "../api/reviews";
 import type { ReviewDto } from "../api/types";
@@ -31,6 +31,7 @@ export default function ReviewsPage() {
     const [successMessage, setSuccessMessage] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [readingReview, setReadingReview] = useState<ReviewDto | null>(null);
+    const firstReviewRef = useRef<HTMLElement | null>(null);
     const reviewsTopRef = useRef<HTMLDivElement>(null);
 
     useBodyScrollLock(readingReview !== null);
@@ -54,9 +55,9 @@ export default function ReviewsPage() {
     }, []);
 
     const showNewReviewAtTop = useCallback((review: ReviewDto) => {
-        setReviews((current) => mergeReviewAtTop(current, review));
+        setReviews((current) => prependReview(current, review));
         requestAnimationFrame(() => {
-            reviewsTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+            firstReviewRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
         });
     }, []);
 
@@ -249,8 +250,12 @@ export default function ReviewsPage() {
 
                 {!isLoading && !loadError && reviews.length > 0 ? (
                     <div className="reviews-list">
-                        {reviews.map((review) => (
-                            <article key={review.id} className="review-card">
+                        {reviews.map((review, index) => (
+                            <article
+                                key={review.id}
+                                ref={index === 0 ? firstReviewRef : undefined}
+                                className="review-card"
+                            >
                                 <div className="review-card-head">
                                     <div className="review-card-main">
                                         <h4 className="review-author">{review.authorName}</h4>

@@ -2,6 +2,7 @@
 import { Link } from "react-router-dom";
 
 import BeforeAfterSlider from "../components/home/BeforeAfterSlider";
+import HomeReviewsCarousel from "../components/home/HomeReviewsCarousel";
 import CountUpMetric, { MetricRange } from "../components/home/CountUpMetric";
 import { HomeIcon, type HomeIconName } from "../components/home/HomeIcons";
 import ReviewCountMetric from "../components/home/ReviewCountMetric";
@@ -192,6 +193,8 @@ export default function HomePage() {
                     <BeforeAfterSlider />
                 </div>
             </section>
+
+            <HomeReviewsCarousel />
         </div>
     );
 }

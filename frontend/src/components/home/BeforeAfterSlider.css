@@ -78,6 +78,10 @@
     will-change: transform;
 }
 
+.ba-carousel-track--instant {
+    transition: none;
+}
+
 .ba-slide {
     flex: 0 0 var(--ba-slide-w);
     width: var(--ba-slide-w);

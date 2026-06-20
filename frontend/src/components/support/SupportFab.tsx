@@ -19,17 +19,21 @@ import "./SupportFab.css";
 
 type SupportView = "auth" | "welcome" | "tickets" | "chat" | "new-ticket";
 
-function HelpIcon() {
+function ChatSupportIcon() {
     return (
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" className="support-fab-icon">
             <path
-                d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"
+                d="M7 8.5h10M7 12h6"
                 stroke="currentColor"
                 strokeWidth="1.75"
                 strokeLinecap="round"
+            />
+            <path
+                d="M6 18.5l1.8-1.5H18a2 2 0 002-2V8a2 2 0 00-2-2H6a2 2 0 00-2 2v8.5z"
+                stroke="currentColor"
+                strokeWidth="1.75"
                 strokeLinejoin="round"
             />
-            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.75" />
         </svg>
     );
 }
@@ -536,7 +540,16 @@ export default function SupportFab() {
                 aria-label={open ? "Закрити підтримку" : "Відкрити підтримку"}
                 onClick={() => setOpen((current) => !current)}
             >
-                {open ? <CloseIcon /> : <HelpIcon />}
+                {open ? (
+                    <CloseIcon />
+                ) : (
+                    <>
+                        <span className="support-fab-trigger-icon-wrap" aria-hidden="true">
+                            <ChatSupportIcon />
+                        </span>
+                        <span className="support-fab-trigger-label">Підтримка</span>
+                    </>
+                )}
             </button>
         </div>
     );

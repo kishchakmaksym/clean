@@ -6,5 +6,5 @@ public sealed class CreateReviewRequestDto
 
     public required int Rating { get; init; }
 
-    public required string Text { get; init; }
+    public string? Text { get; init; }
 }

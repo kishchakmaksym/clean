@@ -2,6 +2,7 @@ import type { OrderDto } from "../api/orders";
 import type { AdminPaymentInvoiceDto } from "../api/payments";
 import type { ReviewDto } from "../api/types";
 import type { SupportTicketDto } from "../api/support";
+import type { JobApplicationDto } from "../api/jobApplications";
 
 export type AdminBadgeSnapshot = {
     initialized: boolean;
@@ -9,6 +10,7 @@ export type AdminBadgeSnapshot = {
     paidInvoiceIds: string[];
     reviewIds: string[];
     supportUnread: Record<string, number>;
+    vacancyApplicationIds: string[];
 };
 
 const emptySnapshot = (): AdminBadgeSnapshot => ({
@@ -17,6 +19,7 @@ const emptySnapshot = (): AdminBadgeSnapshot => ({
     paidInvoiceIds: [],
     reviewIds: [],
     supportUnread: {},
+    vacancyApplicationIds: [],
 });
 function storageKey(userId: string) {
     return `cleanpro-admin-badges-${userId}`;
@@ -39,6 +42,9 @@ export function loadAdminBadgeSnapshot(userId: string): AdminBadgeSnapshot {
                 parsed.supportUnread && typeof parsed.supportUnread === "object"
                     ? parsed.supportUnread
                     : {},
+            vacancyApplicationIds: Array.isArray(parsed.vacancyApplicationIds)
+                ? parsed.vacancyApplicationIds
+                : [],
         };
     } catch {
         return emptySnapshot();
@@ -110,6 +116,26 @@ export function acknowledgeReviewsTab(reviews: ReviewDto[], userId: string) {
     return snapshot;
 }
 
+export function countVacancyBadge(
+    applications: JobApplicationDto[],
+    snapshot: AdminBadgeSnapshot,
+): number {
+    const acknowledged = new Set(snapshot.vacancyApplicationIds);
+    return applications.filter(
+        (application) => application.status === "New" && !acknowledged.has(application.id),
+    ).length;
+}
+
+export function acknowledgeVacanciesTab(applications: JobApplicationDto[], userId: string) {
+    const snapshot = loadAdminBadgeSnapshot(userId);
+    snapshot.vacancyApplicationIds = applications
+        .filter((application) => application.status === "New")
+        .map((application) => application.id);
+    snapshot.initialized = true;
+    saveAdminBadgeSnapshot(userId, snapshot);
+    return snapshot;
+}
+
 export function acknowledgeSupportTab(tickets: SupportTicketDto[], userId: string) {
     const snapshot = loadAdminBadgeSnapshot(userId);
     snapshot.supportUnread = Object.fromEntries(
@@ -125,6 +151,7 @@ export function initializeAdminBadgeSnapshot(
     invoices: AdminPaymentInvoiceDto[],
     reviews: ReviewDto[],
     tickets: SupportTicketDto[],
+    applications: JobApplicationDto[],
     userId: string,
 ) {
     const snapshot = loadAdminBadgeSnapshot(userId);
@@ -142,6 +169,9 @@ export function initializeAdminBadgeSnapshot(
     snapshot.supportUnread = Object.fromEntries(
         tickets.map((ticket) => [ticket.id, ticket.unreadForStaff]),
     );
+    snapshot.vacancyApplicationIds = applications
+        .filter((application) => application.status === "New")
+        .map((application) => application.id);
     snapshot.initialized = true;
     saveAdminBadgeSnapshot(userId, snapshot);
     return snapshot;

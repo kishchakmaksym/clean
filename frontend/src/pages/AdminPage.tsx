@@ -7,6 +7,7 @@ import { formatAdminBadgeCount } from "../utils/adminTabBadges";
 import ProfileAdminPaymentPanel from "./ProfileAdminPaymentPanel";
 import ProfileAdminReviewsTab from "./ProfileAdminReviewsTab";
 import ProfileAdminSupportTab from "./ProfileAdminSupportTab";
+import ProfileAdminVacanciesTab from "./ProfileAdminVacanciesTab";
 import ProfileOrdersTab from "./ProfileOrdersTab";
 import "./HomePage.css";
 import "./ProfilePage.css";
@@ -42,12 +43,19 @@ const ADMIN_TABS = [
         shortLabel: "Підтримка",
         badgeKey: "support" as const,
     },
+    {
+        id: "vacancies",
+        modifier: "admin-vacancies",
+        label: "Вакансії",
+        shortLabel: "Вакансії",
+        badgeKey: "vacancies" as const,
+    },
 ] as const;
 
 type AdminTabId = (typeof ADMIN_TABS)[number]["id"];
 
 function parseAdminTab(value: string | null): AdminTabId {
-    if (value === "invoices" || value === "reviews" || value === "support") {
+    if (value === "invoices" || value === "reviews" || value === "support" || value === "vacancies") {
         return value;
     }
 
@@ -118,6 +126,7 @@ export default function AdminPage() {
                 ) : null}
                 {activeTab === "reviews" ? <ProfileAdminReviewsTab userId={user.id} /> : null}
                 {activeTab === "support" ? <ProfileAdminSupportTab userId={user.id} /> : null}
+                {activeTab === "vacancies" ? <ProfileAdminVacanciesTab userId={user.id} /> : null}
             </section>
         </div>
     );

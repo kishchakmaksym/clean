@@ -23,6 +23,128 @@ export type MonoInvoiceStatusResponse = {
     error?: string;
 };
 
+export type AdminPaymentInvoiceDto = {
+    invoiceId: string;
+    label: string;
+    destination: string;
+    amountKopiyky: number;
+    pageUrl: string;
+    reference: string;
+    status: string;
+    isPaid: boolean;
+    createdAtUtc: string;
+    expiresAtUtc: string;
+    paidAtUtc?: string | null;
+};
+
+export type AdminPaymentInvoiceListResponse = {
+    success: boolean;
+    invoices?: AdminPaymentInvoiceDto[];
+    error?: string;
+};
+
+export type CreateAdminMonoInvoiceBatchRequest = {
+    userId: string;
+    amountUah: number;
+    destination?: string;
+    labels?: string[];
+    count?: number;
+};
+
+async function parseJsonResponse<T>(response: Response): Promise<T | null> {
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.includes("application/json")) {
+        return null;
+    }
+
+    return (await response.json()) as T;
+}
+
+export async function createAdminMonoInvoiceBatch(
+    payload: CreateAdminMonoInvoiceBatchRequest,
+): Promise<AdminPaymentInvoiceListResponse> {
+    try {
+        const response = await fetch("/api/payments/mono/invoice/admin/batch", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                userId: payload.userId,
+                amount: Math.round(payload.amountUah * 100),
+                destination: payload.destination,
+                labels: payload.labels,
+                count: payload.count,
+            }),
+        });
+
+        const data = await parseJsonResponse<AdminPaymentInvoiceListResponse>(response);
+        if (!data) {
+            if (response.status === 404) {
+                return {
+                    success: false,
+                    error: "Сервіс оплати не знайдено. Перезапустіть backend.",
+                };
+            }
+
+            return {
+                success: false,
+                error: `Сервер повернув помилку (${response.status}).`,
+            };
+        }
+
+        if (!response.ok && data.success !== false) {
+            return { success: false, error: "Не вдалося створити рахунки." };
+        }
+
+        return data;
+    } catch {
+        return {
+            success: false,
+            error: "Помилка з'єднання з сервером. Перевірте, чи запущений backend.",
+        };
+    }
+}
+
+export async function fetchAdminMonoInvoices(
+    userId: string,
+    refresh = true,
+): Promise<AdminPaymentInvoiceListResponse> {
+    try {
+        const response = await fetch(
+            `/api/payments/mono/invoice/admin?userId=${encodeURIComponent(userId)}&refresh=${refresh ? "true" : "false"}`,
+        );
+
+        const data = await parseJsonResponse<AdminPaymentInvoiceListResponse>(response);
+        if (!data) {
+            return { success: false, error: "Не вдалося завантажити рахунки." };
+        }
+
+        return data;
+    } catch {
+        return { success: false, error: "Помилка з'єднання з сервером." };
+    }
+}
+
+export async function refreshAdminMonoInvoices(
+    userId: string,
+): Promise<AdminPaymentInvoiceListResponse> {
+    try {
+        const response = await fetch("/api/payments/mono/invoice/admin/refresh", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId }),
+        });
+
+        const data = await parseJsonResponse<AdminPaymentInvoiceListResponse>(response);
+        if (!data) {
+            return { success: false, error: "Не вдалося оновити статуси." };
+        }
+
+        return data;
+    } catch {
+        return { success: false, error: "Помилка з'єднання з сервером." };
+    }
+}
+
 export async function createMonoInvoice(
     payload: CreateMonoInvoiceRequest,
 ): Promise<CreateMonoInvoiceResponse> {

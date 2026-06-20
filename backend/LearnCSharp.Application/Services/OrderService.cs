@@ -1,6 +1,7 @@
 using System.Text.Json;
 using LearnCSharp.Application.DTOs.Orders;
 using LearnCSharp.Application.Interfaces;
+using LearnCSharp.Application.Orders;
 using LearnCSharp.Domain.Entities;
 using LearnCSharp.Domain.Enums;
 
@@ -62,7 +63,7 @@ public sealed class OrderService(
             AreaSqm = request.AreaSqm,
             Rooms = request.Rooms,
             Bathrooms = request.Bathrooms,
-            SelectedAddonsJson = SerializeAddons(request.SelectedAddons),
+            SelectedAddonsJson = OrderAddonsJson.Serialize(request.SelectedAddons),
             TimeSlot = request.TimeSlot.Trim(),
             TimeSlotLabel = request.TimeSlotLabel.Trim(),
             Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
@@ -315,33 +316,6 @@ public sealed class OrderService(
         return false;
     }
 
-    private static string? SerializeAddons(IReadOnlyList<string>? addons)
-    {
-        if (addons is null || addons.Count == 0)
-        {
-            return null;
-        }
-
-        return JsonSerializer.Serialize(addons, JsonOptions);
-    }
-
-    private static IReadOnlyList<string> DeserializeAddons(string? json)
-    {
-        if (string.IsNullOrWhiteSpace(json))
-        {
-            return [];
-        }
-
-        try
-        {
-            return JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? [];
-        }
-        catch (JsonException)
-        {
-            return [];
-        }
-    }
-
     private static OrderResponseDto MapOrder(Order order, string customerName) =>
         new()
         {
@@ -355,7 +329,7 @@ public sealed class OrderService(
             AreaSqm = order.AreaSqm,
             Rooms = order.Rooms,
             Bathrooms = order.Bathrooms,
-            SelectedAddons = DeserializeAddons(order.SelectedAddonsJson),
+            SelectedAddons = OrderAddonsJson.Deserialize(order.SelectedAddonsJson),
             TimeSlot = order.TimeSlot,
             TimeSlotLabel = order.TimeSlotLabel,
             Notes = order.Notes,

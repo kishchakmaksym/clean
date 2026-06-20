@@ -3,6 +3,7 @@ using CleanPro.TelegramBot.Options;
 using CleanPro.TelegramBot.UI;
 using LearnCSharp.Application.DTOs.Telegram;
 using LearnCSharp.Application.Interfaces;
+using LearnCSharp.Application.Orders;
 using LearnCSharp.Domain.Enums;
 using Microsoft.Extensions.Options;
 using Telegram.Bot;
@@ -238,6 +239,7 @@ public sealed class TelegramOutboxWorker(
             PaymentMethod = order.PaymentMethod,
             PayableAmount = order.PayableAmount,
             Notes = order.Notes,
+            SelectedAddons = OrderAddonsJson.Deserialize(order.SelectedAddonsJson),
             CreatedAtUtc = order.CreatedAtUtc,
             AssigneeName = assignment?.EmployeeName,
         };

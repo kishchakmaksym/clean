@@ -28,6 +28,8 @@ export const customCleaningTypes = [
     { id: "same-day", label: "Терміновий виїзд (день у день)", basePerSqm: 34 },
 ] as const;
 
+export const MIN_CUSTOM_ORDER_TOTAL = 1000;
+
 export const propertyTypeOptions = [
     { id: "apartment", label: "Квартира" },
     { id: "house", label: "Будинок" },
@@ -193,8 +195,25 @@ export const allCustomExtras: readonly CustomExtraItem[] = customExtraCategories
     (category) => category.items,
 );
 
+/** Послуги блоку «Топ продаж» — окремий список, не дублюється в категоріях нижче. */
+export const topSellerExtras: readonly CustomExtraItem[] = [
+    { id: "top-windows", label: "Миття вікон", price: 250, priceConfirmed: true },
+    { id: "top-fridge", label: "Холодильник", price: 180, priceConfirmed: true },
+    { id: "top-kitchen", label: "Вологе прибирання кухні", price: 200, priceConfirmed: true },
+    { id: "top-bathroom", label: "Санвузол", price: 180, priceConfirmed: true },
+];
+
+export const allOrderExtras: readonly CustomExtraItem[] = [
+    ...topSellerExtras,
+    ...allCustomExtras,
+];
+
 export function getCustomExtraById(id: string) {
-    return allCustomExtras.find((item) => item.id === id);
+    return allOrderExtras.find((item) => item.id === id);
+}
+
+export function getTopSellerExtras(): readonly CustomExtraItem[] {
+    return topSellerExtras;
 }
 
 export function calculateCustomExtraTotal(extra: CustomExtraItem, sqm: number, quantity = 1) {
@@ -239,11 +258,18 @@ export function getCustomExtraQuantityLabel(extra: CustomExtraItem) {
 }
 
 export function formatCustomExtraOrderLabel(extra: CustomExtraItem, quantity: number) {
-    if (customExtraUsesQuantity(extra) && quantity > 1) {
-        return `${extra.label} × ${quantity}`;
+    if (customExtraUsesQuantity(extra)) {
+        const unitLabel = extra.priceUnit === "door" ? "двері" : "шт.";
+        return `${extra.label} — ${quantity} ${unitLabel}`;
     }
 
     return extra.label;
+}
+
+export function getSelectedCustomExtraLabels(quantities: Record<string, number>) {
+    return allOrderExtras
+        .filter((extra) => (quantities[extra.id] ?? 0) > 0)
+        .map((extra) => formatCustomExtraOrderLabel(extra, quantities[extra.id] ?? 1));
 }
 
 export function buildCustomOrganizationalNote(options: {
@@ -252,7 +278,6 @@ export function buildCustomOrganizationalNote(options: {
     hasPets: boolean;
     ownSupplies: boolean;
     needLadder: boolean;
-    hasElevator: boolean;
     cleanersCount: string;
 }) {
     const propertyLabel =
@@ -267,7 +292,6 @@ export function buildCustomOrganizationalNote(options: {
         `Домашні тварини: ${options.hasPets ? "так" : "ні"}`,
         `Власні засоби: ${options.ownSupplies ? "потрібні" : "наші"}`,
         `Драбина: ${options.needLadder ? "потрібна" : "не потрібна"}`,
-        `Ліфт: ${options.hasElevator ? "є" : "немає"}`,
         `Прибиральників: ${options.cleanersCount || "1"}`,
     ].join(". ");
 }

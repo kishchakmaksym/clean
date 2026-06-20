@@ -1,6 +1,7 @@
 using System.Text.Json;
 using LearnCSharp.Application.DTOs.Telegram;
 using LearnCSharp.Application.Interfaces;
+using LearnCSharp.Application.Orders;
 using LearnCSharp.Application.Validation;
 using LearnCSharp.Domain.Enums;
 
@@ -483,6 +484,7 @@ public sealed class TelegramStaffService(
             PaymentMethod = order.PaymentMethod,
             PayableAmount = order.PayableAmount,
             Notes = order.Notes,
+            SelectedAddons = OrderAddonsJson.Deserialize(order.SelectedAddonsJson),
             CreatedAtUtc = order.CreatedAtUtc,
             AssigneeName = assignment?.EmployeeName,
         };

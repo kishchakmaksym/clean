@@ -8,29 +8,39 @@ import { buildOrderAddressFields, fetchProfile, type UserAddressDto } from "../a
 import { validateServiceAreaAddress } from "../utils/serviceAreaAddress";
 import { supportContacts } from "../config/contacts";
 import {
-    allCustomExtras,
+    allOrderExtras,
     buildCustomOrganizationalNote,
     customCleaningTypes,
+    MIN_CUSTOM_ORDER_TOTAL,
     customExtraCategories,
     pollutionLevelOptions,
     propertyTypeOptions,
     calculateCustomExtraTotal,
     customExtraUsesQuantity,
-    formatCustomExtraOrderLabel,
+    getSelectedCustomExtraLabels,
+    getTopSellerExtras,
     formatCustomExtraRate,
     getCustomExtraQuantityLabel,
     type CustomExtraItem,
 } from "../config/customCleaningOptions";
+import {
+    describeVisitDayRanges,
+    estimateSubscriptionOrder,
+    formatVisitDaysSummary,
+    MIN_SUBSCRIPTION_PER_VISIT,
+    normalizeVisitDays,
+    SUBSCRIPTION_CYCLE_DAYS,
+} from "../config/subscriptionOptions";
 import OrderAddressSelector from "../components/profile/OrderAddressSelector";
 import AutoResizeTextarea from "../components/AutoResizeTextarea";
 import { useAuth } from "../auth/AuthContext";
 import "./HomePage.css";
 import "./ServicesPage.css";
 
-type ServiceTab = "fixed" | "custom" | "subscription";
+type ServiceTab = "fixed" | "custom" | "subscription" | "business";
 
 function parseServiceTab(value: string | null): ServiceTab {
-    if (value === "custom" || value === "subscription") {
+    if (value === "custom" || value === "subscription" || value === "business") {
         return value;
     }
 
@@ -78,7 +88,7 @@ const fixedServiceCategories: readonly FixedServiceCategory[] = [
     {
         id: "express",
         title: "Експрес-прибирання",
-        text: "Швидке наведення ладу — підлога, поверхні, дзеркала та сміття без генерального навантаження.",
+        text: "Швидке наведення порядку для підтримки чистоти в оселі без глибокого очищення.",
         duration: "1–2 год",
         basePerSqm: 35,
         sqmTierThreshold: 50,
@@ -301,66 +311,22 @@ function isFixedServiceId(value: string | null): value is FixedServiceId {
     return value !== null && fixedServiceCategories.some((item) => item.id === value);
 }
 
-const subscriptionPlans = [
-    {
-        title: "Щотижня",
-        text: "Підтримуюче прибирання раз на тиждень — завжди охайно вдома.",
-        frequency: "4 візити на місяць",
-        area: "до 45 м²",
-        price: "2 100 ₴/міс",
-        visitPrice: "525 ₴ за візит",
-        includes: [
-            "Легке прибирання кухні та санвузла",
-            "Пилосос і миття підлоги",
-            "Той самий виконавець",
-            "Пріоритет у записі",
-        ],
-    },
-    {
-        title: "Раз на 2 тижні",
-        text: "Оптимально для невеликих квартир без щоденного навантаження.",
-        frequency: "2 візити на місяць",
-        area: "до 55 м²",
-        price: "1 150 ₴/міс",
-        visitPrice: "575 ₴ за візит",
-        includes: [
-            "Підтримуюче прибирання",
-            "Кухня, санвузол, жила зона",
-            "Гнучкий перенос дати",
-            "Знижка −8% від разових цін",
-        ],
-    },
-    {
-        title: "Щомісяця",
-        text: "Глибше прибирання раз на місяць — базовий догляд за житлом.",
-        frequency: "1 візит на місяць",
-        area: "до 60 м²",
-        price: "750 ₴/міс",
-        visitPrice: "750 ₴ за візит",
-        includes: [
-            "Повне підтримуюче прибирання",
-            "Кухня, санвузол, кімнати",
-            "Нагадування перед візитом",
-            "Можна додати генеральне раз на квартал",
-        ],
-    },
-    {
-        title: "Офісний абонемент",
-        text: "Регулярний догляд за офісом за фіксованим графіком.",
-        frequency: "8 візитів на місяць",
-        area: "до 50 м²",
-        price: "8 800 ₴/міс",
-        visitPrice: "1 100 ₴ за візит",
-        includes: [
-            "Прибирання робочих зон",
-            "Кухня та санвузол",
-            "Договір для компанії",
-            "Заміна виконавця при відпустці",
-        ],
-    },
-] as const;
+const businessServiceIds = new Set<FixedServiceId>(["commercial", "office", "after-events"]);
+
+function isBusinessServiceId(id: FixedServiceId): boolean {
+    return businessServiceIds.has(id);
+}
+
+const businessServiceCategories = fixedServiceCategories.filter((service) =>
+    isBusinessServiceId(service.id),
+);
+
+const residentialServiceCategories = fixedServiceCategories.filter(
+    (service) => !isBusinessServiceId(service.id),
+);
 
 const cleaningTimeSlots = [
+    { id: "any", label: "Будь-який час" },
     { id: "morning", label: "08:00 – 12:00" },
     { id: "afternoon", label: "12:00 – 16:00" },
     { id: "evening", label: "16:00 – 20:00" },
@@ -368,12 +334,16 @@ const cleaningTimeSlots = [
 
 type CleaningTimeSlotId = (typeof cleaningTimeSlots)[number]["id"];
 
-function getCleaningTimeSlotLabel(id: CleaningTimeSlotId) {
-    return cleaningTimeSlots.find((slot) => slot.id === id)?.label ?? cleaningTimeSlots[0].label;
+function getCleaningTimeSlotLabel(id: CleaningTimeSlotId | null) {
+    if (!id) {
+        return "Не обрано";
+    }
+
+    return cleaningTimeSlots.find((slot) => slot.id === id)?.label ?? id;
 }
 
 type CleaningTimeSlotSelectorProps = {
-    value: CleaningTimeSlotId;
+    value: CleaningTimeSlotId | null;
     onChange: (value: CleaningTimeSlotId) => void;
 };
 
@@ -388,7 +358,9 @@ function CleaningTimeSlotSelector({ value, onChange }: CleaningTimeSlotSelectorP
                 {cleaningTimeSlots.map((slot) => (
                     <label
                         key={slot.id}
-                        className={`services-time-slot${value === slot.id ? " services-time-slot--selected" : ""}`}
+                        className={`services-time-slot${
+                            slot.id === "any" ? " services-time-slot--any" : ""
+                        }${value === slot.id ? " services-time-slot--selected" : ""}`}
                     >
                         <input
                             type="radio"
@@ -432,7 +404,11 @@ function formatFixedBaseBreakdown(
 }
 
 function getCardPaymentTotal(total: number) {
-    return Math.max(1, Math.round(total * 0.9));
+    if (total <= 0) {
+        return 0;
+    }
+
+    return Math.round(total * 0.9);
 }
 
 type PaymentMethod = "card" | "cash";
@@ -444,6 +420,7 @@ type OrderPaymentOptionsProps = {
     onSubmit: () => void;
     error?: string;
     isSubmitting?: boolean;
+    submitDisabled?: boolean;
 };
 
 function OrderPaymentOptions({
@@ -453,6 +430,7 @@ function OrderPaymentOptions({
     onSubmit,
     error,
     isSubmitting = false,
+    submitDisabled = false,
 }: OrderPaymentOptionsProps) {
     const cardTotal = getCardPaymentTotal(total);
     const inputName = `payment-${total}`;
@@ -511,7 +489,7 @@ function OrderPaymentOptions({
             <button
                 type="button"
                 className="primary-button services-custom-cta"
-                disabled={isSubmitting}
+                disabled={isSubmitting || submitDisabled}
                 onClick={onSubmit}
             >
                 {isSubmitting ? submittingLabel : submitLabel}
@@ -528,123 +506,137 @@ type CustomExtrasSelectorProps = {
 
 function CustomExtrasSelector({ quantities, onToggle, onQuantityChange }: CustomExtrasSelectorProps) {
     const [openCategoryId, setOpenCategoryId] = useState<string | null>(null);
+    const topSellerItems = useMemo(() => getTopSellerExtras(), []);
 
     function toggleCategory(categoryId: string) {
         setOpenCategoryId((current) => (current === categoryId ? null : categoryId));
     }
 
+    function renderExtraItem(extra: CustomExtraItem) {
+        const quantity = quantities[extra.id] ?? 0;
+        const isSelected = quantity > 0;
+        const usesQuantity = customExtraUsesQuantity(extra);
+
+        return (
+            <div key={extra.id} className="services-extra-row">
+                <label className="services-extra-option">
+                    <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => onToggle(extra)}
+                    />
+                    <span className="services-extra-copy">
+                        <span>{extra.label}</span>
+                        <span className="services-extra-price">
+                            {formatCustomExtraRate(extra)}
+                            {extra.priceConfirmed ? (
+                                <span
+                                    className="services-extra-price-dot"
+                                    title="Ціну вже задано"
+                                    aria-label="Ціну вже задано"
+                                />
+                            ) : null}
+                        </span>
+                    </span>
+                </label>
+                {usesQuantity && isSelected ? (
+                    <label className="services-extra-qty">
+                        <span>{getCustomExtraQuantityLabel(extra)}</span>
+                        <input
+                            type="number"
+                            min={1}
+                            max={99}
+                            value={quantity}
+                            onChange={(event) => onQuantityChange(extra.id, event.target.value)}
+                            inputMode="numeric"
+                            aria-label={`${getCustomExtraQuantityLabel(extra)}: ${extra.label}`}
+                        />
+                    </label>
+                ) : null}
+            </div>
+        );
+    }
+
+    function renderCategoryAccordion(categoryId: string, title: string, items: readonly CustomExtraItem[]) {
+        const isOpen = openCategoryId === categoryId;
+        const selectedCount = items.filter((extra) => (quantities[extra.id] ?? 0) > 0).length;
+
+        return (
+            <div
+                key={categoryId}
+                className={`services-extras services-extras--group services-extras-accordion${
+                    isOpen ? " services-extras-accordion--open" : ""
+                }`}
+            >
+                <button
+                    type="button"
+                    className="services-extras-accordion-trigger"
+                    aria-expanded={isOpen}
+                    onClick={() => toggleCategory(categoryId)}
+                >
+                    <span>{title}</span>
+                    {selectedCount > 0 ? (
+                        <span className="services-extras-accordion-badge">{selectedCount}</span>
+                    ) : null}
+                    <span className="services-extras-accordion-icon" aria-hidden="true" />
+                </button>
+
+                {isOpen ? (
+                    <div className="services-extras-accordion-panel">
+                        <div className="services-extras-grid">{items.map(renderExtraItem)}</div>
+                    </div>
+                ) : null}
+            </div>
+        );
+    }
+
     return (
         <div className="services-extras-categories">
-            {customExtraCategories.map((category) => {
-                const isOpen = openCategoryId === category.id;
-                const selectedCount = category.items.filter(
-                    (extra) => (quantities[extra.id] ?? 0) > 0,
-                ).length;
-
-                return (
-                    <div
-                        key={category.id}
-                        className={`services-extras services-extras--group services-extras-accordion${
-                            isOpen ? " services-extras-accordion--open" : ""
-                        }`}
-                    >
-                        <button
-                            type="button"
-                            className="services-extras-accordion-trigger"
-                            aria-expanded={isOpen}
-                            onClick={() => toggleCategory(category.id)}
-                        >
-                            <span>{category.title}</span>
-                            {selectedCount > 0 ? (
-                                <span className="services-extras-accordion-badge">{selectedCount}</span>
-                            ) : null}
-                            <span className="services-extras-accordion-icon" aria-hidden="true" />
-                        </button>
-
-                        {isOpen ? (
-                            <div className="services-extras-accordion-panel">
-                                <div className="services-extras-grid">
-                                    {category.items.map((extra) => {
-                                        const quantity = quantities[extra.id] ?? 0;
-                                        const isSelected = quantity > 0;
-                                        const usesQuantity = customExtraUsesQuantity(extra);
-
-                                        return (
-                                            <div key={extra.id} className="services-extra-row">
-                                                <label className="services-extra-option">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={isSelected}
-                                                        onChange={() => onToggle(extra)}
-                                                    />
-                                                    <span className="services-extra-copy">
-                                                        <span>{extra.label}</span>
-                                                        <span className="services-extra-price">
-                                                            {formatCustomExtraRate(extra)}
-                                                            {extra.priceConfirmed ? (
-                                                                <span
-                                                                    className="services-extra-price-dot"
-                                                                    title="Ціну вже задано"
-                                                                    aria-label="Ціну вже задано"
-                                                                />
-                                                            ) : null}
-                                                        </span>
-                                                    </span>
-                                                </label>
-                                                {usesQuantity && isSelected ? (
-                                                    <label className="services-extra-qty">
-                                                        <span>{getCustomExtraQuantityLabel(extra)}</span>
-                                                        <input
-                                                            type="number"
-                                                            min={1}
-                                                            max={99}
-                                                            value={quantity}
-                                                            onChange={(event) =>
-                                                                onQuantityChange(extra.id, event.target.value)
-                                                            }
-                                                            inputMode="numeric"
-                                                            aria-label={`${getCustomExtraQuantityLabel(extra)}: ${extra.label}`}
-                                                        />
-                                                    </label>
-                                                ) : null}
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        ) : null}
-                    </div>
-                );
-            })}
+            {renderCategoryAccordion("top-seller", "Топ продаж", topSellerItems)}
+            {customExtraCategories.map((category) =>
+                renderCategoryAccordion(category.id, category.title, category.items),
+            )}
         </div>
     );
 }
 
 type AdditionalServicesSectionProps = CustomExtrasSelectorProps & {
-    packageAddons?: readonly FixedPackageItem[];
-    selectedPackageAddons?: string[];
-    onTogglePackageAddon?: (id: string) => void;
+    defaultOpen?: boolean;
+    alwaysExpanded?: boolean;
 };
 
 function AdditionalServicesSection({
     quantities,
     onToggle,
     onQuantityChange,
-    packageAddons = [],
-    selectedPackageAddons = [],
-    onTogglePackageAddon,
+    defaultOpen = false,
+    alwaysExpanded = false,
 }: AdditionalServicesSectionProps) {
-    const [isOpen, setIsOpen] = useState(false);
-    const selectedCount = useMemo(() => {
-        const customExtrasCount = allCustomExtras.filter(
-            (extra) => (quantities[extra.id] ?? 0) > 0,
-        ).length;
-        const packageAddonsCount = packageAddons.filter((item) =>
-            selectedPackageAddons.includes(item.id),
-        ).length;
+    const [isOpen, setIsOpen] = useState(defaultOpen || alwaysExpanded);
+    const selectedCount = useMemo(
+        () => allOrderExtras.filter((extra) => (quantities[extra.id] ?? 0) > 0).length,
+        [quantities],
+    );
 
-        return customExtrasCount + packageAddonsCount;
-    }, [packageAddons, quantities, selectedPackageAddons]);
+    if (alwaysExpanded) {
+        return (
+            <div className="services-extras-section services-extras-section--open services-extras-section--always-open">
+                <div className="services-extras-section-heading">
+                    <span>Додаткові послуги</span>
+                    {selectedCount > 0 ? (
+                        <span className="services-extras-section-badge">{selectedCount}</span>
+                    ) : null}
+                </div>
+                <div className="services-extras-section-panel">
+                    <CustomExtrasSelector
+                        quantities={quantities}
+                        onToggle={onToggle}
+                        onQuantityChange={onQuantityChange}
+                    />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div
@@ -665,34 +657,6 @@ function AdditionalServicesSection({
 
             {isOpen ? (
                 <div className="services-extras-section-panel">
-                    {packageAddons.length > 0 && onTogglePackageAddon ? (
-                        <div className="services-package-addons-block">
-                            <p className="services-package-addons-title">Можна додати</p>
-                            <div className="services-extras-grid">
-                                {packageAddons.map((item) => {
-                                    const isSelected = selectedPackageAddons.includes(item.id);
-
-                                    return (
-                                        <label
-                                            key={item.id}
-                                            className={`services-extra-option${isSelected ? " services-extra-option--on" : ""}`}
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                checked={isSelected}
-                                                onChange={() => onTogglePackageAddon(item.id)}
-                                            />
-                                            <span className="services-extra-copy">
-                                                <span>{item.label}</span>
-                                                <span>{getPackageItemPriceHint(item)}</span>
-                                            </span>
-                                        </label>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    ) : null}
-
                     <CustomExtrasSelector
                         quantities={quantities}
                         onToggle={onToggle}
@@ -752,34 +716,60 @@ function estimateFixedOrder(
     };
 }
 
-function estimateCustomOrder(
-    basePerSqm: number,
-    area: string,
-    rooms: string,
-    bathrooms: string,
-    extrasTotal = 0,
-) {
-    const sqm = Math.max(20, Number.parseInt(area, 10) || 0);
-    const roomCount = Math.max(1, Number.parseInt(rooms, 10) || 1);
-    const bathCount = Math.max(1, Number.parseInt(bathrooms, 10) || 1);
-    const base = sqm * basePerSqm;
-    const roomFee = Math.max(0, roomCount - 1) * 120;
-    const bathFee = Math.max(0, bathCount - 1) * 180;
-
-    return {
-        sqm,
-        roomCount,
-        bathCount,
-        total: Math.round(base + roomFee + bathFee + extrasTotal),
-    };
-}
-
-function getPackageItemPriceHint(item: FixedPackageItem) {
-    if (item.defaultSelected) {
-        return "в пакеті";
+function parseCustomArea(area: string) {
+    const trimmedArea = area.trim();
+    if (!trimmedArea) {
+        return null;
     }
 
-    return `+${formatPrice(item.adjustment)}`;
+    const parsedArea = Number.parseInt(trimmedArea, 10);
+    if (Number.isNaN(parsedArea) || parsedArea <= 0) {
+        return null;
+    }
+
+    return parsedArea;
+}
+
+function estimateCustomOrder(area: string, extraQuantities: Record<string, number>) {
+    const sqm = parseCustomArea(area);
+    const selectedExtras = allOrderExtras.filter((extra) => (extraQuantities[extra.id] ?? 0) > 0);
+    const hasSelectedExtras = selectedExtras.length > 0;
+    const needsArea = selectedExtras.some((extra) => (extra.priceUnit ?? "flat") === "sqm");
+
+    if (!hasSelectedExtras) {
+        return {
+            sqm: sqm ?? 0,
+            total: 0,
+            extrasTotal: 0,
+            isReady: false,
+            hasSelectedExtras: false,
+        };
+    }
+
+    if (needsArea && sqm === null) {
+        return {
+            sqm: 0,
+            total: 0,
+            extrasTotal: 0,
+            isReady: false,
+            hasSelectedExtras: true,
+        };
+    }
+
+    const effectiveSqm = sqm ?? 0;
+    const extrasTotal = selectedExtras.reduce(
+        (sum, extra) =>
+            sum + calculateCustomExtraTotal(extra, effectiveSqm, extraQuantities[extra.id] ?? 1),
+        0,
+    );
+
+    return {
+        sqm: effectiveSqm,
+        total: Math.round(extrasTotal),
+        extrasTotal: Math.round(extrasTotal),
+        isReady: true,
+        hasSelectedExtras: true,
+    };
 }
 
 function getPackageItemGroups(items: readonly FixedPackageItem[]) {
@@ -801,6 +791,90 @@ function getPackageItemGroups(items: readonly FixedPackageItem[]) {
     }));
 }
 
+type SubscriptionCycleCalendarProps = {
+    visitDays: number[];
+    onToggleDay: (day: number) => void;
+    onClear: () => void;
+    onSelectAll: () => void;
+};
+
+function getSubscriptionDayLabel(day: number) {
+    if (day === 1) {
+        return "сьогодні";
+    }
+
+    if (day === 2) {
+        return "завтра";
+    }
+
+    return null;
+}
+
+function SubscriptionCycleCalendar({
+    visitDays,
+    onToggleDay,
+    onClear,
+    onSelectAll,
+}: SubscriptionCycleCalendarProps) {
+    const activeDays = new Set(visitDays);
+
+    return (
+        <div className="services-subscription-calendar-wrap">
+            <div className="services-subscription-calendar-head">
+                <p className="services-subscription-calendar-title">
+                    Графік на {SUBSCRIPTION_CYCLE_DAYS} днів — натисни на день, щоб увімкнути або вимкнути
+                </p>
+                <div className="services-subscription-calendar-tools">
+                    <button type="button" className="secondary-button compact" onClick={onSelectAll}>
+                        Усі дні
+                    </button>
+                    <button type="button" className="secondary-button compact" onClick={onClear}>
+                        Очистити
+                    </button>
+                </div>
+            </div>
+            <div className="services-subscription-calendar" role="group" aria-label="Дні візитів у циклі">
+                {Array.from({ length: SUBSCRIPTION_CYCLE_DAYS }, (_, index) => {
+                    const day = index + 1;
+                    const isActive = activeDays.has(day);
+                    const label = getSubscriptionDayLabel(day);
+
+                    return (
+                        <button
+                            key={day}
+                            type="button"
+                            aria-pressed={isActive}
+                            aria-label={
+                                label
+                                    ? `${label}, день ${day}${isActive ? ", обрано" : ""}`
+                                    : `День ${day}${isActive ? ", обрано" : ""}`
+                            }
+                            className={`services-subscription-calendar-day${
+                                label ? " services-subscription-calendar-day--labeled" : " services-subscription-calendar-day--blank"
+                            }${isActive ? " services-subscription-calendar-day--active" : ""}`}
+                            onClick={() => onToggleDay(day)}
+                        >
+                            {label}
+                        </button>
+                    );
+                })}
+            </div>
+            {visitDays.length > 0 ? (
+                <>
+                    <p className="services-subscription-calendar-caption">{describeVisitDayRanges(visitDays)}</p>
+                    <p className="services-subscription-calendar-caption services-subscription-calendar-caption--muted">
+                        {formatVisitDaysSummary(visitDays)}
+                    </p>
+                </>
+            ) : (
+                <p className="services-subscription-calendar-caption services-subscription-calendar-caption--muted">
+                    Поки немає обраних днів — клікни по календарю.
+                </p>
+            )}
+        </div>
+    );
+}
+
 export default function ServicesPage() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -814,11 +888,20 @@ export default function ServicesPage() {
     const activeTab = parseServiceTab(searchParams.get("tab"));
     const serviceParam = searchParams.get("service");
     const selectedFixedService =
-        activeTab === "fixed" && isFixedServiceId(serviceParam) ? serviceParam : null;
+        activeTab === "fixed" && isFixedServiceId(serviceParam)
+            ? serviceParam
+            : activeTab === "business" &&
+                isFixedServiceId(serviceParam) &&
+                isBusinessServiceId(serviceParam)
+              ? serviceParam
+              : null;
+    const isPackageTab = activeTab === "fixed" || activeTab === "business";
+    const packageServiceCategories =
+        activeTab === "business" ? businessServiceCategories : residentialServiceCategories;
     const [isPaying, setIsPaying] = useState(false);
     const [paymentError, setPaymentError] = useState("");
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
-    const [cleaningTimeSlot, setCleaningTimeSlot] = useState<CleaningTimeSlotId>("morning");
+    const [cleaningTimeSlot, setCleaningTimeSlot] = useState<CleaningTimeSlotId | null>(null);
     const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
     const [checkoutError, setCheckoutError] = useState("");
 
@@ -828,9 +911,7 @@ export default function ServicesPage() {
     const [fixedNotes, setFixedNotes] = useState("");
 
     const [cleaningType, setCleaningType] = useState<(typeof customCleaningTypes)[number]["id"]>("regular");
-    const [area, setArea] = useState("55");
-    const [rooms, setRooms] = useState("2");
-    const [bathrooms, setBathrooms] = useState("1");
+    const [area, setArea] = useState("");
     const [extraQuantities, setExtraQuantities] = useState<Record<string, number>>({});
     const [notes, setNotes] = useState("");
     const [propertyType, setPropertyType] = useState<(typeof propertyTypeOptions)[number]["id"]>("apartment");
@@ -838,8 +919,13 @@ export default function ServicesPage() {
     const [hasPets, setHasPets] = useState(false);
     const [ownSupplies, setOwnSupplies] = useState(false);
     const [needLadder, setNeedLadder] = useState(false);
-    const [hasElevator, setHasElevator] = useState(true);
     const [cleanersCount, setCleanersCount] = useState("1");
+
+    const [subscriptionVisitDays, setSubscriptionVisitDays] = useState<number[]>([]);
+    const [subscriptionAutoPay, setSubscriptionAutoPay] = useState(true);
+    const [subscriptionArea, setSubscriptionArea] = useState("");
+    const [subscriptionExtraQuantities, setSubscriptionExtraQuantities] = useState<Record<string, number>>({});
+    const [subscriptionNotes, setSubscriptionNotes] = useState("");
 
     const [savedAddresses, setSavedAddresses] = useState<UserAddressDto[]>([]);
     const [addressesLoading, setAddressesLoading] = useState(false);
@@ -854,7 +940,7 @@ export default function ServicesPage() {
         }
 
         const sqmForExtras = Math.max(20, Number.parseInt(fixedArea, 10) || 0);
-        const customExtrasTotal = allCustomExtras
+        const customExtrasTotal = allOrderExtras
             .filter((extra) => (fixedExtraQuantities[extra.id] ?? 0) > 0)
             .reduce(
                 (sum, extra) =>
@@ -878,23 +964,28 @@ export default function ServicesPage() {
 
     const customEstimate = useMemo(() => {
         const type = customCleaningTypes.find((item) => item.id === cleaningType) ?? customCleaningTypes[0];
-        const sqm = Math.max(20, Number.parseInt(area, 10) || 0);
-        const extrasTotal = allCustomExtras
-            .filter((extra) => (extraQuantities[extra.id] ?? 0) > 0)
-            .reduce(
-                (sum, extra) =>
-                    sum + calculateCustomExtraTotal(extra, sqm, extraQuantities[extra.id] ?? 1),
-                0,
-            );
-
-        const result = estimateCustomOrder(type.basePerSqm, area, rooms, bathrooms, extrasTotal);
+        const result = estimateCustomOrder(area, extraQuantities);
 
         return {
             ...result,
             typeLabel: type.label,
-            extrasTotal,
         };
-    }, [area, bathrooms, cleaningType, extraQuantities, rooms]);
+    }, [area, cleaningType, extraQuantities]);
+
+    const subscriptionEstimate = useMemo(
+        () => estimateSubscriptionOrder(subscriptionArea, subscriptionExtraQuantities, subscriptionVisitDays),
+        [subscriptionArea, subscriptionExtraQuantities, subscriptionVisitDays],
+    );
+
+    function toggleSubscriptionVisitDay(day: number) {
+        setSubscriptionVisitDays((current) => {
+            if (current.includes(day)) {
+                return current.filter((value) => value !== day);
+            }
+
+            return normalizeVisitDays([...current, day]);
+        });
+    }
 
     useEffect(() => {
         if (!user || user.role !== "User") {
@@ -998,7 +1089,15 @@ export default function ServicesPage() {
         return null;
     }
 
-    function toggleExtra(extra: (typeof allCustomExtras)[number]) {
+    function validateCleaningTimeSlot(): string | null {
+        if (!cleaningTimeSlot) {
+            return "Оберіть бажаний час прибирання.";
+        }
+
+        return null;
+    }
+
+    function toggleExtra(extra: CustomExtraItem) {
         setExtraQuantities((current) => {
             if ((current[extra.id] ?? 0) > 0) {
                 const next = { ...current };
@@ -1022,6 +1121,35 @@ export default function ServicesPage() {
         }
 
         setExtraQuantities((current) => ({
+            ...current,
+            [id]: Math.min(99, parsed),
+        }));
+    }
+
+    function toggleSubscriptionExtra(extra: CustomExtraItem) {
+        setSubscriptionExtraQuantities((current) => {
+            if ((current[extra.id] ?? 0) > 0) {
+                const next = { ...current };
+                delete next[extra.id];
+                return next;
+            }
+
+            return { ...current, [extra.id]: 1 };
+        });
+    }
+
+    function setSubscriptionExtraQuantity(id: string, rawValue: string) {
+        const parsed = Number.parseInt(rawValue, 10);
+        if (!Number.isFinite(parsed) || parsed < 1) {
+            setSubscriptionExtraQuantities((current) => {
+                const next = { ...current };
+                delete next[id];
+                return next;
+            });
+            return;
+        }
+
+        setSubscriptionExtraQuantities((current) => ({
             ...current,
             [id]: Math.min(99, parsed),
         }));
@@ -1056,12 +1184,6 @@ export default function ServicesPage() {
         }));
     }
 
-    function toggleFixedAddon(id: string) {
-        setFixedSelectedAddons((current) =>
-            current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
-        );
-    }
-
     function openFixedService(id: FixedServiceId) {
         const service = fixedServiceCategories.find((item) => item.id === id);
         if (!service) {
@@ -1074,12 +1196,12 @@ export default function ServicesPage() {
         setFixedNotes("");
         setPaymentError("");
         setPaymentMethod("card");
-        setCleaningTimeSlot("morning");
+        setCleaningTimeSlot(null);
         setCheckoutError("");
 
         setSearchParams((current) => {
             const next = new URLSearchParams(current);
-            next.set("tab", "fixed");
+            next.set("tab", activeTab === "business" ? "business" : "fixed");
             next.set("service", id);
             return next;
         });
@@ -1141,16 +1263,21 @@ export default function ServicesPage() {
             return;
         }
 
+        const timeSlotError = validateCleaningTimeSlot();
+        if (timeSlotError) {
+            setCheckoutError(timeSlotError);
+            setPaymentError(timeSlotError);
+            setIsSubmittingOrder(false);
+            return;
+        }
+
         const addressFields = getOrderAddressFields()!;
+        const selectedTimeSlot = cleaningTimeSlot!;
 
         const selectedPackageAddonLabels = selectedService.packageItems
             .filter((item) => !item.defaultSelected && fixedSelectedAddons.includes(item.id))
             .map((item) => item.label);
-        const selectedCustomExtraLabels = allCustomExtras
-            .filter((extra) => (fixedExtraQuantities[extra.id] ?? 0) > 0)
-            .map((extra) =>
-                formatCustomExtraOrderLabel(extra, fixedExtraQuantities[extra.id] ?? 1),
-            );
+        const selectedCustomExtraLabels = getSelectedCustomExtraLabels(fixedExtraQuantities);
 
         const orderPayload = {
             userId: user.id,
@@ -1159,8 +1286,8 @@ export default function ServicesPage() {
             orderType: "fixed" as const,
             areaSqm: selectedService.flatPrice != null ? undefined : fixedEstimate.sqm,
             selectedAddons: [...selectedPackageAddonLabels, ...selectedCustomExtraLabels],
-            timeSlot: cleaningTimeSlot,
-            timeSlotLabel: getCleaningTimeSlotLabel(cleaningTimeSlot),
+            timeSlot: selectedTimeSlot,
+            timeSlotLabel: getCleaningTimeSlotLabel(selectedTimeSlot),
             notes: fixedNotes.trim() || undefined,
             ...addressFields,
             paymentMethod,
@@ -1218,13 +1345,42 @@ export default function ServicesPage() {
             return;
         }
 
-        const addressFields = getOrderAddressFields()!;
+        const timeSlotError = validateCleaningTimeSlot();
+        if (timeSlotError) {
+            setCheckoutError(timeSlotError);
+            setPaymentError(timeSlotError);
+            setIsSubmittingOrder(false);
+            return;
+        }
 
-        const selectedAddonLabels = allCustomExtras
-            .filter((extra) => (extraQuantities[extra.id] ?? 0) > 0)
-            .map((extra) =>
-                formatCustomExtraOrderLabel(extra, extraQuantities[extra.id] ?? 1),
-            );
+        if (!customEstimate.hasSelectedExtras) {
+            const message = "Оберіть послуги з розділу «Додаткові послуги».";
+            setCheckoutError(message);
+            setPaymentError(message);
+            setIsSubmittingOrder(false);
+            return;
+        }
+
+        if (!customEstimate.isReady) {
+            const message = "Вкажіть площу для розрахунку вартості.";
+            setCheckoutError(message);
+            setPaymentError(message);
+            setIsSubmittingOrder(false);
+            return;
+        }
+
+        if (customEstimate.total < MIN_CUSTOM_ORDER_TOTAL) {
+            const message = `Мінімальна сума замовлення — ${formatPrice(MIN_CUSTOM_ORDER_TOTAL)}.`;
+            setCheckoutError(message);
+            setPaymentError(message);
+            setIsSubmittingOrder(false);
+            return;
+        }
+
+        const addressFields = getOrderAddressFields()!;
+        const selectedTimeSlot = cleaningTimeSlot!;
+
+        const selectedAddonLabels = getSelectedCustomExtraLabels(extraQuantities);
 
         const organizationalNote = buildCustomOrganizationalNote({
             propertyType,
@@ -1232,7 +1388,6 @@ export default function ServicesPage() {
             hasPets,
             ownSupplies,
             needLadder,
-            hasElevator,
             cleanersCount,
         });
 
@@ -1244,11 +1399,9 @@ export default function ServicesPage() {
             serviceTitle: customEstimate.typeLabel,
             orderType: "custom" as const,
             areaSqm: customEstimate.sqm,
-            rooms: customEstimate.roomCount,
-            bathrooms: customEstimate.bathCount,
             selectedAddons: selectedAddonLabels,
-            timeSlot: cleaningTimeSlot,
-            timeSlotLabel: getCleaningTimeSlotLabel(cleaningTimeSlot),
+            timeSlot: selectedTimeSlot,
+            timeSlotLabel: getCleaningTimeSlotLabel(selectedTimeSlot),
             notes: combinedNotes || undefined,
             ...addressFields,
             paymentMethod,
@@ -1265,7 +1418,7 @@ export default function ServicesPage() {
                     ...orderPayload,
                     paymentMethod: "card",
                     paymentReference: crypto.randomUUID(),
-                    description: `${customEstimate.typeLabel} — ${customEstimate.sqm} м², ${getCleaningTimeSlotLabel(cleaningTimeSlot)}`,
+                    description: `${customEstimate.typeLabel} — ${customEstimate.sqm} м², ${getCleaningTimeSlotLabel(selectedTimeSlot)}`,
                 });
                 return;
             }
@@ -1334,7 +1487,7 @@ export default function ServicesPage() {
         setSearchParams((current) => {
             const next = new URLSearchParams(current);
             next.delete("service");
-            next.set("tab", "fixed");
+            next.set("tab", activeTab === "business" ? "business" : "fixed");
             return next;
         });
         setCheckoutError("");
@@ -1354,7 +1507,7 @@ export default function ServicesPage() {
     }
 
     function confirmCheckoutOrder() {
-        if (activeTab === "fixed") {
+        if (isPackageTab) {
             void submitFixedOrder();
             return;
         }
@@ -1427,28 +1580,38 @@ export default function ServicesPage() {
                         <span className="services-tab-label services-tab-label--full">Прибирання по підписці</span>
                         <span className="services-tab-label services-tab-label--short">Підписка</span>
                     </button>
+                    <button
+                        type="button"
+                        role="tab"
+                        id="services-tab-business"
+                        aria-selected={activeTab === "business"}
+                        aria-controls="services-panel-business"
+                        className={`services-tab${activeTab === "business" ? " services-tab--active" : ""}`}
+                        onClick={() => switchTab("business")}
+                    >
+                        <span className="services-tab-label services-tab-label--full">Для бізнесу</span>
+                        <span className="services-tab-label services-tab-label--short">Бізнес</span>
+                    </button>
                 </div>
             </div>
 
-            {activeTab === "fixed" && (
+            {isPackageTab && (
                 <div
                     ref={fixedPanelRef}
-                    id="services-panel-fixed"
+                    id={activeTab === "business" ? "services-panel-business" : "services-panel-fixed"}
                     role="tabpanel"
-                    aria-labelledby="services-tab-fixed"
+                    aria-labelledby={
+                        activeTab === "business" ? "services-tab-business" : "services-tab-fixed"
+                    }
                     className="services-panel"
                 >
                     {selectedService && fixedEstimate ? (
                         <>
-                            <button type="button" className="services-back" onClick={closeFixedService}>
-                                ← Усі послуги
-                            </button>
-
-                            <p className="services-panel-lead">
-                                {selectedService.flatPrice != null
-                                    ? "Базовий пакет уже включений. За потреби додайте додаткові опції."
-                                    : "Вкажіть площу — базовий пакет уже включений. За потреби додайте додаткові опції."}
-                            </p>
+                            <div className="services-fixed-head">
+                                <button type="button" className="services-back" onClick={closeFixedService}>
+                                    ← Усі послуги
+                                </button>
+                            </div>
 
                             <div className="services-custom">
                                 <form
@@ -1458,96 +1621,101 @@ export default function ServicesPage() {
                                     <h2 className="services-custom-title">{selectedService.title}</h2>
                                     <p className="services-category-desc">{selectedService.text}</p>
 
-                                    <div className="services-category-rate hero-panel">
-                                        <span className="services-category-rate-label">Базова ціна</span>
-                                        <span className="services-category-rate-value">
-                                            {selectedService.flatPrice != null ? (
-                                                formatPrice(selectedService.flatPrice)
-                                            ) : selectedService.sqmTierThreshold != null &&
-                                              selectedService.sqmTierRate != null ? (
-                                                <>
-                                                    {formatPrice(selectedService.sqmTierRate)}{" "}
-                                                    <span>/ м²</span>
-                                                    <span className="services-category-rate-tier">
-                                                        {formatPrice(selectedService.basePerSqm ?? 0)} до{" "}
-                                                        {selectedService.sqmTierThreshold} м², далі
-                                                    </span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    {formatPrice(selectedService.basePerSqm ?? 0)}{" "}
-                                                    <span>/ м²</span>
-                                                </>
-                                            )}
-                                        </span>
-                                    </div>
-
-                                    <label className="services-field services-field--area">
-                                        <span>
-                                            {selectedService.flatPrice != null
-                                                ? "Площа, м² (для додаткових послуг)"
-                                                : "Площа, м²"}
-                                        </span>
-                                        <input
-                                            type="number"
-                                            min={20}
-                                            max={500}
-                                            value={fixedArea}
-                                            onChange={(event) => setFixedArea(event.target.value)}
-                                            inputMode="numeric"
-                                        />
-                                    </label>
-
-                                    <fieldset className="services-extras">
-                                        <legend>В пакеті</legend>
-                                        <div className="services-package-form-groups">
+                                    <fieldset className="services-package-included">
+                                        <legend className="services-package-included-legend">
+                                            <span className="services-package-included-legend-title">
+                                                В пакеті
+                                            </span>
+                                            <span className="services-package-included-legend-badge">
+                                                {
+                                                    selectedService.packageItems.filter(
+                                                        (item) => item.defaultSelected,
+                                                    ).length
+                                                }{" "}
+                                                послуг
+                                            </span>
+                                        </legend>
+                                        <p className="services-package-included-note">
+                                            Вже включено у вартість — окремо не оплачуються
+                                        </p>
+                                        <div className="services-package-included-groups">
                                             {getPackageItemGroups(
                                                 selectedService.packageItems.filter((item) => item.defaultSelected),
                                             ).map((section) => (
                                                 <div
                                                     key={section.title ?? "default"}
-                                                    className="services-package-form-group"
+                                                    className="services-package-included-group"
                                                 >
                                                     {section.title ? (
-                                                        <p className="services-package-form-group-title">
+                                                        <p className="services-package-included-group-title">
                                                             {section.title}
                                                         </p>
                                                     ) : null}
-                                                    <div className="services-extras-grid">
+                                                    <ul className="services-package-included-list">
                                                         {section.items.map((item) => (
-                                                            <div
+                                                            <li
                                                                 key={item.id}
-                                                                className="services-extra-option services-extra-option--locked services-extra-option--on"
+                                                                className="services-package-included-chip"
                                                             >
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked
-                                                                    disabled
-                                                                    readOnly
-                                                                />
-                                                                <span className="services-extra-copy">
-                                                                    <span>{item.label}</span>
-                                                                    <span className="services-extra-included">
-                                                                        в пакеті
-                                                                    </span>
-                                                                </span>
-                                                            </div>
+                                                                {item.label}
+                                                            </li>
                                                         ))}
-                                                    </div>
+                                                    </ul>
                                                 </div>
                                             ))}
                                         </div>
                                     </fieldset>
 
+                                    <div className="services-order-params">
+                                        <label className="services-field services-order-area">
+                                            <span>Площа, м²</span>
+                                            <input
+                                                type="number"
+                                                min={20}
+                                                max={500}
+                                                value={fixedArea}
+                                                onChange={(event) => setFixedArea(event.target.value)}
+                                                inputMode="numeric"
+                                            />
+                                        </label>
+
+                                        <div className="services-order-rate">
+                                            <span className="services-order-rate-label">Базова ціна</span>
+                                            {selectedService.flatPrice != null ? (
+                                                <p className="services-order-rate-main">
+                                                    {formatPrice(selectedService.flatPrice)}
+                                                    <span> фікс.</span>
+                                                </p>
+                                            ) : selectedService.sqmTierThreshold != null &&
+                                              selectedService.sqmTierRate != null ? (
+                                                <>
+                                                    <p className="services-order-rate-main">
+                                                        {formatPrice(selectedService.sqmTierRate)}
+                                                        <span> / м²</span>
+                                                    </p>
+                                                    <p className="services-order-rate-note">
+                                                        {formatPrice(selectedService.basePerSqm ?? 0)} / м² для
+                                                        перших {selectedService.sqmTierThreshold} м²
+                                                    </p>
+                                                </>
+                                            ) : (
+                                                <p className="services-order-rate-main">
+                                                    {formatPrice(selectedService.basePerSqm ?? 0)}
+                                                    <span> / м²</span>
+                                                </p>
+                                            )}
+                                            {selectedService.flatPrice != null ? (
+                                                <p className="services-order-rate-note">
+                                                    для розрахунку додаткових послуг
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                    </div>
+
                                     <AdditionalServicesSection
                                         quantities={fixedExtraQuantities}
                                         onToggle={toggleFixedExtra}
                                         onQuantityChange={setFixedExtraQuantity}
-                                        packageAddons={selectedService.packageItems.filter(
-                                            (item) => !item.defaultSelected,
-                                        )}
-                                        selectedPackageAddons={fixedSelectedAddons}
-                                        onTogglePackageAddon={toggleFixedAddon}
                                     />
 
                                     <OrderAddressSelector
@@ -1611,10 +1779,22 @@ export default function ServicesPage() {
                                             </li>
                                         ) : null}
                                         {fixedEstimate.customExtrasTotal > 0 ? (
-                                            <li>
-                                                <span>Додаткові послуги</span>
-                                                <span>+{formatPrice(fixedEstimate.customExtrasTotal)}</span>
-                                            </li>
+                                            <>
+                                                {getSelectedCustomExtraLabels(fixedExtraQuantities).map(
+                                                    (label) => (
+                                                        <li key={label}>
+                                                            <span>{label}</span>
+                                                            <span aria-hidden="true">✓</span>
+                                                        </li>
+                                                    ),
+                                                )}
+                                                <li>
+                                                    <span>Додаткові послуги</span>
+                                                    <span>
+                                                        +{formatPrice(fixedEstimate.customExtrasTotal)}
+                                                    </span>
+                                                </li>
+                                            </>
                                         ) : null}
                                         <li>
                                             <span>Час</span>
@@ -1636,12 +1816,13 @@ export default function ServicesPage() {
                     ) : (
                         <>
                             <p className="services-panel-lead">
-                                Оберіть тип прибирання — натисніть «Переглянути склад пакета», щоб побачити
-                                деталі, або «Розрахувати вартість», щоб оформити замовлення.
+                                {activeTab === "business"
+                                    ? "Офіси, комерційні приміщення та прибирання після заходів — оберіть послугу та розрахуйте вартість."
+                                    : "Оберіть тип прибирання — натисніть «Переглянути склад пакета», щоб побачити деталі, або «Розрахувати вартість», щоб оформити замовлення."}
                             </p>
 
                             <div className="services-grid services-grid--categories">
-                                {fixedServiceCategories.map((service) => (
+                                {packageServiceCategories.map((service) => (
                                     <article key={service.id} className="services-card services-card--category hero-panel">
                                         <div className="services-category-head">
                                             <h2 className="services-card-title">{service.title}</h2>
@@ -1753,41 +1934,18 @@ export default function ServicesPage() {
                                 </select>
                             </label>
 
-                            <div className="services-field-row">
-                                <label className="services-field">
-                                    <span>Площа, м²</span>
-                                    <input
-                                        type="number"
-                                        min={20}
-                                        max={300}
-                                        value={area}
-                                        onChange={(event) => setArea(event.target.value)}
-                                        inputMode="numeric"
-                                    />
-                                </label>
-                                <label className="services-field">
-                                    <span>Кімнати</span>
-                                    <input
-                                        type="number"
-                                        min={1}
-                                        max={8}
-                                        value={rooms}
-                                        onChange={(event) => setRooms(event.target.value)}
-                                        inputMode="numeric"
-                                    />
-                                </label>
-                                <label className="services-field">
-                                    <span>Санвузли</span>
-                                    <input
-                                        type="number"
-                                        min={1}
-                                        max={4}
-                                        value={bathrooms}
-                                        onChange={(event) => setBathrooms(event.target.value)}
-                                        inputMode="numeric"
-                                    />
-                                </label>
-                            </div>
+                            <label className="services-field">
+                                <span>Площа, м²</span>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={300}
+                                    value={area}
+                                    onChange={(event) => setArea(event.target.value)}
+                                    inputMode="numeric"
+                                    placeholder="55"
+                                />
+                            </label>
 
                             <fieldset className="services-extras services-extras--org">
                                 <legend>Організаційні опції</legend>
@@ -1869,16 +2027,6 @@ export default function ServicesPage() {
                                             <span>Потрібна драбина</span>
                                         </span>
                                     </label>
-                                    <label className="services-extra-option services-extra-option--inline">
-                                        <input
-                                            type="checkbox"
-                                            checked={hasElevator}
-                                            onChange={(event) => setHasElevator(event.target.checked)}
-                                        />
-                                        <span className="services-extra-copy">
-                                            <span>Є ліфт</span>
-                                        </span>
-                                    </label>
                                 </div>
                             </fieldset>
 
@@ -1886,6 +2034,7 @@ export default function ServicesPage() {
                                 quantities={extraQuantities}
                                 onToggle={toggleExtra}
                                 onQuantityChange={setExtraQuantity}
+                                alwaysExpanded
                             />
 
                             <OrderAddressSelector
@@ -1917,38 +2066,55 @@ export default function ServicesPage() {
                             <span className="badge hero-badge">Орієнтовна вартість</span>
                             <p className="services-custom-price">
                                 {formatPrice(
-                                    paymentMethod === "card"
-                                        ? getCardPaymentTotal(customEstimate.total)
-                                        : customEstimate.total,
+                                    customEstimate.isReady
+                                        ? paymentMethod === "card"
+                                            ? getCardPaymentTotal(customEstimate.total)
+                                            : customEstimate.total
+                                        : 0,
                                 )}
                             </p>
-                            {paymentMethod === "card" ? (
+                            <p
+                                className={`services-custom-min-note${
+                                    customEstimate.isReady && customEstimate.total < MIN_CUSTOM_ORDER_TOTAL
+                                        ? " services-custom-min-note--warning"
+                                        : ""
+                                }`}
+                            >
+                                Мінімальна сума замовлення — {formatPrice(MIN_CUSTOM_ORDER_TOTAL)}
+                            </p>
+                            {customEstimate.isReady && paymentMethod === "card" ? (
                                 <p className="services-custom-discount-note">
                                     Зі знижкою 10% при оплаті картою
                                 </p>
                             ) : null}
                             <p className="services-custom-note">
-                                Точну суму підтвердимо перед виїздом після короткої консультації.
+                                {customEstimate.hasSelectedExtras
+                                    ? "Точну суму підтвердимо перед виїздом після короткої консультації."
+                                    : "Оберіть послуги зі списку — вартість рахується від обраних позицій та площі."}
                             </p>
 
                             <ul className="services-custom-breakdown">
                                 <li>
+                                    <span>Тип прибирання</span>
                                     <span>{customEstimate.typeLabel}</span>
-                                    <span>{customEstimate.sqm} м²</span>
                                 </li>
                                 <li>
-                                    <span>Кімнати</span>
-                                    <span>{customEstimate.roomCount}</span>
-                                </li>
-                                <li>
-                                    <span>Санвузли</span>
-                                    <span>{customEstimate.bathCount}</span>
+                                    <span>Площа</span>
+                                    <span>{customEstimate.sqm > 0 ? `${customEstimate.sqm} м²` : "—"}</span>
                                 </li>
                                 {customEstimate.extrasTotal > 0 ? (
-                                    <li>
-                                        <span>Додатково</span>
-                                        <span>{formatPrice(customEstimate.extrasTotal)}</span>
-                                    </li>
+                                    <>
+                                        {getSelectedCustomExtraLabels(extraQuantities).map((label) => (
+                                            <li key={label}>
+                                                <span>{label}</span>
+                                                <span aria-hidden="true">✓</span>
+                                            </li>
+                                        ))}
+                                        <li>
+                                            <span>Додаткові послуги</span>
+                                            <span>{formatPrice(customEstimate.extrasTotal)}</span>
+                                        </li>
+                                    </>
                                 ) : null}
                                 <li>
                                     <span>Час</span>
@@ -1957,12 +2123,17 @@ export default function ServicesPage() {
                             </ul>
 
                             <OrderPaymentOptions
-                                total={customEstimate.total}
+                                total={customEstimate.isReady ? customEstimate.total : 0}
                                 method={paymentMethod}
                                 onMethodChange={setPaymentMethod}
                                 onSubmit={handlePaymentSubmit}
                                 error={checkoutError}
                                 isSubmitting={isSubmittingOrder || isPaying}
+                                submitDisabled={
+                                    !customEstimate.isReady ||
+                                    !customEstimate.hasSelectedExtras ||
+                                    customEstimate.total < MIN_CUSTOM_ORDER_TOTAL
+                                }
                             />
                         </aside>
                     </div>
@@ -1977,50 +2148,197 @@ export default function ServicesPage() {
                     className="services-panel"
                 >
                     <p className="services-panel-lead">
-                        Регулярне прибирання за фіксованим графіком — одна ціна на місяць, той самий
-                        виконавець і знижка порівняно з разовими візитами.
+                        28-денний цикл — обери дні в календарі, додай послуги та площу. Ціна оновиться одразу.
                     </p>
 
-                    <div className="services-grid">
-                        {subscriptionPlans.map((plan) => (
-                            <article key={plan.title} className="services-card hero-panel">
-                                <h2 className="services-card-title">{plan.title}</h2>
+                    <div className="services-custom">
+                        <form
+                            className="services-custom-form hero-panel"
+                            onSubmit={(event) => event.preventDefault()}
+                        >
+                            <h2 className="services-custom-title">Налаштування підписки</h2>
 
-                                <p className="services-card-text">{plan.text}</p>
+                            <SubscriptionCycleCalendar
+                                visitDays={subscriptionVisitDays}
+                                onToggleDay={toggleSubscriptionVisitDay}
+                                onClear={() => setSubscriptionVisitDays([])}
+                                onSelectAll={() =>
+                                    setSubscriptionVisitDays(
+                                        Array.from({ length: SUBSCRIPTION_CYCLE_DAYS }, (_, index) => index + 1),
+                                    )
+                                }
+                            />
 
-                                <div className="services-card-meta">
-                                    <div className="services-meta-item">
-                                        <span className="services-meta-label">Графік</span>
-                                        <span className="services-meta-value">{plan.frequency}</span>
-                                    </div>
-                                    <div className="services-meta-item">
-                                        <span className="services-meta-label">Площа</span>
-                                        <span className="services-meta-value">{plan.area}</span>
-                                    </div>
-                                    <div className="services-meta-item">
-                                        <span className="services-meta-label">Ціна</span>
-                                        <span className="services-meta-value services-meta-value--price">
-                                            {plan.price}
+                            <div className="services-subscription-billing hero-panel">
+                                <h3 className="services-subscription-billing-title">Оплата</h3>
+                                <p className="services-subscription-billing-text">
+                                    Рахунок формується на{" "}
+                                    <strong>{SUBSCRIPTION_CYCLE_DAYS} днів</strong> — стільки візитів,
+                                    скільки вміститься у ваш графік.
+                                </p>
+                                <label className="services-extra-option services-extra-option--inline services-subscription-autopay">
+                                    <input
+                                        type="checkbox"
+                                        checked={subscriptionAutoPay}
+                                        onChange={(event) => setSubscriptionAutoPay(event.target.checked)}
+                                    />
+                                    <span className="services-extra-copy">
+                                        <span>Автоматична оплата кожні {SUBSCRIPTION_CYCLE_DAYS} днів карткою</span>
+                                    </span>
+                                </label>
+                                <p className="services-subscription-autopay-note">
+                                    {subscriptionAutoPay
+                                        ? "При оформленні один раз прив'язуєте картку — далі оплата проходитиме автоматично наприкінці кожного 28-денного періоду."
+                                        : "Оплата вручну наприкінці кожного 28-денного періоду — нагадаємо перед датою."}
+                                </p>
+                            </div>
+
+                            <label className="services-field">
+                                <span>Площа, м²</span>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={300}
+                                    value={subscriptionArea}
+                                    onChange={(event) => setSubscriptionArea(event.target.value)}
+                                    inputMode="numeric"
+                                    placeholder="55"
+                                />
+                            </label>
+
+                            <AdditionalServicesSection
+                                quantities={subscriptionExtraQuantities}
+                                onToggle={toggleSubscriptionExtra}
+                                onQuantityChange={setSubscriptionExtraQuantity}
+                            />
+
+                            <label className="services-field services-field--comment">
+                                <span>Коментар</span>
+                                <AutoResizeTextarea
+                                    className="services-comment-field"
+                                    placeholder="Зручний час, ключі, особливі побажання..."
+                                    value={subscriptionNotes}
+                                    onChange={(event) => setSubscriptionNotes(event.target.value)}
+                                />
+                            </label>
+                        </form>
+
+                        <aside className="services-custom-summary hero-panel" aria-live="polite">
+                            <span className="badge hero-badge">Вартість підписки</span>
+                            <p className="services-custom-price">
+                                {formatPrice(
+                                    subscriptionEstimate.isReady
+                                        ? subscriptionEstimate.discountedCycleTotal
+                                        : 0,
+                                )}
+                                {subscriptionEstimate.isReady ? (
+                                    <span className="services-subscription-price-unit">
+                                        {" "}
+                                        / {SUBSCRIPTION_CYCLE_DAYS} днів
+                                    </span>
+                                ) : null}
+                            </p>
+                            <p
+                                className={`services-custom-min-note${
+                                    subscriptionEstimate.isReady &&
+                                    !subscriptionEstimate.meetsMinimumPerVisit
+                                        ? " services-custom-min-note--warning"
+                                        : ""
+                                }`}
+                            >
+                                Мінімальна сума — {formatPrice(MIN_SUBSCRIPTION_PER_VISIT)} за 1 візит
+                            </p>
+                            {subscriptionEstimate.isReady ? (
+                                <p className="services-custom-discount-note">
+                                    Знижка 10% на підписку порівняно з разовими візитами
+                                </p>
+                            ) : null}
+                            <p className="services-custom-note">
+                                {!subscriptionEstimate.hasScheduleSelected
+                                    ? "Обери дні в календарі."
+                                    : !subscriptionEstimate.hasSelectedExtras
+                                      ? "Додайте послуги зі списку — вартість рахується від обраних позицій та площі."
+                                      : !subscriptionEstimate.isReady
+                                        ? "Вкажіть площу для розрахунку вартості."
+                                        : !subscriptionEstimate.meetsMinimumPerVisit
+                                          ? `Додайте послуги — мінімум ${formatPrice(MIN_SUBSCRIPTION_PER_VISIT)} за один візит.`
+                                          : subscriptionAutoPay
+                                          ? "Оплата автоматично кожні 28 днів. Той самий виконавець і пріоритет у записі."
+                                          : "Нагадування перед оплатою кожні 28 днів."}
+                            </p>
+
+                            <ul className="services-custom-breakdown">
+                                <li>
+                                    <span>Графік</span>
+                                    <span>{formatVisitDaysSummary(subscriptionEstimate.visitDays)}</span>
+                                </li>
+                                <li>
+                                    <span>Візитів за цикл</span>
+                                    <span>
+                                        {subscriptionEstimate.hasScheduleSelected
+                                            ? subscriptionEstimate.visitsInCycle
+                                            : "—"}
+                                    </span>
+                                </li>
+                                <li>
+                                    <span>Площа</span>
+                                    <span>
+                                        {subscriptionEstimate.sqm > 0 ? `${subscriptionEstimate.sqm} м²` : "—"}
+                                    </span>
+                                </li>
+                                {subscriptionEstimate.extrasTotal > 0 ? (
+                                    <>
+                                        {getSelectedCustomExtraLabels(subscriptionExtraQuantities).map((label) => (
+                                            <li key={label}>
+                                                <span>{label}</span>
+                                                <span aria-hidden="true">✓</span>
+                                            </li>
+                                        ))}
+                                        <li>
+                                            <span>За 1 візит</span>
+                                            <span>{formatPrice(subscriptionEstimate.perVisitTotal)}</span>
+                                        </li>
+                                    </>
+                                ) : null}
+                                {subscriptionEstimate.isReady ? (
+                                    <li>
+                                        <span>Без знижки</span>
+                                        <span>
+                                            {formatPrice(subscriptionEstimate.cycleTotal)} / {SUBSCRIPTION_CYCLE_DAYS}{" "}
+                                            днів
                                         </span>
-                                    </div>
-                                </div>
+                                    </li>
+                                ) : null}
+                                <li>
+                                    <span>Оплата</span>
+                                    <span>{subscriptionAutoPay ? "Авто кожні 28 днів" : "Вручну кожні 28 днів"}</span>
+                                </li>
+                            </ul>
 
-                                <p className="services-subscription-note">{plan.visitPrice}</p>
-
-                                <ul className="services-card-includes">
-                                    {plan.includes.map((item) => (
-                                        <li key={item}>{item}</li>
-                                    ))}
-                                </ul>
-
-                                <a
-                                    href={supportContacts.phoneHref}
-                                    className="secondary-button compact services-card-cta"
-                                >
-                                    Оформити підписку
-                                </a>
-                            </article>
-                        ))}
+                            <a
+                                href={supportContacts.phoneHref}
+                                className={`primary-button services-custom-cta${
+                                    !subscriptionEstimate.isReady ||
+                                    !subscriptionEstimate.meetsMinimumPerVisit
+                                        ? " services-custom-cta--disabled"
+                                        : ""
+                                }`}
+                                aria-disabled={
+                                    !subscriptionEstimate.isReady ||
+                                    !subscriptionEstimate.meetsMinimumPerVisit
+                                }
+                                onClick={(event) => {
+                                    if (
+                                        !subscriptionEstimate.isReady ||
+                                        !subscriptionEstimate.meetsMinimumPerVisit
+                                    ) {
+                                        event.preventDefault();
+                                    }
+                                }}
+                            >
+                                Оформити підписку
+                            </a>
+                        </aside>
                     </div>
                 </div>
             )}

@@ -17,6 +17,7 @@ import { validateServiceAreaAddress } from "../utils/serviceAreaAddress";
 type ProfileAccountTabProps = {
     user: UserDto;
     onProfileSaved: (profile: UserProfileDto) => void;
+    onLogout: () => void;
 };
 
 type AddressDraft = {
@@ -28,6 +29,8 @@ const emptyAddressDraft = (): AddressDraft => ({
     label: "",
     addressLine: "",
 });
+
+const ADDRESSES_PREVIEW_COUNT = 4;
 
 function AddressPinIcon() {
     return (
@@ -44,7 +47,7 @@ function AddressPinIcon() {
     );
 }
 
-export default function ProfileAccountTab({ user, onProfileSaved }: ProfileAccountTabProps) {
+export default function ProfileAccountTab({ user, onProfileSaved, onLogout }: ProfileAccountTabProps) {
     const isClient = user.role === "User";
 
     const [profile, setProfile] = useState<UserProfileDto | null>(null);
@@ -54,9 +57,9 @@ export default function ProfileAccountTab({ user, onProfileSaved }: ProfileAccou
     const [name, setName] = useState(user.name);
     const [email, setEmail] = useState(user.email);
     const [phone, setPhone] = useState(user.phone);
-    const [profileMessage, setProfileMessage] = useState("");
     const [profileError, setProfileError] = useState("");
     const [isSavingProfile, setIsSavingProfile] = useState(false);
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
 
     const [addressDraft, setAddressDraft] = useState<AddressDraft>(emptyAddressDraft);
     const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
@@ -64,6 +67,7 @@ export default function ProfileAccountTab({ user, onProfileSaved }: ProfileAccou
     const [addressMessage, setAddressMessage] = useState("");
     const [addressError, setAddressError] = useState("");
     const [isSavingAddress, setIsSavingAddress] = useState(false);
+    const [showAllAddresses, setShowAllAddresses] = useState(false);
 
     const reloadProfile = useCallback(async () => {
         setLoading(true);
@@ -99,6 +103,22 @@ export default function ProfileAccountTab({ user, onProfileSaved }: ProfileAccou
         setAddressError("");
     }
 
+    function startProfileEdit() {
+        setProfileError("");
+        setIsEditingProfile(true);
+    }
+
+    function cancelProfileEdit() {
+        if (profile) {
+            setName(profile.name);
+            setEmail(profile.email);
+            setPhone(profile.phone);
+        }
+
+        setProfileError("");
+        setIsEditingProfile(false);
+    }
+
     function startAddAddress() {
         setEditingAddressId(null);
         setAddressDraft(emptyAddressDraft());
@@ -120,7 +140,10 @@ export default function ProfileAccountTab({ user, onProfileSaved }: ProfileAccou
 
     async function handleSaveProfile(event: React.FormEvent) {
         event.preventDefault();
-        setProfileMessage("");
+        if (!isEditingProfile) {
+            return;
+        }
+
         setProfileError("");
         setIsSavingProfile(true);
 
@@ -138,8 +161,11 @@ export default function ProfileAccountTab({ user, onProfileSaved }: ProfileAccou
             }
 
             setProfile(result.profile);
-            setProfileMessage(result.message ?? "Профіль оновлено.");
+            setName(result.profile.name);
+            setEmail(result.profile.email);
+            setPhone(result.profile.phone);
             onProfileSaved(result.profile);
+            setIsEditingProfile(false);
         } catch {
             setProfileError("Помилка з'єднання з сервером.");
         } finally {
@@ -232,6 +258,11 @@ export default function ProfileAccountTab({ user, onProfileSaved }: ProfileAccou
                 <button type="button" className="secondary-button" onClick={() => void reloadProfile()}>
                     Спробувати знову
                 </button>
+                <div className="profile-account-footer profile-account-footer--actions-only">
+                    <button type="button" className="secondary-button compact" onClick={onLogout}>
+                        Вийти
+                    </button>
+                </div>
             </section>
         );
     }
@@ -254,6 +285,11 @@ export default function ProfileAccountTab({ user, onProfileSaved }: ProfileAccou
                         <span className="profile-info-value">{user.email}</span>
                     </li>
                 </ul>
+                <div className="profile-account-footer profile-account-footer--actions-only">
+                    <button type="button" className="secondary-button compact" onClick={onLogout}>
+                        Вийти
+                    </button>
+                </div>
             </section>
         );
     }
@@ -263,57 +299,97 @@ export default function ProfileAccountTab({ user, onProfileSaved }: ProfileAccou
             <section className="profile-account-card hero-panel">
                 <h2 className="profile-sidebar-title">Особисті дані</h2>
 
-                {profileMessage ? <p className="profile-account-success">{profileMessage}</p> : null}
                 {profileError ? (
                     <p className="profile-account-error" role="alert">
                         {profileError}
                     </p>
                 ) : null}
 
-                <form className="profile-form" onSubmit={handleSaveProfile}>
-                    <label>
-                        <span>Ім&apos;я</span>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(event) => setName(event.target.value)}
-                            autoComplete="name"
-                            required
-                        />
-                    </label>
-                    <label>
-                        <span>Електронна пошта</span>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(event) => setEmail(event.target.value)}
-                            autoComplete="email"
-                            required
-                        />
-                    </label>
-                    <label>
-                        <span>Телефон</span>
-                        <input
-                            type="tel"
-                            value={phone}
-                            onChange={(event) => setPhone(event.target.value)}
-                            autoComplete="tel"
-                            required
-                        />
-                    </label>
-                    <button type="submit" className="primary-button" disabled={isSavingProfile}>
-                        {isSavingProfile ? "Збереження…" : "Зберегти зміни"}
-                    </button>
-                </form>
+                <div className="profile-form">
+                    {isEditingProfile ? (
+                        <form className="profile-form-edit" onSubmit={handleSaveProfile}>
+                            <label>
+                                <span>Ім&apos;я</span>
+                                <input
+                                    type="text"
+                                    value={name}
+                                    onChange={(event) => setName(event.target.value)}
+                                    autoComplete="name"
+                                    required
+                                />
+                            </label>
+                            <label>
+                                <span>Електронна пошта</span>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(event) => setEmail(event.target.value)}
+                                    autoComplete="email"
+                                    required
+                                />
+                            </label>
+                            <label>
+                                <span>Телефон</span>
+                                <input
+                                    type="tel"
+                                    value={phone}
+                                    onChange={(event) => setPhone(event.target.value)}
+                                    autoComplete="tel"
+                                    required
+                                />
+                            </label>
+                            <div className="profile-form-actions">
+                                <button type="submit" className="primary-button" disabled={isSavingProfile}>
+                                    {isSavingProfile ? "Збереження…" : "Зберегти зміни"}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="secondary-button"
+                                    disabled={isSavingProfile}
+                                    onClick={cancelProfileEdit}
+                                >
+                                    Скасувати
+                                </button>
+                            </div>
+                        </form>
+                    ) : (
+                        <>
+                            <div className="profile-form-readonly">
+                                <div className="profile-form-readonly-field">
+                                    <span>Ім&apos;я</span>
+                                    <p>{name}</p>
+                                </div>
+                                <div className="profile-form-readonly-field">
+                                    <span>Електронна пошта</span>
+                                    <p>{email}</p>
+                                </div>
+                                <div className="profile-form-readonly-field">
+                                    <span>Телефон</span>
+                                    <p>{phone}</p>
+                                </div>
+                            </div>
+                            <button type="button" className="secondary-button" onClick={startProfileEdit}>
+                                Змінити інформацію
+                            </button>
+                        </>
+                    )}
+                </div>
 
-                {profile ? (
-                    <p className="profile-account-created">
-                        Акаунт створено{" "}
-                        <time dateTime={profile.createdAtUtc}>
-                            {formatUkrainianShortDate(profile.createdAtUtc)}
-                        </time>
-                    </p>
-                ) : null}
+                <div className="profile-account-footer">
+                    {profile ? (
+                        <p className="profile-account-created">
+                            Акаунт створено{" "}
+                            <time dateTime={profile.createdAtUtc}>
+                                {formatUkrainianShortDate(profile.createdAtUtc)}
+                            </time>
+                        </p>
+                    ) : (
+                        <span />
+                    )}
+                    <button type="button" className="secondary-button compact" onClick={onLogout}>
+                        Вийти
+                    </button>
+                </div>
             </section>
 
             <section className="profile-addresses-panel hero-panel">
@@ -339,51 +415,72 @@ export default function ProfileAccountTab({ user, onProfileSaved }: ProfileAccou
                 ) : null}
 
                 {profile && profile.addresses.length > 0 ? (
-                    <ul className="profile-address-list">
-                        {profile.addresses.map((address) => {
-                            const isEditing = editingAddressId === address.id;
+                    <>
+                        <ul className="profile-address-list">
+                            {(showAllAddresses
+                                ? profile.addresses
+                                : profile.addresses.slice(0, ADDRESSES_PREVIEW_COUNT)
+                            ).map((address) => {
+                                const isEditing = editingAddressId === address.id;
 
-                            return (
-                                <li
-                                    key={address.id}
-                                    className={`profile-address-card${isEditing ? " profile-address-card--editing" : ""}${address.isLastUsed ? " profile-address-card--recent" : ""}`}
-                                >
-                                    <div className="profile-address-card-icon">
-                                        <AddressPinIcon />
-                                    </div>
-                                    <div className="profile-address-card-body">
-                                        <div className="profile-address-card-top">
-                                            <span className="profile-address-card-name">
-                                                {address.label?.trim() || "Адреса"}
-                                            </span>
-                                            {address.isLastUsed ? (
-                                                <span className="profile-address-card-tag">Остання</span>
-                                            ) : null}
+                                return (
+                                    <li
+                                        key={address.id}
+                                        className={`profile-address-card${isEditing ? " profile-address-card--editing" : ""}${address.isLastUsed ? " profile-address-card--recent" : ""}`}
+                                    >
+                                        <div className="profile-address-card-icon">
+                                            <AddressPinIcon />
                                         </div>
-                                        <p className="profile-address-card-line">{address.addressLine}</p>
-                                    </div>
-                                    <div className="profile-address-card-actions">
-                                        <button
-                                            type="button"
-                                            className="profile-address-action"
-                                            onClick={() => startEditAddress(address)}
-                                            disabled={isSavingAddress}
-                                        >
-                                            Редагувати
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="profile-address-action profile-address-action--danger"
-                                            onClick={() => void handleDeleteAddress(address.id)}
-                                            disabled={isSavingAddress}
-                                        >
-                                            Видалити
-                                        </button>
-                                    </div>
-                                </li>
-                            );
-                        })}
-                    </ul>
+                                        <div className="profile-address-card-body">
+                                            <div className="profile-address-card-top">
+                                                <span className="profile-address-card-name">
+                                                    {address.label?.trim() || "Адреса"}
+                                                </span>
+                                                {address.isLastUsed ? (
+                                                    <span className="profile-address-card-tag">Остання</span>
+                                                ) : null}
+                                            </div>
+                                            <p className="profile-address-card-line">{address.addressLine}</p>
+                                        </div>
+                                        <div className="profile-address-card-actions">
+                                            <button
+                                                type="button"
+                                                className="profile-address-action"
+                                                onClick={() => startEditAddress(address)}
+                                                disabled={isSavingAddress}
+                                            >
+                                                Редагувати
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="profile-address-action profile-address-action--danger"
+                                                onClick={() => void handleDeleteAddress(address.id)}
+                                                disabled={isSavingAddress}
+                                            >
+                                                Видалити
+                                            </button>
+                                        </div>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                        {profile.addresses.length > ADDRESSES_PREVIEW_COUNT ? (
+                            <div className="profile-list-more profile-list-more--compact">
+                                <p className="profile-list-more-meta">
+                                    {showAllAddresses
+                                        ? `Усі ${profile.addresses.length} адрес`
+                                        : `Показано ${ADDRESSES_PREVIEW_COUNT} з ${profile.addresses.length}`}
+                                </p>
+                                <button
+                                    type="button"
+                                    className="secondary-button compact"
+                                    onClick={() => setShowAllAddresses((current) => !current)}
+                                >
+                                    {showAllAddresses ? "Згорнути" : "Показати всі адреси"}
+                                </button>
+                            </div>
+                        ) : null}
+                    </>
                 ) : (
                     <div className="profile-addresses-empty">
                         <AddressPinIcon />

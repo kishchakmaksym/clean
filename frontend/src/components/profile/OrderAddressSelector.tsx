@@ -67,11 +67,7 @@ export default function OrderAddressSelector({
                         </span>
                     </label>
                 </div>
-            ) : (
-                <p className="services-address-hint">
-                    Збережених адрес ще немає. Вкажіть адресу — вона автоматично з&apos;явиться у вашому профілі.
-                </p>
-            )}
+            ) : null}
 
             {showCustomField ? (
                 <div className="services-field services-address-custom">

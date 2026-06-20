@@ -323,10 +323,6 @@ export default function StreetAddressInput({
                     />
                 </label>
             </div>
-
-            <p className="street-address-hint">
-                Підказки з OpenStreetMap — усі вулиці Ужгорода, Минаю та Сторожниці, включно з новими.
-            </p>
         </div>
     );
 }

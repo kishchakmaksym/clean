@@ -45,6 +45,15 @@ public static class BotMessages
             _{Escape(string.IsNullOrWhiteSpace(order.Notes) ? "коментар відсутній" : order.Notes)}_
             """;
 
+        if (order.SelectedAddons.Count > 0)
+        {
+            text += "\n\n➕ *Додаткові послуги:*";
+            foreach (var addon in order.SelectedAddons)
+            {
+                text += $"\n• {Escape(addon)}";
+            }
+        }
+
         if (showActionsHint)
         {
             text += "\n\nОберіть дію нижче 👇";

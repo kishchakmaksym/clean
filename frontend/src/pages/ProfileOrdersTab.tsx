@@ -25,6 +25,16 @@ import "./ServicesPage.css";
 
 const STAFF_ORDER_TABS = ["PendingConfirmation", "Confirmed", "Completed"] as const;
 
+const ORDERS_PAGE_SIZE = 3;
+
+const USER_ORDER_FILTERS = [
+    { id: "all", label: "Усі" },
+    { id: "active", label: "Активні" },
+    { id: "completed", label: "Виконані" },
+] as const;
+
+type UserOrderFilter = (typeof USER_ORDER_FILTERS)[number]["id"];
+
 const staffTabModifiers: Record<OrderStatus, "fixed" | "custom" | "subscription"> = {
     PendingConfirmation: "fixed",
     Confirmed: "custom",
@@ -58,6 +68,17 @@ function orderMatchesIdQuery(order: OrderDto, query: string) {
     return order.id.replace(/-/g, "").toLowerCase().includes(normalizedQuery);
 }
 
+function filterUserOrders(orders: OrderDto[], filter: UserOrderFilter) {
+    switch (filter) {
+        case "active":
+            return orders.filter((order) => order.status !== "Completed");
+        case "completed":
+            return orders.filter((order) => order.status === "Completed");
+        default:
+            return orders;
+    }
+}
+
 export default function ProfileOrdersTab() {
     const { user } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -72,8 +93,11 @@ export default function ProfileOrdersTab() {
     const [paymentFinalizeError, setPaymentFinalizeError] = useState("");
     const [paymentSucceeded, setPaymentSucceeded] = useState(false);
     const [activeStaffTab, setActiveStaffTab] = useState<OrderStatus>("PendingConfirmation");
+    const [userOrderFilter, setUserOrderFilter] = useState<UserOrderFilter>("all");
+    const [visibleOrdersCount, setVisibleOrdersCount] = useState(ORDERS_PAGE_SIZE);
     const [orderIdSearch, setOrderIdSearch] = useState("");
     const [expandedOrderComments, setExpandedOrderComments] = useState<Record<string, boolean>>({});
+    const [expandedOrderAddons, setExpandedOrderAddons] = useState<Record<string, boolean>>({});
 
     const loadOrders = useCallback(async (options?: { silent?: boolean }) => {
         if (!user) {
@@ -186,14 +210,9 @@ export default function ProfileOrdersTab() {
         return groups;
     }, [orders]);
 
-    const orderStats = useMemo(
-        () => ({
-            total: orders.length,
-            pending: groupedOrders.PendingConfirmation.length,
-            completed: groupedOrders.Completed.length,
-        }),
-        [groupedOrders, orders.length],
-    );
+    useEffect(() => {
+        setVisibleOrdersCount(ORDERS_PAGE_SIZE);
+    }, [activeStaffTab, orderIdSearch, userOrderFilter]);
 
     useEffect(() => {
         if (!actionSuccess) {
@@ -308,6 +327,52 @@ export default function ProfileOrdersTab() {
         return null;
     }
 
+    function renderOrdersList(items: OrderDto[]) {
+        const visibleItems = items.slice(0, visibleOrdersCount);
+        const hasMore = visibleItems.length < items.length;
+        const canCollapse = visibleItems.length > ORDERS_PAGE_SIZE;
+
+        return (
+            <>
+                <div className="profile-orders-list" role="list">
+                    {visibleItems.map(renderOrderCard)}
+                </div>
+                {items.length > ORDERS_PAGE_SIZE ? (
+                    <div className="profile-list-more">
+                        <p className="profile-list-more-meta">
+                            Показано {visibleItems.length} з {items.length}
+                        </p>
+                        <div className="profile-list-more-actions">
+                            {canCollapse ? (
+                                <button
+                                    type="button"
+                                    className="secondary-button compact"
+                                    onClick={() => setVisibleOrdersCount(ORDERS_PAGE_SIZE)}
+                                >
+                                    Згорнути
+                                </button>
+                            ) : null}
+                            {hasMore ? (
+                                <button
+                                    type="button"
+                                    className="secondary-button compact"
+                                    onClick={() =>
+                                        setVisibleOrdersCount(
+                                            (current) => current + ORDERS_PAGE_SIZE,
+                                        )
+                                    }
+                                >
+                                    Показати ще{" "}
+                                    {Math.min(ORDERS_PAGE_SIZE, items.length - visibleItems.length)}
+                                </button>
+                            ) : null}
+                        </div>
+                    </div>
+                ) : null}
+            </>
+        );
+    }
+
     function renderOrderCard(order: OrderDto) {
         const isUpdating = updatingOrderId === order.id;
         const detailItems: { label: string; value: string }[] = [];
@@ -320,12 +385,18 @@ export default function ProfileOrdersTab() {
             detailItems.push({ label: "Адреса", value: order.address });
         }
 
+        const hasAddons = order.selectedAddons.length > 0;
+        const addonsExpanded = expandedOrderAddons[order.id] ?? false;
+        const shouldCollapseAddons = !isStaff && order.selectedAddons.length > 2;
+        const addonsValue = !hasAddons
+            ? "нема додаткових послуг"
+            : shouldCollapseAddons && !addonsExpanded
+              ? `${order.selectedAddons.length} послуг`
+              : order.selectedAddons.join(" · ");
+
         detailItems.push({
             label: "Додаткові послуги",
-            value:
-                order.selectedAddons.length > 0
-                    ? order.selectedAddons.join(" · ")
-                    : "нема додаткових послуг",
+            value: addonsValue,
         });
 
         if (isStaff) {
@@ -381,25 +452,43 @@ export default function ProfileOrdersTab() {
                 </div>
 
                 <div className="profile-order-bottom">
-                    <dl className="profile-order-details">
-                        {detailItems.map((item) => (
-                            <div
-                                key={item.label}
-                                className={`profile-order-detail${
-                                    item.label === "Додаткові послуги" && order.selectedAddons.length === 0
-                                        ? " profile-order-detail--empty"
-                                        : item.label === "Коментар"
-                                          ? ` profile-order-detail--comment${
-                                                !hasComment ? " profile-order-detail--empty" : ""
-                                            }`
-                                          : ""
-                                }`}
+                    <div className="profile-order-details-wrap">
+                        <dl className="profile-order-details">
+                            {detailItems.map((item) => (
+                                <div
+                                    key={item.label}
+                                    className={`profile-order-detail${
+                                        item.label === "Додаткові послуги" && order.selectedAddons.length === 0
+                                            ? " profile-order-detail--empty"
+                                            : item.label === "Коментар"
+                                              ? ` profile-order-detail--comment${
+                                                    !hasComment ? " profile-order-detail--empty" : ""
+                                                }`
+                                              : ""
+                                    }`}
+                                >
+                                    <dt>{item.label}</dt>
+                                    <dd>{item.value}</dd>
+                                </div>
+                            ))}
+                        </dl>
+
+                        {!isStaff && shouldCollapseAddons ? (
+                            <button
+                                type="button"
+                                className="profile-order-addons-toggle"
+                                onClick={() =>
+                                    setExpandedOrderAddons((current) => ({
+                                        ...current,
+                                        [order.id]: !current[order.id],
+                                    }))
+                                }
+                                aria-expanded={addonsExpanded}
                             >
-                                <dt>{item.label}</dt>
-                                <dd>{item.value}</dd>
-                            </div>
-                        ))}
-                    </dl>
+                                {addonsExpanded ? "Сховати послуги" : "Показати всі послуги"}
+                            </button>
+                        ) : null}
+                    </div>
 
                     <div className="profile-order-summary">
                         <span className="profile-order-price">{formatPrice(order.payableAmount)}</span>
@@ -476,7 +565,45 @@ export default function ProfileOrdersTab() {
         }
 
         if (userRole === "User") {
-            return <div className="profile-orders-list">{orders.map(renderOrderCard)}</div>;
+            const filteredUserOrders = filterUserOrders(orders, userOrderFilter);
+
+            return (
+                <>
+                    <div className="profile-orders-filter-bar" role="tablist" aria-label="Фільтр замовлень">
+                        {USER_ORDER_FILTERS.map((filter) => {
+                            const count = filterUserOrders(orders, filter.id).length;
+
+                            return (
+                                <button
+                                    key={filter.id}
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={userOrderFilter === filter.id}
+                                    className={`profile-orders-filter${
+                                        userOrderFilter === filter.id ? " profile-orders-filter--active" : ""
+                                    }`}
+                                    onClick={() => setUserOrderFilter(filter.id)}
+                                >
+                                    {filter.label}
+                                    <span className="profile-orders-filter-count">{count}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    {filteredUserOrders.length === 0 ? (
+                        <p className="profile-orders-empty profile-orders-empty--inline">
+                            {userOrderFilter === "active"
+                                ? "Немає активних замовлень"
+                                : userOrderFilter === "completed"
+                                  ? "Ще немає виконаних замовлень"
+                                  : "У вас ще немає замовлень"}
+                        </p>
+                    ) : (
+                        renderOrdersList(filteredUserOrders)
+                    )}
+                </>
+            );
         }
 
         const activeOrders = groupedOrders[activeStaffTab];
@@ -530,9 +657,7 @@ export default function ProfileOrdersTab() {
                 ) : null}
 
                 {filteredOrders.length > 0 ? (
-                    <div className="profile-orders-list" role="tabpanel">
-                        {filteredOrders.map(renderOrderCard)}
-                    </div>
+                    <div role="tabpanel">{renderOrdersList(filteredOrders)}</div>
                 ) : (
                     <p className="profile-orders-empty profile-orders-empty--inline">
                         {hasActiveSearch
@@ -577,21 +702,6 @@ export default function ProfileOrdersTab() {
                     ) : null}
                 </div>
             ) : null}
-
-            <div className="profile-stats">
-                <article className="profile-stat">
-                    <span className="profile-stat-value">{orderStats.total}</span>
-                    <span className="profile-stat-label">Усього</span>
-                </article>
-                <article className="profile-stat profile-stat--pending">
-                    <span className="profile-stat-value">{orderStats.pending}</span>
-                    <span className="profile-stat-label">Чекають</span>
-                </article>
-                <article className="profile-stat profile-stat--completed">
-                    <span className="profile-stat-value">{orderStats.completed}</span>
-                    <span className="profile-stat-label">Виконано</span>
-                </article>
-            </div>
 
             {actionSuccess ? (
                 <p className="profile-action-toast profile-action-toast--success" role="status">

@@ -4,6 +4,7 @@ import type { UserProfileDto } from "../api/profile";
 import { normalizeUserRole } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
 import ProfileAccountTab from "./ProfileAccountTab";
+import ProfileAdminPaymentPanel from "./ProfileAdminPaymentPanel";
 import ProfileOrdersTab from "./ProfileOrdersTab";
 import "./HomePage.css";
 import "./ProfilePage.css";
@@ -35,25 +36,10 @@ export default function ProfilePage() {
 
     return (
         <div className="profile-page">
-            <header className="profile-page-head">
-                <div>
-                    <h1 className="profile-page-title">Профіль</h1>
-                    <p className="profile-page-subtitle">
-                        {userRole === "Admin"
-                            ? "Керування замовленнями клієнтів"
-                            : userRole === "Employee"
-                              ? "Ваші дані та призначені замовлення"
-                              : "Особисті дані та історія замовлень"}
-                    </p>
-                </div>
-                <button type="button" className="secondary-button compact" onClick={logout}>
-                    Вийти
-                </button>
-            </header>
-
             <div className="profile-layout">
                 <aside className="profile-sidebar">
-                    <ProfileAccountTab user={user} onProfileSaved={handleProfileSaved} />
+                    <ProfileAccountTab user={user} onProfileSaved={handleProfileSaved} onLogout={logout} />
+                    {userRole === "Admin" ? <ProfileAdminPaymentPanel userId={user.id} /> : null}
                 </aside>
 
                 <section className="profile-orders-section" aria-labelledby="profile-orders-heading">

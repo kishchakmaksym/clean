@@ -135,10 +135,3 @@
 .street-address-suggestion-status--error {
     color: #b91c1c;
 }
-
-.street-address-hint {
-    margin: 0;
-    font-size: 0.75rem;
-    line-height: 1.45;
-    color: var(--muted);
-}

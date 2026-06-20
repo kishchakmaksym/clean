@@ -13,6 +13,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<PendingCardOrder> PendingCardOrders => Set<PendingCardOrder>();
 
+    public DbSet<AdminPaymentInvoice> AdminPaymentInvoices => Set<AdminPaymentInvoice>();
+
     public DbSet<UserAddress> UserAddresses => Set<UserAddress>();
 
     public DbSet<TelegramAccount> TelegramAccounts => Set<TelegramAccount>();
@@ -175,6 +177,44 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
             entity.Property(pending => pending.CreatedAtUtc)
                 .IsRequired();
+        });
+
+        modelBuilder.Entity<AdminPaymentInvoice>(entity =>
+        {
+            entity.HasKey(invoice => invoice.InvoiceId);
+
+            entity.Property(invoice => invoice.InvoiceId)
+                .HasMaxLength(64)
+                .IsRequired();
+
+            entity.Property(invoice => invoice.Label)
+                .HasMaxLength(120)
+                .IsRequired();
+
+            entity.Property(invoice => invoice.Destination)
+                .HasMaxLength(200)
+                .IsRequired();
+
+            entity.Property(invoice => invoice.PageUrl)
+                .HasMaxLength(500)
+                .IsRequired();
+
+            entity.Property(invoice => invoice.Reference)
+                .HasMaxLength(64)
+                .IsRequired();
+
+            entity.Property(invoice => invoice.Status)
+                .HasMaxLength(32)
+                .IsRequired();
+
+            entity.Property(invoice => invoice.CreatedAtUtc)
+                .IsRequired();
+
+            entity.Property(invoice => invoice.ExpiresAtUtc)
+                .IsRequired();
+
+            entity.HasIndex(invoice => invoice.CreatedByUserId);
+            entity.HasIndex(invoice => invoice.CreatedAtUtc);
         });
 
         modelBuilder.Entity<TelegramAccount>(entity =>

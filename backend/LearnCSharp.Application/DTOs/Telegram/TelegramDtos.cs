@@ -112,6 +112,8 @@ public sealed class StaffOrderDto
 
     public string? Notes { get; init; }
 
+    public IReadOnlyList<string> SelectedAddons { get; init; } = [];
+
     public DateTime CreatedAtUtc { get; init; }
 
     public string? AssigneeName { get; init; }

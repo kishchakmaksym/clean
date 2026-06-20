@@ -129,6 +129,11 @@ public sealed class OrderService(
             return UpdateFailure(["Замовлення не знайдено."]);
         }
 
+        if (order.Status is OrderStatus.Cancelled)
+        {
+            return UpdateFailure(["Скасоване замовлення не можна змінити."]);
+        }
+
         if (actor.Role == UserRole.Admin)
         {
             var isValidTransition = (order.Status, targetStatus) switch
@@ -176,6 +181,56 @@ public sealed class OrderService(
                 _ => "Статус оновлено.",
             },
             Order = MapOrder(order, order.User?.Name ?? "Клієнт"),
+        };
+    }
+
+    public async Task<UpdateOrderStatusResponseDto> CancelAsync(
+        CancelOrderRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        var actor = await userRepository.FindByIdAsync(request.UserId, cancellationToken);
+        if (actor is null)
+        {
+            return UpdateFailure(["Користувача не знайдено."]);
+        }
+
+        if (actor.Role is UserRole.Admin or UserRole.Employee)
+        {
+            return UpdateFailure(["Скасування доступне лише в особистому кабінеті клієнта."]);
+        }
+
+        var order = await orderRepository.FindByIdAsync(request.OrderId, cancellationToken);
+        if (order is null)
+        {
+            return UpdateFailure(["Замовлення не знайдено."]);
+        }
+
+        if (order.UserId != actor.Id)
+        {
+            return UpdateFailure(["Це не ваше замовлення."]);
+        }
+
+        if (order.Status is OrderStatus.Completed or OrderStatus.Cancelled)
+        {
+            return UpdateFailure(["Це замовлення вже не можна скасувати."]);
+        }
+
+        if (!OrderScheduling.CanUserCancel(order.CreatedAtUtc, order.TimeSlot, order.Status, DateTime.UtcNow))
+        {
+            return UpdateFailure([
+                "Скасування можливе не пізніше ніж за 1 годину до початку прибирання.",
+            ]);
+        }
+
+        order.Status = OrderStatus.Cancelled;
+        order.UpdatedAtUtc = DateTime.UtcNow;
+        await orderRepository.UpdateAsync(order, cancellationToken);
+
+        return new UpdateOrderStatusResponseDto
+        {
+            Success = true,
+            Message = "Замовлення скасовано.",
+            Order = MapOrder(order, actor.Name),
         };
     }
 
@@ -316,8 +371,12 @@ public sealed class OrderService(
         return false;
     }
 
-    private static OrderResponseDto MapOrder(Order order, string customerName) =>
-        new()
+    private static OrderResponseDto MapOrder(Order order, string customerName)
+    {
+        var nowUtc = DateTime.UtcNow;
+        var scheduledCleaningStartUtc = OrderScheduling.GetNextCleaningStartUtc(order.CreatedAtUtc, order.TimeSlot);
+
+        return new()
         {
             Id = order.Id,
             UserId = order.UserId,
@@ -340,7 +399,14 @@ public sealed class OrderService(
             PayableAmount = order.PayableAmount,
             CreatedAtUtc = order.CreatedAtUtc,
             UpdatedAtUtc = order.UpdatedAtUtc,
+            ScheduledCleaningStartUtc = scheduledCleaningStartUtc,
+            CanCancel = OrderScheduling.CanUserCancel(
+                order.CreatedAtUtc,
+                order.TimeSlot,
+                order.Status,
+                nowUtc),
         };
+    }
 
     private static CreateOrderResponseDto CreateFailure(IReadOnlyList<string> errors) =>
         new() { Success = false, Errors = errors };

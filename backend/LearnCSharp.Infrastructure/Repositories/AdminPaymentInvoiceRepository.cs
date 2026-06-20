@@ -58,4 +58,59 @@ public sealed class AdminPaymentInvoiceRepository(AppDbContext dbContext) : IAdm
         invoice.PaidAtUtc = paidAtUtc;
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<bool> MarkAsDeletedAsync(
+        string invoiceId,
+        Guid adminUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var invoice = await dbContext.AdminPaymentInvoices
+            .FirstOrDefaultAsync(
+                item => item.InvoiceId == invoiceId && item.CreatedByUserId == adminUserId,
+                cancellationToken);
+
+        if (invoice is null)
+        {
+            return false;
+        }
+
+        if (string.Equals(invoice.Status, "success", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (invoice.DeletedAtUtc is not null)
+        {
+            return true;
+        }
+
+        invoice.DeletedAtUtc = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    public async Task<bool> RestoreAsync(
+        string invoiceId,
+        Guid adminUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var invoice = await dbContext.AdminPaymentInvoices
+            .FirstOrDefaultAsync(
+                item => item.InvoiceId == invoiceId && item.CreatedByUserId == adminUserId,
+                cancellationToken);
+
+        if (invoice is null || invoice.DeletedAtUtc is null)
+        {
+            return false;
+        }
+
+        if (string.Equals(invoice.Status, "success", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        invoice.DeletedAtUtc = null;
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return true;
+    }
 }

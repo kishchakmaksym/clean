@@ -108,7 +108,7 @@ public sealed class PaymentsController(
         }
 
         var baseDestination = string.IsNullOrWhiteSpace(request.Destination)
-            ? "Оплата послуг CleanPro"
+            ? "Оплата послуг Smart Clean"
             : request.Destination.Trim();
 
         var createdAtUtc = DateTime.UtcNow;
@@ -238,6 +238,108 @@ public sealed class PaymentsController(
         });
     }
 
+    [HttpPost("mono/invoice/admin/delete")]
+    [ProducesResponseType(typeof(DeleteAdminMonoInvoiceResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(DeleteAdminMonoInvoiceResponseDto), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<DeleteAdminMonoInvoiceResponseDto>> DeleteAdminMonoInvoice(
+        [FromBody] DeleteAdminMonoInvoiceRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var adminError = await ValidateAdminAsync(request.UserId, cancellationToken);
+        if (adminError is not null)
+        {
+            return BadRequest(new DeleteAdminMonoInvoiceResponseDto
+            {
+                Success = false,
+                Error = adminError,
+            });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.InvoiceId))
+        {
+            return BadRequest(new DeleteAdminMonoInvoiceResponseDto
+            {
+                Success = false,
+                Error = "Не вказано рахунок.",
+            });
+        }
+
+        var deleted = await adminPaymentInvoiceRepository.MarkAsDeletedAsync(
+            request.InvoiceId.Trim(),
+            request.UserId,
+            cancellationToken);
+
+        if (!deleted)
+        {
+            return BadRequest(new DeleteAdminMonoInvoiceResponseDto
+            {
+                Success = false,
+                Error = "Рахунок не знайдено або вже оплачено.",
+            });
+        }
+
+        var invoices = await adminPaymentInvoiceRepository.GetForAdminAsync(
+            request.UserId,
+            cancellationToken: cancellationToken);
+
+        return Ok(new DeleteAdminMonoInvoiceResponseDto
+        {
+            Success = true,
+            Invoices = invoices.Select(MapAdminInvoice).ToList(),
+        });
+    }
+
+    [HttpPost("mono/invoice/admin/restore")]
+    [ProducesResponseType(typeof(DeleteAdminMonoInvoiceResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(DeleteAdminMonoInvoiceResponseDto), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<DeleteAdminMonoInvoiceResponseDto>> RestoreAdminMonoInvoice(
+        [FromBody] DeleteAdminMonoInvoiceRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var adminError = await ValidateAdminAsync(request.UserId, cancellationToken);
+        if (adminError is not null)
+        {
+            return BadRequest(new DeleteAdminMonoInvoiceResponseDto
+            {
+                Success = false,
+                Error = adminError,
+            });
+        }
+
+        if (string.IsNullOrWhiteSpace(request.InvoiceId))
+        {
+            return BadRequest(new DeleteAdminMonoInvoiceResponseDto
+            {
+                Success = false,
+                Error = "Не вказано рахунок.",
+            });
+        }
+
+        var restored = await adminPaymentInvoiceRepository.RestoreAsync(
+            request.InvoiceId.Trim(),
+            request.UserId,
+            cancellationToken);
+
+        if (!restored)
+        {
+            return BadRequest(new DeleteAdminMonoInvoiceResponseDto
+            {
+                Success = false,
+                Error = "Рахунок не знайдено або не видалений.",
+            });
+        }
+
+        var invoices = await adminPaymentInvoiceRepository.GetForAdminAsync(
+            request.UserId,
+            cancellationToken: cancellationToken);
+
+        return Ok(new DeleteAdminMonoInvoiceResponseDto
+        {
+            Success = true,
+            Invoices = invoices.Select(MapAdminInvoice).ToList(),
+        });
+    }
+
     private async Task<string?> ValidateAdminAsync(Guid userId, CancellationToken cancellationToken)
     {
         var admin = await userRepository.FindByIdAsync(userId, cancellationToken);
@@ -320,9 +422,11 @@ public sealed class PaymentsController(
             Reference = invoice.Reference,
             Status = invoice.Status,
             IsPaid = string.Equals(invoice.Status, "success", StringComparison.OrdinalIgnoreCase),
+            IsDeleted = invoice.DeletedAtUtc is not null,
             CreatedAtUtc = invoice.CreatedAtUtc,
             ExpiresAtUtc = invoice.ExpiresAtUtc,
             PaidAtUtc = invoice.PaidAtUtc,
+            DeletedAtUtc = invoice.DeletedAtUtc,
         };
 
     private async Task<CreateMonoInvoiceResponseDto> CreateMonoInvoiceCoreAsync(
@@ -551,11 +655,31 @@ public sealed class AdminPaymentInvoiceDto
 
     public bool IsPaid { get; init; }
 
+    public bool IsDeleted { get; init; }
+
     public required DateTime CreatedAtUtc { get; init; }
 
     public required DateTime ExpiresAtUtc { get; init; }
 
     public DateTime? PaidAtUtc { get; init; }
+
+    public DateTime? DeletedAtUtc { get; init; }
+}
+
+public sealed class DeleteAdminMonoInvoiceRequestDto
+{
+    public Guid UserId { get; init; }
+
+    public required string InvoiceId { get; init; }
+}
+
+public sealed class DeleteAdminMonoInvoiceResponseDto
+{
+    public bool Success { get; init; }
+
+    public IReadOnlyList<AdminPaymentInvoiceDto> Invoices { get; init; } = [];
+
+    public string? Error { get; init; }
 }
 
 public sealed class CreateMonoInvoiceResponseDto

@@ -32,9 +32,11 @@ export type AdminPaymentInvoiceDto = {
     reference: string;
     status: string;
     isPaid: boolean;
+    isDeleted: boolean;
     createdAtUtc: string;
     expiresAtUtc: string;
     paidAtUtc?: string | null;
+    deletedAtUtc?: string | null;
 };
 
 export type AdminPaymentInvoiceListResponse = {
@@ -137,6 +139,50 @@ export async function refreshAdminMonoInvoices(
         const data = await parseJsonResponse<AdminPaymentInvoiceListResponse>(response);
         if (!data) {
             return { success: false, error: "Не вдалося оновити статуси." };
+        }
+
+        return data;
+    } catch {
+        return { success: false, error: "Помилка з'єднання з сервером." };
+    }
+}
+
+export async function deleteAdminMonoInvoice(
+    userId: string,
+    invoiceId: string,
+): Promise<AdminPaymentInvoiceListResponse> {
+    try {
+        const response = await fetch("/api/payments/mono/invoice/admin/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId, invoiceId }),
+        });
+
+        const data = await parseJsonResponse<AdminPaymentInvoiceListResponse>(response);
+        if (!data) {
+            return { success: false, error: "Не вдалося видалити рахунок." };
+        }
+
+        return data;
+    } catch {
+        return { success: false, error: "Помилка з'єднання з сервером." };
+    }
+}
+
+export async function restoreAdminMonoInvoice(
+    userId: string,
+    invoiceId: string,
+): Promise<AdminPaymentInvoiceListResponse> {
+    try {
+        const response = await fetch("/api/payments/mono/invoice/admin/restore", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId, invoiceId }),
+        });
+
+        const data = await parseJsonResponse<AdminPaymentInvoiceListResponse>(response);
+        if (!data) {
+            return { success: false, error: "Не вдалося відновити рахунок." };
         }
 
         return data;

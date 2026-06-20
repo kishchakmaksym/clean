@@ -1,0 +1,56 @@
+.support-typing {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 1rem;
+    background: var(--panel-bg);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.support-typing--start {
+    justify-self: start;
+}
+
+.support-typing--end {
+    justify-self: end;
+}
+
+.support-typing-dot {
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: var(--muted2);
+    animation: support-typing-wave 1.25s infinite ease-in-out;
+}
+
+.support-typing-dot:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.support-typing-dot:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+@keyframes support-typing-wave {
+    0%,
+    60%,
+    100% {
+        transform: translateY(0);
+        opacity: 0.45;
+    }
+
+    30% {
+        transform: translateY(-0.28rem);
+        opacity: 1;
+    }
+}
+
+.admin-support-messages .support-typing {
+    margin-top: 0.1rem;
+}
+
+.support-chat-messages .support-typing {
+    margin-top: 0.1rem;
+}

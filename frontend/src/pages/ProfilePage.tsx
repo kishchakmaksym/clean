@@ -4,7 +4,6 @@ import type { UserProfileDto } from "../api/profile";
 import { normalizeUserRole } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
 import ProfileAccountTab from "./ProfileAccountTab";
-import ProfileAdminPaymentPanel from "./ProfileAdminPaymentPanel";
 import ProfileOrdersTab from "./ProfileOrdersTab";
 import "./HomePage.css";
 import "./ProfilePage.css";
@@ -39,21 +38,18 @@ export default function ProfilePage() {
             <div className="profile-layout">
                 <aside className="profile-sidebar">
                     <ProfileAccountTab user={user} onProfileSaved={handleProfileSaved} onLogout={logout} />
-                    {userRole === "Admin" ? <ProfileAdminPaymentPanel userId={user.id} /> : null}
                 </aside>
 
                 <section className="profile-orders-section" aria-labelledby="profile-orders-heading">
                     <div className="profile-orders-head">
                         <h2 id="profile-orders-heading">Замовлення</h2>
                         <p>
-                            {userRole === "Admin"
-                                ? "Підтверджуйте нові заявки та позначайте виконані"
-                                : isStaff
-                                  ? "Усі заявки та їхній статус"
-                                  : "Усі ваші заявки та їхній статус"}
+                            {isStaff && userRole !== "Admin"
+                                ? "Усі заявки та їхній статус"
+                                : "Усі ваші заявки та їхній статус"}
                         </p>
                     </div>
-                    <ProfileOrdersTab />
+                    <ProfileOrdersTab viewMode="profile" />
                 </section>
             </div>
         </div>

@@ -1,4 +1,4 @@
-export type OrderStatus = "PendingConfirmation" | "Confirmed" | "Completed";
+export type OrderStatus = "PendingConfirmation" | "Confirmed" | "Completed" | "Cancelled";
 
 export type PaymentMethodType = "card" | "cash";
 
@@ -24,6 +24,8 @@ export type OrderDto = {
     payableAmount: number;
     createdAtUtc: string;
     updatedAtUtc?: string | null;
+    scheduledCleaningStartUtc: string;
+    canCancel: boolean;
 };
 
 export type CreateOrderRequest = {
@@ -64,6 +66,13 @@ export type UpdateOrderStatusResponse = {
     order?: OrderDto;
     errors?: string[];
 };
+
+export type CancelOrderRequest = {
+    userId: string;
+    orderId: string;
+};
+
+export type CancelOrderResponse = UpdateOrderStatusResponse;
 
 export async function createOrder(payload: CreateOrderRequest): Promise<CreateOrderResponse> {
     const controller = new AbortController();
@@ -193,16 +202,34 @@ export async function updateOrderStatus(
     return data;
 }
 
+export async function cancelOrder(payload: CancelOrderRequest): Promise<CancelOrderResponse> {
+    const response = await fetch("/api/orders/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+
+    const data = (await response.json()) as CancelOrderResponse;
+
+    if (!response.ok && data.success !== false) {
+        return { success: false, errors: ["Не вдалося скасувати замовлення."] };
+    }
+
+    return data;
+}
+
 export const orderStatusLabels: Record<OrderStatus, string> = {
-    PendingConfirmation: "Замовлення очікує підтвердження",
+    PendingConfirmation: "Очікує підтвердження",
     Confirmed: "Підтверджено",
     Completed: "Виконано",
+    Cancelled: "Скасовано",
 };
 
 export const orderStatusGroupLabels: Record<OrderStatus, string> = {
     PendingConfirmation: "Очікують підтвердження",
     Confirmed: "Підтверджені",
     Completed: "Виконані",
+    Cancelled: "Скасовані",
 };
 
 export const paymentMethodLabels: Record<PaymentMethodType, string> = {

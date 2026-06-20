@@ -1,0 +1,474 @@
+.admin-page {
+    width: 100%;
+    max-width: 72rem;
+    margin: 0 auto;
+    padding: clamp(1.5rem, 4vw, 2.5rem) var(--pad-inline) var(--pad-block);
+    padding-left: max(var(--pad-inline), env(safe-area-inset-left));
+    padding-right: max(var(--pad-inline), env(safe-area-inset-right));
+    display: grid;
+    gap: clamp(1rem, 2.5vw, 1.5rem);
+    overflow-x: clip;
+}
+
+.admin-page-head {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.admin-page-head h1 {
+    margin: 0;
+    font-size: clamp(1.35rem, 3vw, 1.85rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text);
+}
+
+.admin-page-head p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.admin-tabs-wrap {
+    position: static;
+    margin-block: 0;
+    padding-block: 0;
+}
+
+.admin-tabs-wrap .services-tabs {
+    --tab-count: 4;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: min(100%, 52rem);
+}
+
+.services-tabs--admin-orders .services-tabs-indicator {
+    left: var(--tab-pad);
+    width: calc(100% / var(--tab-count) + var(--tab-slant));
+    clip-path: polygon(0 0, 100% 0, calc(100% - var(--tab-slant)) 100%, 0 100%);
+    border-radius: var(--radius-pill) 0 0 var(--radius-pill);
+}
+
+.services-tabs--admin-invoices .services-tabs-indicator {
+    left: calc(100% / var(--tab-count) - var(--tab-slant));
+    width: calc(100% / var(--tab-count) + var(--tab-slant) * 2);
+    clip-path: polygon(var(--tab-slant) 0, calc(100% - var(--tab-slant)) 0, 100% 100%, 0 100%);
+    border-radius: 0;
+}
+
+.services-tabs--admin-reviews .services-tabs-indicator {
+    left: calc(100% / var(--tab-count) * 2 - var(--tab-slant));
+    width: calc(100% / var(--tab-count) + var(--tab-slant) * 2);
+    clip-path: polygon(var(--tab-slant) 0, calc(100% - var(--tab-slant)) 0, 100% 100%, 0 100%);
+    border-radius: 0;
+}
+
+.services-tabs--admin-support .services-tabs-indicator {
+    left: calc(100% / var(--tab-count) * 3 - var(--tab-slant));
+    width: calc(100% / var(--tab-count) + var(--tab-slant));
+    clip-path: polygon(0 0, 100% 0, 100% 100%, var(--tab-slant) 100%);
+    border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+}
+
+.admin-panel-section {
+    min-width: 0;
+}
+
+.admin-panel-section .profile-payment-stack {
+    gap: 0.85rem;
+}
+
+.profile-admin-payment--panel {
+    padding: clamp(1rem, 2.5vw, 1.35rem);
+    border-radius: 1.1rem;
+    background: var(--panel-bg);
+    border: 1px solid rgba(var(--primary-rgb), 0.22);
+    box-shadow: var(--panel-shadow);
+    gap: 0.85rem;
+}
+
+.profile-admin-payment--panel .profile-sidebar-title {
+    font-size: 1.125rem;
+    letter-spacing: 0.04em;
+    color: #0f172a;
+    margin-bottom: 1.25rem;
+}
+
+.profile-admin-payment--panel .profile-form-edit {
+    gap: 1rem;
+}
+
+.profile-admin-payment--panel .profile-form-edit label {
+    gap: 0.45rem;
+}
+
+.profile-admin-payment--panel .profile-form-edit span {
+    font-size: 0.8125rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    color: #0f172a;
+}
+
+.profile-admin-payment--panel .profile-form-edit input,
+.profile-admin-payment--panel .profile-form-edit textarea {
+    padding: 0.85rem 1rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #0f172a;
+    border-color: rgba(15, 23, 42, 0.14);
+    background: #fff;
+}
+
+.profile-admin-payment--panel .profile-form-edit input::placeholder,
+.profile-admin-payment--panel .profile-form-edit textarea::placeholder {
+    color: #64748b;
+    opacity: 1;
+}
+
+.profile-admin-payment--panel .profile-form-edit textarea,
+.profile-admin-payment--panel .profile-admin-labels-input {
+    height: 5.5rem;
+    min-height: 5.5rem;
+    max-height: 5.5rem;
+    line-height: 1.5;
+    resize: none;
+    overflow-y: auto;
+}
+
+.profile-admin-payment--panel .profile-admin-payment-list-title {
+    font-size: 0.8125rem;
+    color: #0f172a;
+}
+
+.profile-admin-payment--panel .profile-admin-payment-filter {
+    font-size: 0.8125rem;
+    color: #334155;
+}
+
+.profile-admin-payment--panel .profile-admin-payment-filter--active {
+    color: var(--primary);
+}
+
+.profile-admin-payment--panel .profile-admin-payment-empty {
+    font-size: 0.9375rem;
+    color: #334155;
+}
+
+.profile-admin-payment--panel .profile-admin-invoice-label {
+    font-size: 1rem;
+    color: #0f172a;
+}
+
+.profile-admin-payment--panel .profile-admin-invoice-destination {
+    font-size: 0.875rem;
+    color: #334155;
+}
+
+.profile-admin-payment--panel .profile-order-id {
+    font-size: 0.75rem;
+    color: #475569;
+}
+
+.profile-admin-payment--panel .profile-admin-invoice-meta strong {
+    font-size: 1rem;
+    color: #0f172a;
+}
+
+.profile-admin-payment--panel .profile-admin-invoice-created {
+    font-size: 0.8125rem;
+    color: #475569;
+}
+
+.profile-admin-payment--panel .profile-admin-invoice-action {
+    font-size: 0.6875rem;
+}
+
+.profile-admin-payment--panel .profile-account-error {
+    font-size: 0.9375rem;
+    color: #b91c1c;
+}
+
+.admin-reviews-panel {
+    display: grid;
+    gap: 1rem;
+}
+
+.admin-reviews-form {
+    margin: 0;
+}
+
+.admin-reviews-list {
+    min-width: 0;
+}
+
+.admin-support-panel {
+    display: grid;
+    grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+    gap: 1rem;
+    min-height: 28rem;
+}
+
+.admin-support-sidebar,
+.admin-support-chat {
+    border-radius: 1.1rem;
+    background: var(--panel-bg);
+    border: 1px solid rgba(var(--primary-rgb), 0.18);
+    box-shadow: var(--panel-shadow);
+    min-width: 0;
+}
+
+.admin-support-sidebar {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    max-height: 34rem;
+}
+
+.admin-support-sidebar-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.85rem 0.9rem;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.admin-support-sidebar-head h2 {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 800;
+}
+
+.admin-support-ticket-list {
+    list-style: none;
+    margin: 0;
+    padding: 0.55rem;
+    overflow-y: auto;
+    display: grid;
+    gap: 0.45rem;
+    align-content: start;
+}
+
+.admin-support-ticket-card {
+    position: relative;
+    width: 100%;
+    display: grid;
+    gap: 0.2rem;
+    padding: 0.65rem 0.7rem;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-radius: 0.85rem;
+    background: var(--bg-alt);
+    text-align: left;
+    cursor: pointer;
+}
+
+.admin-support-ticket-card--active {
+    border-color: rgba(var(--primary-rgb), 0.45);
+    box-shadow: 0 0 0 1px rgba(var(--primary-rgb), 0.12);
+}
+
+.admin-support-ticket-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+}
+
+.admin-support-ticket-name {
+    font-size: 0.8125rem;
+    font-weight: 800;
+    color: var(--text);
+}
+
+.admin-support-ticket-id,
+.admin-support-ticket-preview {
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+.admin-support-ticket-preview {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.admin-support-status {
+    font-size: 0.625rem;
+    font-weight: 800;
+    padding: 0.15rem 0.4rem;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.admin-support-status--open {
+    background: rgba(249, 115, 22, 0.14);
+    color: #c2410c;
+}
+
+.admin-support-status--answered {
+    background: rgba(59, 130, 246, 0.14);
+    color: #1d4ed8;
+}
+
+.admin-support-status--closed {
+    background: rgba(100, 116, 139, 0.14);
+    color: #475569;
+}
+
+.admin-support-unread {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.45rem;
+    min-width: 1.15rem;
+    height: 1.15rem;
+    padding: 0 0.3rem;
+    border-radius: 999px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.625rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-support-chat {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    max-height: 34rem;
+}
+
+.admin-support-chat-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.85rem 0.95rem;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.admin-support-chat-head h3 {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 800;
+}
+
+.admin-support-empty {
+    display: grid;
+    place-items: center;
+    padding: 2rem 1rem;
+    color: var(--muted);
+    font-size: 0.875rem;
+}
+
+.admin-support-messages {
+    overflow-y: auto;
+    padding: 0.85rem;
+    display: grid;
+    gap: 0.55rem;
+    align-content: start;
+}
+
+.admin-support-bubble {
+    max-width: 85%;
+    padding: 0.55rem 0.7rem;
+    border-radius: 0.85rem;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+}
+
+.admin-support-bubble p {
+    margin: 0;
+}
+
+.admin-support-bubble-meta {
+    margin: 0 0 0.2rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    opacity: 0.75;
+}
+
+.admin-support-bubble--user {
+    justify-self: start;
+    background: var(--bg-alt);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.admin-support-bubble--staff {
+    justify-self: end;
+    background: linear-gradient(135deg, var(--primary) 0%, #9333ea 100%);
+    color: #fff;
+}
+
+.admin-support-bubble--system {
+    justify-self: center;
+    max-width: 100%;
+    background: rgba(15, 23, 42, 0.04);
+    color: var(--muted);
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+.admin-support-compose {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.55rem;
+    padding: 0.7rem 0.85rem 0.85rem;
+    border-top: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.admin-support-input {
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    font-family: inherit;
+    background: var(--bg-alt);
+}
+
+.admin-support-meta {
+    margin: 0;
+    font-size: 0.75rem;
+    color: var(--muted);
+}
+
+.admin-support-meta--warn {
+    padding: 0.65rem 0.85rem;
+    color: #b45309;
+}
+
+.admin-support-error {
+    margin: 0;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: #b91c1c;
+    background: rgba(239, 68, 68, 0.08);
+}
+
+@media (max-width: 52rem) {
+    .admin-support-panel {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-support-sidebar,
+    .admin-support-chat {
+        max-height: none;
+    }
+
+    .admin-support-sidebar {
+        max-height: 16rem;
+    }
+}
+
+@media (max-width: 40rem) {
+    .admin-tabs-wrap .services-tabs {
+        width: 100%;
+        --tab-slant: 0.75rem;
+    }
+
+    .admin-tabs-wrap .services-tab {
+        font-size: 0.75rem;
+        padding: 0.72rem 0.35rem;
+    }
+}

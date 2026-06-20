@@ -8,6 +8,7 @@
     display: flex;
     flex-direction: column;
     gap: clamp(1.5rem, 3.5vw, 2.25rem);
+    overflow-x: clip;
 }
 
 .services-page-anchor {
@@ -1028,14 +1029,16 @@
 }
 
 .services-subscription-calendar-day {
-    display: grid;
-    place-items: center;
-    min-height: 1.85rem;
-    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.08rem;
+    min-width: 0;
+    min-height: 2.35rem;
+    padding: 0.15rem 0.1rem;
     border: 1px solid rgba(15, 23, 42, 0.08);
     border-radius: 0.55rem;
-    font-size: 0.6875rem;
-    font-weight: 700;
     font-family: inherit;
     color: var(--muted);
     background: rgba(15, 23, 42, 0.04);
@@ -1048,21 +1051,30 @@
         transform 0.15s ease;
 }
 
+.services-subscription-calendar-day-value {
+    font-size: 0.75rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.services-subscription-calendar-day-label {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.5625rem;
+    font-weight: 700;
+    line-height: 1;
+    text-transform: lowercase;
+    white-space: nowrap;
+}
+
 .services-subscription-calendar-day:hover {
     border-color: rgba(var(--primary-rgb), 0.28);
     background: rgba(var(--primary-rgb), 0.06);
 }
 
 .services-subscription-calendar-day--labeled {
-    min-height: 2.15rem;
-    padding: 0.2rem 0.15rem;
-    font-size: 0.625rem;
-    line-height: 1.1;
-    text-transform: lowercase;
-}
-
-.services-subscription-calendar-day--blank {
-    min-height: 1.85rem;
+    min-height: 2.5rem;
 }
 
 .services-subscription-calendar-day--active {
@@ -1070,6 +1082,10 @@
     border-color: transparent;
     background: linear-gradient(135deg, #9333ea 0%, var(--primary) 100%);
     box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.22);
+}
+
+.services-subscription-calendar-day--active .services-subscription-calendar-day-label {
+    opacity: 0.92;
 }
 
 .services-subscription-calendar-caption {
@@ -2011,6 +2027,125 @@
         --tab-pad: 0.22rem;
     }
 
+    .services-tabs-wrap {
+        padding-block: 0.5rem;
+        margin-block: -0.5rem;
+    }
+
+    .services-custom {
+        padding-bottom: calc(9rem + env(safe-area-inset-bottom));
+    }
+
+    .services-custom-summary {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        top: auto;
+        z-index: 35;
+        margin: 0;
+        border-radius: 1.1rem 1.1rem 0 0;
+        border-bottom: none;
+        padding: 0.75rem max(var(--pad-inline), env(safe-area-inset-left))
+            max(0.75rem, env(safe-area-inset-bottom))
+            max(var(--pad-inline), env(safe-area-inset-right));
+        padding-right: max(calc(var(--pad-inline) + 3.75rem), calc(env(safe-area-inset-right) + 3.75rem));
+        box-shadow:
+            0 -8px 32px rgba(15, 23, 42, 0.1),
+            0 -1px 0 rgba(15, 23, 42, 0.06);
+        gap: 0.45rem;
+        max-height: min(52vh, 22rem);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .services-custom-summary .hero-badge,
+    .services-custom-note,
+    .services-custom-breakdown {
+        display: none;
+    }
+
+    .services-custom-summary .services-custom-price {
+        margin: 0;
+        font-size: clamp(1.35rem, 5vw, 1.75rem);
+    }
+
+    .services-custom-summary .services-custom-discount-note,
+    .services-custom-summary .services-custom-min-note {
+        margin: 0;
+        font-size: 0.75rem;
+    }
+
+    .services-payment-options-title {
+        display: none;
+    }
+
+    .services-payment-methods {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.35rem;
+    }
+
+    .services-payment-method {
+        padding: 0.55rem 0.5rem;
+        gap: 0.35rem;
+    }
+
+    .services-payment-method-copy {
+        min-height: 0;
+    }
+
+    .services-payment-method-label {
+        font-size: 0.75rem;
+    }
+
+    .services-payment-method-hint {
+        display: none;
+    }
+
+    .services-payment-method-price {
+        font-size: 0.75rem;
+        white-space: normal;
+    }
+
+    .services-payment-options .services-custom-cta {
+        margin-top: 0.25rem;
+    }
+
+    .services-extra-included,
+    .services-extra-copy span:last-child,
+    .services-payment-method-price {
+        white-space: normal;
+    }
+
+    .services-subscription-calendar-title {
+        min-width: 0;
+    }
+
+    .services-subscription-calendar-head {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .services-subscription-calendar-tools {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .services-subscription-calendar-tools .secondary-button {
+        width: 100%;
+    }
+
+    .services-subscription-calendar-day-label {
+        display: none;
+    }
+
+    .services-subscription-calendar-day,
+    .services-subscription-calendar-day--labeled {
+        min-height: 2.75rem;
+        padding: 0.15rem 0.1rem;
+    }
+
     .services-subscription-pattern-row {
         grid-template-columns: 1fr;
     }
@@ -2021,7 +2156,7 @@
 
     .services-tab {
         padding: 0.72rem 0.35rem;
-        font-size: 0.6875rem;
+        font-size: 0.75rem;
     }
 
     .services-tab-label--full {
@@ -2054,6 +2189,12 @@
 
     .services-field-row {
         grid-template-columns: 1fr;
+    }
+
+    .services-field input,
+    .services-field select,
+    .services-field textarea {
+        font-size: 1rem;
     }
 
     .services-order-params {

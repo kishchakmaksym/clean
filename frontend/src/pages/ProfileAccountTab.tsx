@@ -259,7 +259,7 @@ export default function ProfileAccountTab({ user, onProfileSaved, onLogout }: Pr
                     Спробувати знову
                 </button>
                 <div className="profile-account-footer profile-account-footer--actions-only">
-                    <button type="button" className="secondary-button compact" onClick={onLogout}>
+                    <button type="button" className="profile-logout-button" onClick={onLogout}>
                         Вийти
                     </button>
                 </div>
@@ -286,7 +286,7 @@ export default function ProfileAccountTab({ user, onProfileSaved, onLogout }: Pr
                     </li>
                 </ul>
                 <div className="profile-account-footer profile-account-footer--actions-only">
-                    <button type="button" className="secondary-button compact" onClick={onLogout}>
+                    <button type="button" className="profile-logout-button" onClick={onLogout}>
                         Вийти
                     </button>
                 </div>
@@ -386,7 +386,7 @@ export default function ProfileAccountTab({ user, onProfileSaved, onLogout }: Pr
                     ) : (
                         <span />
                     )}
-                    <button type="button" className="secondary-button compact" onClick={onLogout}>
+                    <button type="button" className="profile-logout-button" onClick={onLogout}>
                         Вийти
                     </button>
                 </div>
@@ -394,15 +394,10 @@ export default function ProfileAccountTab({ user, onProfileSaved, onLogout }: Pr
 
             <section className="profile-addresses-panel hero-panel">
                 <div className="profile-addresses-head">
-                    <div>
-                        <h2 className="profile-addresses-title">Мої адреси</h2>
-                        <p className="profile-addresses-subtitle">
-                            Ужгород, Минай та Сторожниця — перша адреса з останнього замовлення
-                        </p>
-                    </div>
+                    <h2 className="profile-addresses-title">Мої адреси</h2>
                     {!showAddressForm ? (
                         <button type="button" className="secondary-button compact" onClick={startAddAddress}>
-                            + Додати
+                            Додати вулицю
                         </button>
                     ) : null}
                 </div>

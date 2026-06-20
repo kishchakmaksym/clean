@@ -43,4 +43,8 @@ public sealed class OrderResponseDto
     public required DateTime CreatedAtUtc { get; init; }
 
     public DateTime? UpdatedAtUtc { get; init; }
+
+    public DateTime ScheduledCleaningStartUtc { get; init; }
+
+    public bool CanCancel { get; init; }
 }

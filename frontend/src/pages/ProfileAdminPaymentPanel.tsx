@@ -2,16 +2,44 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react
 
 import {
     createAdminMonoInvoiceBatch,
+    deleteAdminMonoInvoice,
     fetchAdminMonoInvoices,
     refreshAdminMonoInvoices,
+    restoreAdminMonoInvoice,
     type AdminPaymentInvoiceDto,
 } from "../api/payments";
+import { formatUkrainianDateTime } from "../utils/dateTime";
+import ModalPortal from "../components/ModalPortal";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
+import "./ReviewsPage.css";
 
 type ProfileAdminPaymentPanelProps = {
     userId: string;
+    variant?: "sidebar" | "admin-panel";
 };
 
-type StatusFilter = "all" | "pending" | "paid";
+type StatusFilter = "pending" | "paid" | "deleted" | "all";
+
+// Backend зберігає суму в копійках (int32) — ~20 млн ₴ технічний максимум.
+const MAX_INVOICE_AMOUNT = 20_000_000;
+
+function parseAmountInput(raw: string) {
+    const digits = raw.replace(/\D/g, "");
+    if (!digits) {
+        return null;
+    }
+
+    const value = Number.parseInt(digits, 10);
+    if (!Number.isFinite(value)) {
+        return null;
+    }
+
+    return Math.min(value, MAX_INVOICE_AMOUNT);
+}
+
+function formatAmountInput(value: number) {
+    return value.toLocaleString("uk-UA");
+}
 
 function formatPrice(amountKopiyky: number) {
     return new Intl.NumberFormat("uk-UA", {
@@ -33,8 +61,29 @@ function parseLabels(raw: string): string[] {
         .slice(0, 20);
 }
 
+function formatInvoiceId(invoiceId: string) {
+    const compact = invoiceId.replace(/-/g, "");
+    if (compact.length <= 8) {
+        return compact.toUpperCase();
+    }
+
+    return compact.slice(0, 8).toUpperCase();
+}
+
 function isPendingInvoice(invoice: AdminPaymentInvoiceDto) {
-    return !invoice.isPaid && !["expired", "failure", "reversed"].includes(invoice.status);
+    return (
+        !invoice.isDeleted &&
+        !invoice.isPaid &&
+        !["expired", "failure", "reversed"].includes(invoice.status)
+    );
+}
+
+function isDeletedInvoice(invoice: AdminPaymentInvoiceDto) {
+    return invoice.isDeleted && !invoice.isPaid;
+}
+
+function isVisibleInAllTab(invoice: AdminPaymentInvoiceDto) {
+    return !invoice.isDeleted;
 }
 
 function getStatusLabel(invoice: AdminPaymentInvoiceDto) {
@@ -54,6 +103,10 @@ function getStatusLabel(invoice: AdminPaymentInvoiceDto) {
 }
 
 function getStatusClass(invoice: AdminPaymentInvoiceDto) {
+    if (invoice.isDeleted && !invoice.isPaid) {
+        return "profile-admin-invoice-status--deleted";
+    }
+
     if (invoice.isPaid || invoice.status === "success") {
         return "profile-admin-invoice-status--paid";
     }
@@ -68,26 +121,63 @@ function getStatusClass(invoice: AdminPaymentInvoiceDto) {
 function AdminInvoiceCard({
     invoice,
     copiedInvoiceId,
+    actionInvoiceId,
     onCopy,
+    onRequestDelete,
+    onRestore,
 }: {
     invoice: AdminPaymentInvoiceDto;
     copiedInvoiceId: string | null;
+    actionInvoiceId: string | null;
     onCopy: (invoiceId: string, pageUrl: string) => void;
+    onRequestDelete: (invoice: AdminPaymentInvoiceDto) => void;
+    onRestore: (invoiceId: string) => void;
 }) {
     const [showQr, setShowQr] = useState(false);
+    const canDelete = !invoice.isPaid && !invoice.isDeleted;
+    const canRestore = invoice.isDeleted && !invoice.isPaid;
+    const isActionPending = actionInvoiceId === invoice.invoiceId;
 
     return (
-        <article className={`profile-admin-invoice${invoice.isPaid ? " profile-admin-invoice--paid" : ""}`}>
+        <article
+            className={`profile-admin-invoice${invoice.isPaid ? " profile-admin-invoice--paid" : ""}${
+                invoice.isDeleted ? " profile-admin-invoice--deleted" : ""
+            }`}
+        >
             <div className="profile-admin-invoice-head">
                 <div>
+                    <p className="profile-order-id">№ {formatInvoiceId(invoice.invoiceId)}</p>
                     <h3 className="profile-admin-invoice-label">{invoice.label}</h3>
                     <p className="profile-admin-invoice-destination">{invoice.destination}</p>
+                    <p className="profile-admin-invoice-created">
+                        Створено: {formatUkrainianDateTime(invoice.createdAtUtc)}
+                    </p>
                 </div>
                 <div className="profile-admin-invoice-meta">
-                    <strong>{formatPrice(invoice.amountKopiyky)}</strong>
                     <span className={`profile-admin-invoice-status ${getStatusClass(invoice)}`}>
-                        {getStatusLabel(invoice)}
+                        {invoice.isDeleted && !invoice.isPaid ? "Видалено" : getStatusLabel(invoice)}
                     </span>
+                    <strong>{formatPrice(invoice.amountKopiyky)}</strong>
+                    {canDelete ? (
+                        <button
+                            type="button"
+                            className="profile-admin-invoice-action"
+                            disabled={isActionPending}
+                            onClick={() => onRequestDelete(invoice)}
+                        >
+                            Видалити
+                        </button>
+                    ) : null}
+                    {canRestore ? (
+                        <button
+                            type="button"
+                            className="profile-admin-invoice-action"
+                            disabled={isActionPending}
+                            onClick={() => onRestore(invoice.invoiceId)}
+                        >
+                            {isActionPending ? "Повернення…" : "Повернути"}
+                        </button>
+                    ) : null}
                 </div>
             </div>
 
@@ -130,18 +220,24 @@ function AdminInvoiceCard({
     );
 }
 
-export default function ProfileAdminPaymentPanel({ userId }: ProfileAdminPaymentPanelProps) {
+export default function ProfileAdminPaymentPanel({
+    userId,
+    variant = "sidebar",
+}: ProfileAdminPaymentPanelProps) {
     const [amount, setAmount] = useState("");
     const [destination, setDestination] = useState("");
     const [labelsRaw, setLabelsRaw] = useState("");
-    const [count, setCount] = useState("1");
     const [invoices, setInvoices] = useState<AdminPaymentInvoiceDto[]>([]);
-    const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+    const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
     const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [copiedInvoiceId, setCopiedInvoiceId] = useState<string | null>(null);
+    const [actionInvoiceId, setActionInvoiceId] = useState<string | null>(null);
+    const [pendingDeleteInvoice, setPendingDeleteInvoice] = useState<AdminPaymentInvoiceDto | null>(null);
+
+    useBodyScrollLock(pendingDeleteInvoice !== null);
 
     const loadInvoices = useCallback(async (refresh = true) => {
         const result = await fetchAdminMonoInvoices(userId, refresh);
@@ -175,33 +271,36 @@ export default function ProfileAdminPaymentPanel({ userId }: ProfileAdminPayment
             return invoices.filter(isPendingInvoice);
         }
 
-        return invoices;
+        if (statusFilter === "deleted") {
+            return invoices.filter(isDeletedInvoice);
+        }
+
+        return invoices.filter(isVisibleInAllTab);
     }, [invoices, statusFilter]);
 
     const pendingCount = useMemo(() => invoices.filter(isPendingInvoice).length, [invoices]);
     const paidCount = useMemo(() => invoices.filter((invoice) => invoice.isPaid).length, [invoices]);
+    const deletedCount = useMemo(() => invoices.filter(isDeletedInvoice).length, [invoices]);
+    const allCount = useMemo(() => invoices.filter(isVisibleInAllTab).length, [invoices]);
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         setError("");
 
-        const parsedAmount = Number.parseInt(amount.trim(), 10);
-        if (!Number.isFinite(parsedAmount) || parsedAmount < 1) {
+        const parsedAmount = parseAmountInput(amount);
+        if (parsedAmount === null || parsedAmount < 1) {
             setError("Вкажіть суму не менше 1 ₴.");
             return;
         }
 
-        if (parsedAmount > 999_999) {
-            setError("Максимальна сума — 999 999 ₴.");
+        if (parsedAmount > MAX_INVOICE_AMOUNT) {
+            setError(`Максимальна сума — ${formatAmountInput(MAX_INVOICE_AMOUNT)} ₴.`);
             return;
         }
 
         const labels = parseLabels(labelsRaw);
-        const parsedCount = Number.parseInt(count.trim(), 10);
-        const batchCount = labels.length > 0 ? labels.length : Number.isFinite(parsedCount) ? parsedCount : 1;
-
-        if (batchCount < 1 || batchCount > 20) {
-            setError("Можна створити від 1 до 20 рахунків за раз.");
+        if (labels.length > 20) {
+            setError("Можна створити не більше 20 рахунків за раз.");
             return;
         }
 
@@ -212,7 +311,6 @@ export default function ProfileAdminPaymentPanel({ userId }: ProfileAdminPayment
             amountUah: parsedAmount,
             destination: destination.trim() || undefined,
             labels: labels.length > 0 ? labels : undefined,
-            count: labels.length > 0 ? undefined : batchCount,
         });
 
         setIsSubmitting(false);
@@ -227,10 +325,6 @@ export default function ProfileAdminPaymentPanel({ userId }: ProfileAdminPayment
             const created = result.invoices!.filter((item) => !existingIds.has(item.invoiceId));
             return [...created, ...current];
         });
-
-        if (labels.length === 0) {
-            setCount(String(batchCount));
-        }
     }
 
     async function handleRefresh() {
@@ -258,25 +352,121 @@ export default function ProfileAdminPaymentPanel({ userId }: ProfileAdminPayment
         }
     }
 
+    async function handleConfirmDelete() {
+        if (!pendingDeleteInvoice) {
+            return;
+        }
+
+        setError("");
+        setActionInvoiceId(pendingDeleteInvoice.invoiceId);
+
+        const result = await deleteAdminMonoInvoice(userId, pendingDeleteInvoice.invoiceId);
+
+        setActionInvoiceId(null);
+
+        if (!result.success || !result.invoices) {
+            setError(result.error ?? "Не вдалося видалити рахунок.");
+            return;
+        }
+
+        setInvoices(result.invoices);
+        window.setTimeout(() => setPendingDeleteInvoice(null), 150);
+    }
+
+    function closeDeleteModal() {
+        setPendingDeleteInvoice(null);
+    }
+
+    async function handleRestore(invoiceId: string) {
+        setError("");
+        setActionInvoiceId(invoiceId);
+
+        const result = await restoreAdminMonoInvoice(userId, invoiceId);
+
+        setActionInvoiceId(null);
+
+        if (!result.success || !result.invoices) {
+            setError(result.error ?? "Не вдалося відновити рахунок.");
+            return;
+        }
+
+        setInvoices(result.invoices);
+    }
+
     return (
-        <div className="profile-account-card profile-admin-payment">
+        <div
+            className={`${
+                variant === "admin-panel" ? "profile-admin-payment--panel" : "profile-account-card"
+            } profile-admin-payment`}
+        >
+            {pendingDeleteInvoice ? (
+                <ModalPortal>
+                    <div
+                        className="review-modal-backdrop"
+                        role="presentation"
+                        onMouseDown={closeDeleteModal}
+                    >
+                    <div
+                        className="review-modal"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="admin-delete-invoice-title"
+                        onMouseDown={(event) => event.stopPropagation()}
+                    >
+                        <h3 id="admin-delete-invoice-title">Видалити рахунок?</h3>
+                        <p>
+                            Рахунок <strong>№ {formatInvoiceId(pendingDeleteInvoice.invoiceId)}</strong> (
+                            {pendingDeleteInvoice.label}) перейде у «Видалені». Посилання на оплату залишиться
+                            дійсним.
+                        </p>
+                        <div className="review-modal-actions">
+                            <button
+                                type="button"
+                                className="secondary-button compact"
+                                onClick={closeDeleteModal}
+                                disabled={actionInvoiceId === pendingDeleteInvoice.invoiceId}
+                            >
+                                Скасувати
+                            </button>
+                            <button
+                                type="button"
+                                className="primary-button compact"
+                                disabled={actionInvoiceId === pendingDeleteInvoice.invoiceId}
+                                onMouseDown={(event) => event.preventDefault()}
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    void handleConfirmDelete();
+                                }}
+                            >
+                                {actionInvoiceId === pendingDeleteInvoice.invoiceId
+                                    ? "Видалення…"
+                                    : "Так, видалити"}
+                            </button>
+                        </div>
+                    </div>
+                    </div>
+                </ModalPortal>
+            ) : null}
+
             <h2 className="profile-sidebar-title">Рахунки на оплату</h2>
-            <p className="profile-admin-payment-lead">
-                Створюйте кілька посилань і QR-кодів одразу. Кожен рахунок дійсний 30 днів.
-            </p>
+            {variant !== "admin-panel" ? (
+                <p className="profile-admin-payment-lead">
+                    Створюйте кілька посилань і QR-кодів одразу. Кожен рахунок дійсний 30 днів.
+                </p>
+            ) : null}
 
             <form className="profile-form profile-form-edit" onSubmit={(event) => void handleSubmit(event)}>
                 <label>
                     <span>Сума, ₴</span>
                     <input
-                        type="number"
-                        min={1}
-                        max={999999}
-                        step={1}
+                        type="text"
                         inputMode="numeric"
+                        autoComplete="off"
                         value={amount}
-                        onChange={(event) => setAmount(event.target.value)}
-                        placeholder="5000"
+                        onChange={(event) => {
+                            const parsed = parseAmountInput(event.target.value);
+                            setAmount(parsed === null ? "" : formatAmountInput(parsed));
+                        }}
                         required
                     />
                 </label>
@@ -287,7 +477,6 @@ export default function ProfileAdminPaymentPanel({ userId }: ProfileAdminPayment
                         type="text"
                         value={destination}
                         onChange={(event) => setDestination(event.target.value)}
-                        placeholder="Прибирання офісу"
                         maxLength={200}
                     />
                 </label>
@@ -297,28 +486,10 @@ export default function ProfileAdminPaymentPanel({ userId }: ProfileAdminPayment
                     <textarea
                         value={labelsRaw}
                         onChange={(event) => setLabelsRaw(event.target.value)}
-                        placeholder={"Офіс А\nОфіс Б\nСалон на Хрещатику"}
                         rows={3}
+                        className={variant === "admin-panel" ? "profile-admin-labels-input" : undefined}
                     />
                 </label>
-
-                <label>
-                    <span>Кількість однакових рахунків</span>
-                    <input
-                        type="number"
-                        min={1}
-                        max={20}
-                        step={1}
-                        value={count}
-                        onChange={(event) => setCount(event.target.value)}
-                        disabled={parseLabels(labelsRaw).length > 0}
-                    />
-                </label>
-                {parseLabels(labelsRaw).length === 0 ? (
-                    <p className="profile-admin-payment-hint">
-                        Якщо не вказуєте позначки — створиться стільки однакових посилань (#1, #2…).
-                    </p>
-                ) : null}
 
                 {error ? (
                     <p className="profile-account-error" role="alert">
@@ -347,15 +518,6 @@ export default function ProfileAdminPaymentPanel({ userId }: ProfileAdminPayment
                 <button
                     type="button"
                     role="tab"
-                    aria-selected={statusFilter === "all"}
-                    className={`profile-admin-payment-filter${statusFilter === "all" ? " profile-admin-payment-filter--active" : ""}`}
-                    onClick={() => setStatusFilter("all")}
-                >
-                    Усі ({invoices.length})
-                </button>
-                <button
-                    type="button"
-                    role="tab"
                     aria-selected={statusFilter === "pending"}
                     className={`profile-admin-payment-filter${statusFilter === "pending" ? " profile-admin-payment-filter--active" : ""}`}
                     onClick={() => setStatusFilter("pending")}
@@ -371,6 +533,24 @@ export default function ProfileAdminPaymentPanel({ userId }: ProfileAdminPayment
                 >
                     Оплачені ({paidCount})
                 </button>
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={statusFilter === "all"}
+                    className={`profile-admin-payment-filter${statusFilter === "all" ? " profile-admin-payment-filter--active" : ""}`}
+                    onClick={() => setStatusFilter("all")}
+                >
+                    Усі ({allCount})
+                </button>
+                <button
+                    type="button"
+                    role="tab"
+                    aria-selected={statusFilter === "deleted"}
+                    className={`profile-admin-payment-filter${statusFilter === "deleted" ? " profile-admin-payment-filter--active" : ""}`}
+                    onClick={() => setStatusFilter("deleted")}
+                >
+                    Видалені ({deletedCount})
+                </button>
             </div>
 
             {isLoading ? (
@@ -379,7 +559,9 @@ export default function ProfileAdminPaymentPanel({ userId }: ProfileAdminPayment
                 <p className="profile-admin-payment-empty">
                     {statusFilter === "all"
                         ? "Ще немає створених рахунків."
-                        : "Немає рахунків у цій категорії."}
+                        : statusFilter === "deleted"
+                          ? "Немає видалених рахунків."
+                          : "Немає рахунків у цій категорії."}
                 </p>
             ) : (
                 <div className="profile-admin-invoice-list">
@@ -388,7 +570,10 @@ export default function ProfileAdminPaymentPanel({ userId }: ProfileAdminPayment
                             key={invoice.invoiceId}
                             invoice={invoice}
                             copiedInvoiceId={copiedInvoiceId}
+                            actionInvoiceId={actionInvoiceId}
                             onCopy={handleCopy}
+                            onRequestDelete={setPendingDeleteInvoice}
+                            onRestore={handleRestore}
                         />
                     ))}
                 </div>

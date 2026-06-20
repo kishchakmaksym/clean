@@ -10,7 +10,8 @@
 }
 
 .street-address-settlement {
-    padding: 0.42rem 0.85rem;
+    padding: 0.55rem 0.85rem;
+    min-height: 2.75rem;
     border: 1px solid rgba(15, 23, 42, 0.08);
     border-radius: var(--radius-pill);
     background: var(--panel-bg);
@@ -70,6 +71,16 @@
 
 .street-address-field--street {
     grid-column: 1 / -1;
+}
+
+@media (max-width: 639px) {
+    .street-address-fields {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .street-address-field--street {
+        grid-column: 1 / -1;
+    }
 }
 
 @media (min-width: 640px) {

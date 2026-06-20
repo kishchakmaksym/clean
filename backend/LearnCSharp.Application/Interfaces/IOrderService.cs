@@ -16,6 +16,10 @@ public interface IOrderService
         UpdateOrderStatusRequestDto request,
         CancellationToken cancellationToken = default);
 
+    Task<UpdateOrderStatusResponseDto> CancelAsync(
+        CancelOrderRequestDto request,
+        CancellationToken cancellationToken = default);
+
     Task<CreateOrderResponseDto> FinalizeCardPaymentAsync(
         FinalizeCardOrderRequestDto request,
         CancellationToken cancellationToken = default);

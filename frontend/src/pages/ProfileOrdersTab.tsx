@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 import {
+    cancelOrder,
     fetchOrders,
     finalizeCardOrder,
     finalizeLatestCardOrder,
@@ -28,9 +29,9 @@ const STAFF_ORDER_TABS = ["PendingConfirmation", "Confirmed", "Completed"] as co
 const ORDERS_PAGE_SIZE = 3;
 
 const USER_ORDER_FILTERS = [
-    { id: "all", label: "Усі" },
     { id: "active", label: "Активні" },
     { id: "completed", label: "Виконані" },
+    { id: "cancelled", label: "Скасовані" },
 ] as const;
 
 type UserOrderFilter = (typeof USER_ORDER_FILTERS)[number]["id"];
@@ -39,12 +40,14 @@ const staffTabModifiers: Record<OrderStatus, "fixed" | "custom" | "subscription"
     PendingConfirmation: "fixed",
     Confirmed: "custom",
     Completed: "subscription",
+    Cancelled: "fixed",
 };
 
 const staffTabShortLabels: Record<OrderStatus, string> = {
     PendingConfirmation: "Очікують",
     Confirmed: "Підтверджені",
     Completed: "Виконані",
+    Cancelled: "Скасовані",
 };
 
 function formatPrice(value: number) {
@@ -71,15 +74,23 @@ function orderMatchesIdQuery(order: OrderDto, query: string) {
 function filterUserOrders(orders: OrderDto[], filter: UserOrderFilter) {
     switch (filter) {
         case "active":
-            return orders.filter((order) => order.status !== "Completed");
+            return orders.filter(
+                (order) => order.status === "PendingConfirmation" || order.status === "Confirmed",
+            );
         case "completed":
             return orders.filter((order) => order.status === "Completed");
+        case "cancelled":
+            return orders.filter((order) => order.status === "Cancelled");
         default:
             return orders;
     }
 }
 
-export default function ProfileOrdersTab() {
+type ProfileOrdersTabProps = {
+    viewMode?: "profile" | "admin-panel";
+};
+
+export default function ProfileOrdersTab({ viewMode = "profile" }: ProfileOrdersTabProps) {
     const { user } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
     const paymentSuccess = searchParams.get("paid") === "1";
@@ -93,11 +104,24 @@ export default function ProfileOrdersTab() {
     const [paymentFinalizeError, setPaymentFinalizeError] = useState("");
     const [paymentSucceeded, setPaymentSucceeded] = useState(false);
     const [activeStaffTab, setActiveStaffTab] = useState<OrderStatus>("PendingConfirmation");
-    const [userOrderFilter, setUserOrderFilter] = useState<UserOrderFilter>("all");
+    const [userOrderFilter, setUserOrderFilter] = useState<UserOrderFilter>("active");
     const [visibleOrdersCount, setVisibleOrdersCount] = useState(ORDERS_PAGE_SIZE);
     const [orderIdSearch, setOrderIdSearch] = useState("");
     const [expandedOrderComments, setExpandedOrderComments] = useState<Record<string, boolean>>({});
     const [expandedOrderAddons, setExpandedOrderAddons] = useState<Record<string, boolean>>({});
+
+    const userRole = user ? normalizeUserRole(user.role) : "User";
+    const isAdmin = userRole === "Admin";
+    const isStaff = isAdmin || userRole === "Employee";
+    const showPersonalOrdersView = userRole === "User" || (isAdmin && viewMode === "profile");
+
+    const personalOrders = useMemo(() => {
+        if (isAdmin && viewMode === "profile" && user) {
+            return orders.filter((order) => order.userId === user.id);
+        }
+
+        return orders;
+    }, [isAdmin, orders, user, viewMode]);
 
     const loadOrders = useCallback(async (options?: { silent?: boolean }) => {
         if (!user) {
@@ -201,14 +225,21 @@ export default function ProfileOrdersTab() {
             PendingConfirmation: [],
             Confirmed: [],
             Completed: [],
+            Cancelled: [],
         };
 
-        for (const order of orders) {
+        const sourceOrders = personalOrders;
+
+        for (const order of sourceOrders) {
+            if (order.status === "Cancelled") {
+                continue;
+            }
+
             groups[order.status].push(order);
         }
 
         return groups;
-    }, [orders]);
+    }, [personalOrders]);
 
     useEffect(() => {
         setVisibleOrdersCount(ORDERS_PAGE_SIZE);
@@ -228,9 +259,6 @@ export default function ProfileOrdersTab() {
     }
 
     const currentUser = user;
-    const userRole = normalizeUserRole(currentUser.role);
-    const isAdmin = userRole === "Admin";
-    const isStaff = isAdmin || userRole === "Employee";
 
     async function handleStatusUpdate(orderId: string, status: OrderStatus) {
         setUpdatingOrderId(orderId);
@@ -254,6 +282,43 @@ export default function ProfileOrdersTab() {
             }
 
             setActionSuccess(result.message ?? "Статус оновлено.");
+        } catch {
+            setActionError("Помилка з'єднання з сервером.");
+        } finally {
+            setUpdatingOrderId(null);
+        }
+    }
+
+    async function handleCancelOrder(orderId: string) {
+        const confirmed = window.confirm(
+            "Скасувати це замовлення? Після скасування його не можна буде відновити.",
+        );
+        if (!confirmed) {
+            return;
+        }
+
+        setUpdatingOrderId(orderId);
+        setActionError("");
+        setActionSuccess("");
+
+        try {
+            const result = await cancelOrder({ userId: currentUser.id, orderId });
+
+            if (!result.success) {
+                setActionError(result.errors?.[0] ?? "Не вдалося скасувати замовлення.");
+                return;
+            }
+
+            if (result.order) {
+                setOrders((current) =>
+                    current.map((order) => (order.id === result.order!.id ? result.order! : order)),
+                );
+            } else {
+                await loadOrders({ silent: true });
+            }
+
+            setUserOrderFilter("cancelled");
+            setActionSuccess(result.message ?? "Замовлення скасовано.");
         } catch {
             setActionError("Помилка з'єднання з сервером.");
         } finally {
@@ -320,6 +385,19 @@ export default function ProfileOrdersTab() {
                     onClick={() => void handleStatusUpdate(order.id, "Completed")}
                 >
                     {isUpdating ? "Зберігаємо…" : "Позначити виконаним"}
+                </button>
+            );
+        }
+
+        if (showPersonalOrdersView && order.canCancel) {
+            return (
+                <button
+                    type="button"
+                    className="secondary-button profile-order-action profile-order-action--cancel"
+                    disabled={isUpdating}
+                    onClick={() => void handleCancelOrder(order.id)}
+                >
+                    {isUpdating ? "Скасовуємо…" : "Скасувати замовлення"}
                 </button>
             );
         }
@@ -544,18 +622,18 @@ export default function ProfileOrdersTab() {
             return <p className="profile-orders-error">{loadError}</p>;
         }
 
-        if (orders.length === 0) {
+        if (personalOrders.length === 0) {
             return (
                 <div className="profile-orders-empty">
                     <span className="profile-orders-empty-icon" aria-hidden="true">
                         ✨
                     </span>
                     <p>
-                        {userRole === "User"
+                        {showPersonalOrdersView
                             ? "У вас ще немає замовлень. Оберіть послугу — ми підтвердимо деталі перед виїздом."
                             : "Замовлень поки немає."}
                     </p>
-                    {userRole === "User" ? (
+                    {showPersonalOrdersView ? (
                         <Link to="/services" className="primary-button compact">
                             Перейти до послуг
                         </Link>
@@ -564,14 +642,14 @@ export default function ProfileOrdersTab() {
             );
         }
 
-        if (userRole === "User") {
-            const filteredUserOrders = filterUserOrders(orders, userOrderFilter);
+        if (showPersonalOrdersView) {
+            const filteredUserOrders = filterUserOrders(personalOrders, userOrderFilter);
 
             return (
                 <>
                     <div className="profile-orders-filter-bar" role="tablist" aria-label="Фільтр замовлень">
                         {USER_ORDER_FILTERS.map((filter) => {
-                            const count = filterUserOrders(orders, filter.id).length;
+                            const count = filterUserOrders(personalOrders, filter.id).length;
 
                             return (
                                 <button
@@ -597,7 +675,7 @@ export default function ProfileOrdersTab() {
                                 ? "Немає активних замовлень"
                                 : userOrderFilter === "completed"
                                   ? "Ще немає виконаних замовлень"
-                                  : "У вас ще немає замовлень"}
+                                  : "Немає скасованих замовлень"}
                         </p>
                     ) : (
                         renderOrdersList(filteredUserOrders)

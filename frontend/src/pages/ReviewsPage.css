@@ -5,6 +5,7 @@
     padding: clamp(1.5rem, 4vw, 2.5rem) var(--pad-inline) var(--pad-block);
     padding-left: max(var(--pad-inline), env(safe-area-inset-left));
     padding-right: max(var(--pad-inline), env(safe-area-inset-right));
+    overflow-x: clip;
 }
 
 .reviews-layout {
@@ -13,7 +14,7 @@
 }
 
 .reviews-list-anchor {
-    scroll-margin-top: 6rem;
+    scroll-margin-top: calc(var(--site-header-h) + env(safe-area-inset-top, 0px) + 1rem);
 }
 
 .review-form-card {
@@ -82,7 +83,9 @@
 }
 
 .star-button {
-    padding: 0;
+    padding: 0.35rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
     border: none;
     background: none;
     font-size: 1.75rem;
@@ -172,7 +175,8 @@
 
 .review-toggle {
     justify-self: start;
-    padding: 0;
+    padding: 0.45rem 0;
+    min-height: 2.75rem;
     border: none;
     background: none;
     color: var(--primary);
@@ -210,18 +214,20 @@
     margin-top: 0.5rem;
     padding: 0.55rem 0.9rem;
     border-radius: var(--radius-lg);
-    border: 1px solid rgba(220, 53, 69, 0.45);
-    background: rgba(220, 53, 69, 0.12);
-    color: #ffb4b4;
+    border: 1px solid rgba(var(--primary-rgb), 0.28);
+    background: rgba(var(--primary-rgb), 0.08);
+    color: var(--primary);
     font: inherit;
     font-size: var(--text-small);
     font-weight: 700;
     cursor: pointer;
-    transition: background 0.15s ease;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
 .review-delete-button:hover:not(:disabled) {
-    background: rgba(220, 53, 69, 0.22);
+    background: rgba(var(--primary-rgb), 0.14);
+    border-color: rgba(var(--primary-rgb), 0.4);
+    color: var(--primary-hover);
 }
 
 .review-delete-button:disabled {
@@ -237,12 +243,14 @@
 .review-modal-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 1000;
+    z-index: 1100;
     display: grid;
     place-items: center;
     padding: 1rem;
     background: rgba(0, 0, 0, 0.65);
     backdrop-filter: blur(4px);
+    overflow: hidden;
+    overscroll-behavior: contain;
 }
 
 .review-modal {

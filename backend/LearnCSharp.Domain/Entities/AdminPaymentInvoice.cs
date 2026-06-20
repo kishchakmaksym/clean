@@ -23,4 +23,6 @@ public class AdminPaymentInvoice
     public DateTime ExpiresAtUtc { get; set; }
 
     public DateTime? PaidAtUtc { get; set; }
+
+    public DateTime? DeletedAtUtc { get; set; }
 }

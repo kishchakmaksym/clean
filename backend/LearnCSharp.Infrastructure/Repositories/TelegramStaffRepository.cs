@@ -402,7 +402,9 @@ public sealed class TelegramStaffRepository(AppDbContext dbContext) : ITelegramS
         return await dbContext.Orders
             .AsNoTracking()
             .Include(order => order.User)
-            .Where(order => orderIds.Contains(order.Id) && order.Status != OrderStatus.Completed)
+            .Where(order => orderIds.Contains(order.Id) &&
+                order.Status != OrderStatus.Completed &&
+                order.Status != OrderStatus.Cancelled)
             .OrderByDescending(order => order.CreatedAtUtc)
             .ToListAsync(cancellationToken);
     }
@@ -437,7 +439,9 @@ public sealed class TelegramStaffRepository(AppDbContext dbContext) : ITelegramS
         await dbContext.Orders
             .AsNoTracking()
             .Include(order => order.User)
-            .Where(order => order.Status != OrderStatus.Completed)
+            .Where(order =>
+                order.Status != OrderStatus.Completed &&
+                order.Status != OrderStatus.Cancelled)
             .OrderByDescending(order => order.CreatedAtUtc)
             .ToListAsync(cancellationToken);
 

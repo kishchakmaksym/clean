@@ -20,4 +20,14 @@ public interface IAdminPaymentInvoiceRepository
         string status,
         DateTime? paidAtUtc,
         CancellationToken cancellationToken = default);
+
+    Task<bool> MarkAsDeletedAsync(
+        string invoiceId,
+        Guid adminUserId,
+        CancellationToken cancellationToken = default);
+
+    Task<bool> RestoreAsync(
+        string invoiceId,
+        Guid adminUserId,
+        CancellationToken cancellationToken = default);
 }

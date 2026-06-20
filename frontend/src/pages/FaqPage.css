@@ -7,6 +7,7 @@
     padding-right: max(var(--pad-inline), env(safe-area-inset-right));
     display: grid;
     gap: clamp(1.25rem, 3vw, 1.75rem);
+    overflow-x: clip;
 }
 
 .faq-hero {

@@ -1,6 +1,7 @@
 .auth-page {
     max-width: 32rem;
     margin: 0 auto;
+    overflow-x: clip;
 }
 
 .auth-card {
@@ -90,7 +91,8 @@
 }
 
 .auth-toggle {
-    padding: 0;
+    padding: 0.45rem 0.35rem;
+    min-height: 2.75rem;
     border: none;
     background: none;
     font: inherit;

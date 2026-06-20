@@ -7,8 +7,10 @@ import HomePage from "./pages/HomePage";
 import ServicesPage from "./pages/ServicesPage";
 import ReviewsPage from "./pages/ReviewsPage";
 import AuthPage from "./pages/AuthPage";
+import AdminPage from "./pages/AdminPage";
 import ProfilePage from "./pages/ProfilePage";
 import FaqPage from "./pages/FaqPage";
+import VacanciesPage from "./pages/VacanciesPage";
 
 function ProfileOrdersRedirect() {
     const location = useLocation();
@@ -26,10 +28,12 @@ function App() {
                         <Route path="/services" element={<ServicesPage />} />
                         <Route path="/reviews" element={<ReviewsPage />} />
                         <Route path="/faq" element={<FaqPage />} />
+                        <Route path="/vacancies" element={<VacanciesPage />} />
                         <Route path="/contacts" element={<Navigate to="/faq" replace />} />
                         <Route path="/login" element={<AuthPage />} />
                         <Route path="/register" element={<Navigate to="/login" replace />} />
                         <Route path="/profile" element={<ProfilePage />} />
+                        <Route path="/admin" element={<AdminPage />} />
                         <Route path="/profile/orders" element={<ProfileOrdersRedirect />} />
                         <Route path="/orders" element={<Navigate to="/profile" replace />} />
                     </Routes>

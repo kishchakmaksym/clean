@@ -29,6 +29,14 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     public DbSet<TelegramOrderNotification> TelegramOrderNotifications => Set<TelegramOrderNotification>();
 
+    public DbSet<SupportTicket> SupportTickets => Set<SupportTicket>();
+
+    public DbSet<SupportMessage> SupportMessages => Set<SupportMessage>();
+
+    public DbSet<SupportTelegramAccount> SupportTelegramAccounts => Set<SupportTelegramAccount>();
+
+    public DbSet<SupportOutboxMessage> SupportOutboxMessages => Set<SupportOutboxMessage>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<User>(entity =>
@@ -304,6 +312,74 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
                 .WithMany()
                 .HasForeignKey(notification => notification.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SupportTicket>(entity =>
+        {
+            entity.HasKey(ticket => ticket.Id);
+
+            entity.Property(ticket => ticket.Subject)
+                .HasMaxLength(120);
+
+            entity.HasIndex(ticket => ticket.UserId);
+            entity.HasIndex(ticket => ticket.Status);
+            entity.HasIndex(ticket => ticket.CreatedAtUtc);
+
+            entity.HasOne(ticket => ticket.User)
+                .WithMany()
+                .HasForeignKey(ticket => ticket.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SupportMessage>(entity =>
+        {
+            entity.HasKey(message => message.Id);
+
+            entity.Property(message => message.Body)
+                .HasMaxLength(4000)
+                .IsRequired();
+
+            entity.HasIndex(message => message.TicketId);
+            entity.HasIndex(message => message.CreatedAtUtc);
+
+            entity.HasOne(message => message.Ticket)
+                .WithMany(ticket => ticket.Messages)
+                .HasForeignKey(message => message.TicketId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(message => message.SenderUser)
+                .WithMany()
+                .HasForeignKey(message => message.SenderUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<SupportTelegramAccount>(entity =>
+        {
+            entity.HasKey(account => account.Id);
+
+            entity.HasIndex(account => account.TelegramUserId)
+                .IsUnique();
+
+            entity.HasIndex(account => account.UserId)
+                .IsUnique();
+
+            entity.Property(account => account.VerifiedPhone)
+                .HasMaxLength(20)
+                .IsRequired();
+
+            entity.HasOne(account => account.User)
+                .WithMany()
+                .HasForeignKey(account => account.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<SupportOutboxMessage>(entity =>
+        {
+            entity.HasKey(message => message.Id);
+
+            entity.Property(message => message.PayloadJson)
+                .HasMaxLength(8000)
+                .IsRequired();
         });
     }
 }

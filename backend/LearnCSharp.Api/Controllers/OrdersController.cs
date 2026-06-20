@@ -40,6 +40,17 @@ public sealed class OrdersController(IOrderService orderService) : ControllerBas
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
+    [HttpPost("cancel")]
+    [ProducesResponseType(typeof(UpdateOrderStatusResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UpdateOrderStatusResponseDto), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<UpdateOrderStatusResponseDto>> Cancel(
+        [FromBody] CancelOrderRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var result = await orderService.CancelAsync(request, cancellationToken);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
     [HttpPost("finalize-card")]
     [ProducesResponseType(typeof(CreateOrderResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(CreateOrderResponseDto), StatusCodes.Status400BadRequest)]

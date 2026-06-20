@@ -850,11 +850,14 @@ function SubscriptionCycleCalendar({
                                     : `День ${day}${isActive ? ", обрано" : ""}`
                             }
                             className={`services-subscription-calendar-day${
-                                label ? " services-subscription-calendar-day--labeled" : " services-subscription-calendar-day--blank"
+                                label ? " services-subscription-calendar-day--labeled" : ""
                             }${isActive ? " services-subscription-calendar-day--active" : ""}`}
                             onClick={() => onToggleDay(day)}
                         >
-                            {label}
+                            <span className="services-subscription-calendar-day-value">{day}</span>
+                            {label ? (
+                                <span className="services-subscription-calendar-day-label">{label}</span>
+                            ) : null}
                         </button>
                     );
                 })}

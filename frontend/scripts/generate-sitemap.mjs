@@ -1,4 +1,4 @@
-const siteUrl = (process.env.VITE_SITE_URL ?? "https://smartclean.uz.ua").replace(/\/$/, "");
+const siteUrl = (process.env.VITE_SITE_URL ?? "https://smartclean.com.ua").replace(/\/$/, "");
 const today = new Date().toISOString().slice(0, 10);
 
 const routes = [

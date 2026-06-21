@@ -42,6 +42,12 @@ public interface ITelegramStaffService
         int limit = 30,
         CancellationToken cancellationToken = default);
 
+    Task<StaffAuditLogsPageDto> GetAuditLogsPageAsync(
+        StaffAuditLogPeriod period,
+        int page,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default);
+
     Task<IReadOnlyList<EmployeeListItemDto>> GetEmployeesAsync(
         CancellationToken cancellationToken = default);
 

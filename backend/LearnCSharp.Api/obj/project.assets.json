@@ -920,6 +920,37 @@
           }
         }
       },
+      "Npgsql/10.0.0": {
+        "type": "package",
+        "compile": {
+          "lib/net10.0/Npgsql.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net10.0/Npgsql.dll": {
+            "related": ".xml"
+          }
+        }
+      },
+      "Npgsql.EntityFrameworkCore.PostgreSQL/10.0.0": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore": "[10.0.0, 11.0.0)",
+          "Microsoft.EntityFrameworkCore.Relational": "[10.0.0, 11.0.0)",
+          "Npgsql": "10.0.0"
+        },
+        "compile": {
+          "lib/net10.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net10.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll": {
+            "related": ".xml"
+          }
+        }
+      },
       "SQLitePCLRaw.bundle_e_sqlite3/2.1.11": {
         "type": "package",
         "dependencies": {
@@ -1363,13 +1394,28 @@
           "LearnCSharp.Application": "1.0.0",
           "LearnCSharp.Domain": "1.0.0",
           "Microsoft.EntityFrameworkCore": "10.0.0",
-          "Microsoft.EntityFrameworkCore.Sqlite": "10.0.0"
+          "Microsoft.EntityFrameworkCore.Sqlite": "10.0.0",
+          "Npgsql.EntityFrameworkCore.PostgreSQL": "10.0.0"
         },
         "compile": {
           "bin/placeholder/LearnCSharp.Infrastructure.dll": {}
         },
         "runtime": {
           "bin/placeholder/LearnCSharp.Infrastructure.dll": {}
+        }
+      },
+      "LearnCSharp.Infrastructure.Postgres/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v10.0",
+        "dependencies": {
+          "LearnCSharp.Infrastructure": "1.0.0",
+          "Npgsql.EntityFrameworkCore.PostgreSQL": "10.0.0"
+        },
+        "compile": {
+          "bin/placeholder/LearnCSharp.Infrastructure.Postgres.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/LearnCSharp.Infrastructure.Postgres.dll": {}
         }
       }
     }
@@ -2845,6 +2891,40 @@
         "packageIcon.png"
       ]
     },
+    "Npgsql/10.0.0": {
+      "sha512": "xZAYhPOU2rUIFpV48xsqhCx9vXs6Y+0jX2LCoSEfDFYMw9jtAOUk3iQsCnDLrFIv9NT3JGMihn7nnuZsPKqJmA==",
+      "type": "package",
+      "path": "npgsql/10.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "lib/net10.0/Npgsql.dll",
+        "lib/net10.0/Npgsql.xml",
+        "lib/net8.0/Npgsql.dll",
+        "lib/net8.0/Npgsql.xml",
+        "lib/net9.0/Npgsql.dll",
+        "lib/net9.0/Npgsql.xml",
+        "npgsql.10.0.0.nupkg.sha512",
+        "npgsql.nuspec",
+        "postgresql.png"
+      ]
+    },
+    "Npgsql.EntityFrameworkCore.PostgreSQL/10.0.0": {
+      "sha512": "E2+uSWxSB8LdsUVwPaqRWOcGOP92biry2JEwc0KJMdLJF+aZdczeIdEXVwEyv4nSVMQJH0o8tLhyAMiR6VF0lw==",
+      "type": "package",
+      "path": "npgsql.entityframeworkcore.postgresql/10.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "lib/net10.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll",
+        "lib/net10.0/Npgsql.EntityFrameworkCore.PostgreSQL.xml",
+        "npgsql.entityframeworkcore.postgresql.10.0.0.nupkg.sha512",
+        "npgsql.entityframeworkcore.postgresql.nuspec",
+        "postgresql.png"
+      ]
+    },
     "SQLitePCLRaw.bundle_e_sqlite3/2.1.11": {
       "sha512": "DC4nA7yWnf4UZdgJDF+9Mus4/cb0Y3Sfgi3gDnAoKNAIBwzkskNAbNbyu+u4atT0ruVlZNJfwZmwiEwE5oz9LQ==",
       "type": "package",
@@ -3373,12 +3453,18 @@
       "type": "project",
       "path": "../LearnCSharp.Infrastructure/LearnCSharp.Infrastructure.csproj",
       "msbuildProject": "../LearnCSharp.Infrastructure/LearnCSharp.Infrastructure.csproj"
+    },
+    "LearnCSharp.Infrastructure.Postgres/1.0.0": {
+      "type": "project",
+      "path": "../LearnCSharp.Infrastructure.Postgres/LearnCSharp.Infrastructure.Postgres.csproj",
+      "msbuildProject": "../LearnCSharp.Infrastructure.Postgres/LearnCSharp.Infrastructure.Postgres.csproj"
     }
   },
   "projectFileDependencyGroups": {
     "net10.0": [
       "LearnCSharp.Application >= 1.0.0",
       "LearnCSharp.Infrastructure >= 1.0.0",
+      "LearnCSharp.Infrastructure.Postgres >= 1.0.0",
       "Microsoft.AspNetCore.OpenApi >= 10.0.9",
       "Microsoft.EntityFrameworkCore.Design >= 10.0.0"
     ]
@@ -3390,11 +3476,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Api\\LearnCSharp.Api.csproj",
+      "projectUniqueName": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Api\\LearnCSharp.Api.csproj",
       "projectName": "LearnCSharp.Api",
-      "projectPath": "C:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Api\\LearnCSharp.Api.csproj",
+      "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Api\\LearnCSharp.Api.csproj",
       "packagesPath": "C:\\Users\\kashchei94\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Api\\obj\\",
+      "outputPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Api\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -3417,11 +3503,14 @@
           "framework": "net10.0",
           "targetAlias": "net10.0",
           "projectReferences": {
-            "C:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj": {
-              "projectPath": "C:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj"
+            "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj": {
+              "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj"
             },
-            "C:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj": {
-              "projectPath": "C:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj"
+            "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure.Postgres\\LearnCSharp.Infrastructure.Postgres.csproj": {
+              "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure.Postgres\\LearnCSharp.Infrastructure.Postgres.csproj"
+            },
+            "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj": {
+              "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj"
             }
           }
         }

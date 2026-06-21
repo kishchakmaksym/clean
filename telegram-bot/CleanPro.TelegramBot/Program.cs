@@ -13,6 +13,7 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddSingleton<UserSessionStore>();
+builder.Services.AddSingleton<BotScreenMessenger>();
 builder.Services.AddSingleton<BotUpdateHandler>();
 
 builder.Services.AddSingleton<ITelegramBotClient>(sp =>
@@ -25,5 +26,5 @@ builder.Services.AddHostedService<TelegramPollingService>();
 builder.Services.AddHostedService<TelegramOutboxWorker>();
 
 var host = builder.Build();
-await host.Services.InitializeDatabaseAsync();
+await host.Services.InitializeDatabaseAsync(applyMigrations: false);
 await host.RunAsync();

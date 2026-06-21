@@ -1,24 +1,14 @@
 using LearnCSharp.Application.DTOs.Telegram;
+using LearnCSharp.Application.Helpers;
 using LearnCSharp.Domain.Enums;
-
 namespace CleanPro.TelegramBot.UI;
 
 public static class BotMessages
 {
-    public static string WelcomeUnauthorized() =>
-        """
-        🧹 *CleanPro — бот для команди*
-
-        Тут працюють лише *працівники* та *адміністратори*.
-
-        Щоб увійти, натисніть кнопку нижче й *надішліть свій контакт*.
-        Бот сам візьме номер з вашого Telegram-акаунта — вводити його вручну не можна.
-        """;
+    public static string WelcomeUnauthorized() => "🧹 *Smart Clean*";
 
     public static string MainMenu(TelegramAccountDto account) =>
-        account.Role == UserRole.Admin
-            ? $"👋 *{Escape(account.Name)}*\n\nОберіть розділ:"
-            : $"👋 *{Escape(account.Name)}*\n\nОберіть розділ:";
+        $"👋 *{Escape(account.Name)}*\n\nОберіть розділ нижче 👇";
 
     public static string OrderCard(StaffOrderDto order, bool showActionsHint = true)
     {
@@ -89,28 +79,31 @@ public static class BotMessages
         🗓 Місяць: *{stats.MonthCount}*
         🏆 Усього: *{stats.AllTimeCount}*
 
-        💼 Ваша доля: *{stats.SharePercent:0.#}%*
+        💼 Мій процент від замовлення: *{stats.SharePercent:0.#}%*
 
         💳 До виплати від компанії (картка): *{stats.CardPayoutAmount:N0} ₴*
         💵 Ваша частка готівки: *{stats.CashEmployeeAmount:N0} ₴*
         🏢 До здачі компанії (готівка): *{stats.CashCompanyAmount:N0} ₴*
         """;
 
-    public static string AuditLogs(IReadOnlyList<StaffAuditLogDto> logs)
+    public static string AuditLogsPage(StaffAuditLogsPageDto page)
     {
-        if (logs.Count == 0)
+        if (page.TotalCount == 0)
         {
-            return "📜 Логів поки немає.";
+            return $"📜 *Журнал подій · {Escape(page.PeriodLabel)}*\n\n_За цей період логів немає._";
         }
 
-        var lines = logs
-            .Take(15)
-            .Select(log =>
-                $"• `{log.CreatedAtUtc:dd.MM HH:mm}` *{Escape(log.ActorName)}*\n  {Escape(log.Details)}");
+        var from = page.Page * page.PageSize + 1;
+        var to = Math.Min(from + page.Items.Count - 1, page.TotalCount);
+        var header =
+            $"📜 *Журнал подій · {Escape(page.PeriodLabel)}*\n" +
+            $"Показано *{from}–{to}* з *{page.TotalCount}*\n";
 
-        return "📜 *Останні події*\n\n" + string.Join("\n\n", lines);
+        var lines = page.Items.Select(log =>
+            $"• `{StaffAuditLogPeriodHelper.FormatKyivTime(log.CreatedAtUtc)}` *{Escape(log.ActorName)}*\n  {Escape(log.Details)}");
+
+        return header + "\n" + string.Join("\n\n", lines);
     }
-
     public static string Employees(IReadOnlyList<EmployeeListItemDto> employees)
     {
         if (employees.Count == 0)

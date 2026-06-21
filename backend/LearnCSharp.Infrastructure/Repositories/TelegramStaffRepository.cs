@@ -79,6 +79,23 @@ public sealed class TelegramStaffRepository(AppDbContext dbContext) : ITelegramS
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task UpdateLastBotScreenMessageIdAsync(
+        long telegramUserId,
+        int? messageId,
+        CancellationToken cancellationToken = default)
+    {
+        var account = await dbContext.TelegramAccounts
+            .FirstOrDefaultAsync(item => item.TelegramUserId == telegramUserId, cancellationToken);
+
+        if (account is null)
+        {
+            return;
+        }
+
+        account.LastBotScreenMessageId = messageId;
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task TouchLastSeenAsync(long telegramUserId, CancellationToken cancellationToken = default)
     {
         var account = await dbContext.TelegramAccounts
@@ -282,6 +299,47 @@ public sealed class TelegramStaffRepository(AppDbContext dbContext) : ITelegramS
             })
             .ToListAsync(cancellationToken);
 
+    public async Task<(IReadOnlyList<StaffAuditLogDto> Items, int TotalCount)> GetAuditLogsPageAsync(
+        DateTime? fromUtcInclusive,
+        DateTime? toUtcExclusive,
+        int skip,
+        int take,
+        CancellationToken cancellationToken = default)
+    {
+        var query = dbContext.StaffAuditLogs
+            .AsNoTracking()
+            .Include(item => item.Actor)
+            .AsQueryable();
+
+        if (fromUtcInclusive.HasValue)
+        {
+            query = query.Where(item => item.CreatedAtUtc >= fromUtcInclusive.Value);
+        }
+
+        if (toUtcExclusive.HasValue)
+        {
+            query = query.Where(item => item.CreatedAtUtc < toUtcExclusive.Value);
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var items = await query
+            .OrderByDescending(item => item.CreatedAtUtc)
+            .Skip(skip)
+            .Take(take)
+            .Select(item => new StaffAuditLogDto
+            {
+                Id = item.Id,
+                ActorName = item.Actor.Name,
+                Action = item.Action,
+                Details = item.Details,
+                OrderId = item.OrderId,
+                CreatedAtUtc = item.CreatedAtUtc,
+            })
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
+
     public async Task EnqueueOutboxAsync(
         TelegramOutboxType type,
         string payloadJson,
@@ -464,5 +522,6 @@ public sealed class TelegramStaffRepository(AppDbContext dbContext) : ITelegramS
             Role = account.User.Role,
             TelegramUserId = account.TelegramUserId,
             ChatId = account.ChatId,
+            LastBotScreenMessageId = account.LastBotScreenMessageId,
         };
 }

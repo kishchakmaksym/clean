@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "GISa/IBIlm0=",
+  "dgSpecHash": "C+RT9ujjcw0=",
   "success": true,
-  "projectFilePath": "C:\\Users\\kashchei94\\Desktop\\CleanPro\\telegram-bot\\CleanPro.TelegramBot\\CleanPro.TelegramBot.csproj",
+  "projectFilePath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\telegram-bot\\CleanPro.TelegramBot\\CleanPro.TelegramBot.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\kashchei94\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\kashchei94\\.nuget\\packages\\microsoft.data.sqlite.core\\10.0.0\\microsoft.data.sqlite.core.10.0.0.nupkg.sha512",
@@ -43,6 +43,8 @@
     "C:\\Users\\kashchei94\\.nuget\\packages\\microsoft.extensions.options\\10.0.0\\microsoft.extensions.options.10.0.0.nupkg.sha512",
     "C:\\Users\\kashchei94\\.nuget\\packages\\microsoft.extensions.options.configurationextensions\\10.0.0\\microsoft.extensions.options.configurationextensions.10.0.0.nupkg.sha512",
     "C:\\Users\\kashchei94\\.nuget\\packages\\microsoft.extensions.primitives\\10.0.0\\microsoft.extensions.primitives.10.0.0.nupkg.sha512",
+    "C:\\Users\\kashchei94\\.nuget\\packages\\npgsql\\10.0.0\\npgsql.10.0.0.nupkg.sha512",
+    "C:\\Users\\kashchei94\\.nuget\\packages\\npgsql.entityframeworkcore.postgresql\\10.0.0\\npgsql.entityframeworkcore.postgresql.10.0.0.nupkg.sha512",
     "C:\\Users\\kashchei94\\.nuget\\packages\\sqlitepclraw.bundle_e_sqlite3\\2.1.11\\sqlitepclraw.bundle_e_sqlite3.2.1.11.nupkg.sha512",
     "C:\\Users\\kashchei94\\.nuget\\packages\\sqlitepclraw.core\\2.1.11\\sqlitepclraw.core.2.1.11.nupkg.sha512",
     "C:\\Users\\kashchei94\\.nuget\\packages\\sqlitepclraw.lib.e_sqlite3\\2.1.11\\sqlitepclraw.lib.e_sqlite3.2.1.11.nupkg.sha512",
@@ -55,9 +57,9 @@
       "code": "NU1903",
       "level": "Warning",
       "message": "Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q",
-      "projectPath": "C:\\Users\\kashchei94\\Desktop\\CleanPro\\telegram-bot\\CleanPro.TelegramBot\\CleanPro.TelegramBot.csproj",
+      "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\telegram-bot\\CleanPro.TelegramBot\\CleanPro.TelegramBot.csproj",
       "warningLevel": 1,
-      "filePath": "C:\\Users\\kashchei94\\Desktop\\CleanPro\\telegram-bot\\CleanPro.TelegramBot\\CleanPro.TelegramBot.csproj",
+      "filePath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\telegram-bot\\CleanPro.TelegramBot\\CleanPro.TelegramBot.csproj",
       "libraryId": "SQLitePCLRaw.lib.e_sqlite3",
       "targetGraphs": [
         "net10.0"

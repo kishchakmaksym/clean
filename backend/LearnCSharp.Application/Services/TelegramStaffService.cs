@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LearnCSharp.Application.DTOs.Telegram;
+using LearnCSharp.Application.Helpers;
 using LearnCSharp.Application.Interfaces;
 using LearnCSharp.Application.Orders;
 using LearnCSharp.Application.Validation;
@@ -103,9 +104,8 @@ public sealed class TelegramStaffService(
             return [];
         }
 
-        IReadOnlyList<Domain.Entities.Order> orders = actor.Role == UserRole.Admin
-            ? await repository.GetActiveOrdersForAdminAsync(cancellationToken)
-            : await repository.GetOrdersAssignedToAsync(actorUserId, cancellationToken);
+        IReadOnlyList<Domain.Entities.Order> orders =
+            await repository.GetOrdersAssignedToAsync(actorUserId, cancellationToken);
 
         var result = new List<StaffOrderDto>();
         foreach (var order in orders)
@@ -293,7 +293,7 @@ public sealed class TelegramStaffService(
             return null;
         }
 
-        if (actor.Role == UserRole.Employee)
+        if (actor.Role is UserRole.Employee or UserRole.Admin)
         {
             var assignment = await repository.GetOrderAssignmentAsync(orderId, cancellationToken);
             var isAvailable = order.Status == OrderStatus.PendingConfirmation && assignment is null;
@@ -342,6 +342,32 @@ public sealed class TelegramStaffService(
         int limit = 30,
         CancellationToken cancellationToken = default) =>
         repository.GetRecentAuditLogsAsync(limit, cancellationToken);
+
+    public async Task<StaffAuditLogsPageDto> GetAuditLogsPageAsync(
+        StaffAuditLogPeriod period,
+        int page,
+        int pageSize = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var safePage = Math.Max(0, page);
+        var safePageSize = Math.Clamp(pageSize, 1, 50);
+        var (fromUtc, toUtcExclusive, label) = StaffAuditLogPeriodHelper.GetUtcRange(period);
+        var (items, totalCount) = await repository.GetAuditLogsPageAsync(
+            fromUtc,
+            toUtcExclusive,
+            safePage * safePageSize,
+            safePageSize,
+            cancellationToken);
+
+        return new StaffAuditLogsPageDto
+        {
+            PeriodLabel = label,
+            Items = items,
+            TotalCount = totalCount,
+            Page = safePage,
+            PageSize = safePageSize,
+        };
+    }
 
     public Task<IReadOnlyList<EmployeeListItemDto>> GetEmployeesAsync(
         CancellationToken cancellationToken = default) =>
@@ -495,14 +521,14 @@ public sealed class TelegramStaffService(
         var profile = await repository.GetEmployeeProfileAsync(userId, cancellationToken);
         if (profile is null)
         {
-            return "\n\nВаша доля: 0%. Доступ до замовлень вимкнено — зверніться до адміна.";
+            return "\n\nМій процент від замовлення: 0%. Доступ до замовлень вимкнено — зверніться до адміна.";
         }
 
         var access = profile.CanAcceptOrders && profile.SharePercent > 0
             ? "можете приймати замовлення"
             : "поки не можете приймати замовлення — зверніться до адміна";
 
-        return $"\n\nВаша доля: {profile.SharePercent:0.#}%. Зараз ви {access}.";
+        return $"\n\nМій процент від замовлення: {profile.SharePercent:0.#}%. Зараз ви {access}.";
     }
 
     private async Task<bool> IsAdminAsync(Guid userId, CancellationToken cancellationToken)

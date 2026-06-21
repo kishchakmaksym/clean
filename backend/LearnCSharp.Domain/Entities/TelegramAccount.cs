@@ -17,4 +17,6 @@ public class TelegramAccount
     public DateTime LinkedAtUtc { get; set; }
 
     public DateTime? LastSeenAtUtc { get; set; }
+
+    public int? LastBotScreenMessageId { get; set; }
 }

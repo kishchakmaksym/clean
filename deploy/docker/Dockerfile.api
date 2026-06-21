@@ -1,0 +1,41 @@
+# syntax=docker/dockerfile:1
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+COPY backend/LearnCSharp.Domain/LearnCSharp.Domain.csproj backend/LearnCSharp.Domain/
+COPY backend/LearnCSharp.Application/LearnCSharp.Application.csproj backend/LearnCSharp.Application/
+COPY backend/LearnCSharp.Infrastructure/LearnCSharp.Infrastructure.csproj backend/LearnCSharp.Infrastructure/
+COPY backend/LearnCSharp.Infrastructure.Postgres/LearnCSharp.Infrastructure.Postgres.csproj backend/LearnCSharp.Infrastructure.Postgres/
+COPY backend/LearnCSharp.Api/LearnCSharp.Api.csproj backend/LearnCSharp.Api/
+
+RUN dotnet restore backend/LearnCSharp.Api/LearnCSharp.Api.csproj
+
+COPY backend/ backend/
+
+RUN dotnet publish backend/LearnCSharp.Api/LearnCSharp.Api.csproj \
+    -c Release \
+    -o /app/publish \
+    /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && groupadd -r appuser \
+    && useradd -r -g appuser -d /app appuser \
+    && chown -R appuser:appuser /app
+
+USER appuser
+
+COPY --from=build --chown=appuser:appuser /app/publish ./
+
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+    CMD curl -f http://127.0.0.1:8080/health || exit 1
+
+ENTRYPOINT ["dotnet", "LearnCSharp.Api.dll"]

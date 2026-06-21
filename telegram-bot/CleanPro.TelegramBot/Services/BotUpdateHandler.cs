@@ -6,6 +6,7 @@ using LearnCSharp.Domain.Enums;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace CleanPro.TelegramBot.Services;
 
@@ -14,6 +15,7 @@ public sealed class BotUpdateHandler(
     ITelegramStaffRepository staffRepository,
     ITelegramStaffService staffService,
     UserSessionStore sessions,
+    BotScreenMessenger screenMessenger,
     ILogger<BotUpdateHandler> logger)
 {
     public async Task HandleUpdateAsync(Update update, CancellationToken cancellationToken)
@@ -49,102 +51,406 @@ public sealed class BotUpdateHandler(
 
         if (message.Contact is not null)
         {
-            await HandleContactAsync(chatId, telegramUserId, message.Contact, cancellationToken);
+            await HandleContactAsync(chatId, telegramUserId, message, message.Contact, cancellationToken);
             return;
         }
 
         var account = await staffRepository.FindAccountByTelegramUserIdAsync(telegramUserId, cancellationToken);
         if (account is null)
         {
-            await SendUnauthorizedAsync(chatId, cancellationToken);
+            await SendUnauthorizedAsync(chatId, telegramUserId, cancellationToken);
             return;
         }
 
         await staffRepository.TouchLastSeenAsync(telegramUserId, cancellationToken);
 
         var session = sessions.GetOrCreate(telegramUserId);
+        BindSessionContext(session, telegramUserId, account);
         var text = message.Text?.Trim() ?? string.Empty;
 
-        if (text.Equals("/start", StringComparison.OrdinalIgnoreCase))
+        if (text.Equals("/start", StringComparison.OrdinalIgnoreCase) ||
+            text.Equals("/menu", StringComparison.OrdinalIgnoreCase))
         {
-            sessions.Clear(telegramUserId);
-            await SendMainMenuAsync(chatId, account, cancellationToken);
+            ResetSession(session);
+            await SendMainMenuAsync(chatId, account, session, cancellationToken);
+            await DeleteUserMessageAsync(message, cancellationToken);
             return;
         }
 
         if (account.Role == UserRole.Admin && session.Mode == UserSessionMode.AwaitingBroadcast)
         {
-            sessions.Clear(telegramUserId);
-            var result = await staffService.QueueBroadcastAsync(account.UserId, text, cancellationToken);
-            await botClient.SendMessage(
-                chatId,
-                result.Message,
-                parseMode: ParseMode.Markdown,
-                replyMarkup: BotKeyboards.MainMenu(account.Role),
-                cancellationToken: cancellationToken);
-            return;
-        }
-
-        if (account.Role == UserRole.Admin && session.Mode == UserSessionMode.AwaitingEmployeeShare && session.TargetEmployeeId is Guid employeeId)
-        {
-            sessions.Clear(telegramUserId);
-            if (!decimal.TryParse(text.Replace(',', '.'), out var share))
+            if (IsCancel(text) || text == BotLabels.Back)
             {
-                await botClient.SendMessage(chatId, "Введіть число від 0 до 100.", cancellationToken: cancellationToken);
+                session.Mode = UserSessionMode.None;
+                await SendAdminMenuAsync(chatId, account, session, cancellationToken);
+                await DeleteUserMessageAsync(message, cancellationToken);
                 return;
             }
 
-            var result = await staffService.SetEmployeeShareAsync(account.UserId, employeeId, share, cancellationToken);
-            await botClient.SendMessage(chatId, result.Message, cancellationToken: cancellationToken);
-            await SendEmployeesAsync(chatId, account, cancellationToken);
+            session.Mode = UserSessionMode.None;
+            var result = await staffService.QueueBroadcastAsync(account.UserId, text, cancellationToken);
+            await SendEphemeralAsync(
+                session,
+                chatId,
+                result.Message,
+                replyMarkup: null,
+                parseMode: ParseMode.Markdown,
+                cancellationToken);
+            await SendAdminMenuAsync(chatId, account, session, cancellationToken);
+            await DeleteUserMessageAsync(message, cancellationToken);
             return;
         }
 
-        if (text.Equals("/menu", StringComparison.OrdinalIgnoreCase))
+        if (account.Role == UserRole.Admin &&
+            session.Mode == UserSessionMode.AwaitingEmployeeShare &&
+            session.TargetEmployeeId is Guid shareEmployeeId)
         {
-            await SendMainMenuAsync(chatId, account, cancellationToken);
+            if (IsCancel(text) || text == BotLabels.Back)
+            {
+                session.Mode = UserSessionMode.None;
+                await ShowEmployeeAsync(chatId, account, shareEmployeeId, cancellationToken);
+                await DeleteUserMessageAsync(message, cancellationToken);
+                return;
+            }
+
+            if (!decimal.TryParse(text.Replace(',', '.'), out var share))
+            {
+                await SendScreenAsync(
+                    session,
+                    chatId,
+                    "Введіть число від 0 до 100.",
+                    BotKeyboards.CancelOnly(),
+                    ParseMode.None,
+                    cancellationToken);
+                await DeleteUserMessageAsync(message, cancellationToken);
+                return;
+            }
+
+            session.Mode = UserSessionMode.None;
+            var result = await staffService.SetEmployeeShareAsync(account.UserId, shareEmployeeId, share, cancellationToken);
+            await SendEphemeralAsync(session, chatId, result.Message, null, null, cancellationToken);
+            await ShowEmployeeAsync(chatId, account, shareEmployeeId, cancellationToken);
+            await DeleteUserMessageAsync(message, cancellationToken);
             return;
         }
 
-        await botClient.SendMessage(
-            chatId,
-            "Оберіть дію в меню 👇",
-            replyMarkup: BotKeyboards.MainMenu(account.Role),
-            cancellationToken: cancellationToken);
+        if (await TryHandleNavigationTextAsync(chatId, account, session, text, cancellationToken))
+        {
+            await DeleteUserMessageAsync(message, cancellationToken);
+            return;
+        }
+
+        await SendMainMenuAsync(chatId, account, session, cancellationToken);
+        await DeleteUserMessageAsync(message, cancellationToken);
+    }
+
+    private async Task<bool> TryHandleNavigationTextAsync(
+        long chatId,
+        TelegramAccountDto account,
+        UserSession session,
+        string text,
+        CancellationToken cancellationToken)
+    {
+        if (text == BotLabels.Back)
+        {
+            await HandleBackAsync(chatId, account, session, cancellationToken);
+            return true;
+        }
+
+        if (text == BotLabels.Available)
+        {
+            await SendAvailableOrdersAsync(chatId, account, session, cancellationToken);
+            return true;
+        }
+
+        if (text == BotLabels.MyOrders)
+        {
+            await SendMyOrdersAsync(chatId, account, session, cancellationToken);
+            return true;
+        }
+
+        if (text == BotLabels.Stats)
+        {
+            await SendStatsAsync(chatId, account, session, cancellationToken);
+            return true;
+        }
+
+        if (text == BotLabels.Admin && account.Role == UserRole.Admin)
+        {
+            await SendAdminMenuAsync(chatId, account, session, cancellationToken);
+            return true;
+        }
+
+        if (text == BotLabels.Employees && account.Role == UserRole.Admin)
+        {
+            await SendEmployeesAsync(chatId, account, session, cancellationToken);
+            return true;
+        }
+
+        if (text == BotLabels.Logs && account.Role == UserRole.Admin)
+        {
+            await SendLogsFilterAsync(chatId, account, session, cancellationToken);
+            return true;
+        }
+
+        if (text == BotLabels.LogsToday && account.Role == UserRole.Admin)
+        {
+            await SendLogsPageAsync(chatId, account, session, StaffAuditLogPeriod.Today, 0, cancellationToken);
+            return true;
+        }
+
+        if (text == BotLabels.LogsYesterday && account.Role == UserRole.Admin)
+        {
+            await SendLogsPageAsync(chatId, account, session, StaffAuditLogPeriod.Yesterday, 0, cancellationToken);
+            return true;
+        }
+
+        if (text == BotLabels.Logs7Days && account.Role == UserRole.Admin)
+        {
+            await SendLogsPageAsync(chatId, account, session, StaffAuditLogPeriod.Last7Days, 0, cancellationToken);
+            return true;
+        }
+
+        if (text == BotLabels.LogsMonth && account.Role == UserRole.Admin)
+        {
+            await SendLogsPageAsync(chatId, account, session, StaffAuditLogPeriod.LastMonth, 0, cancellationToken);
+            return true;
+        }
+
+        if (text == BotLabels.LogsNext &&
+            account.Role == UserRole.Admin &&
+            session.LogPeriod is StaffAuditLogPeriod period)
+        {
+            await SendLogsPageAsync(chatId, account, session, period, session.LogPage + 1, cancellationToken);
+            return true;
+        }
+
+        if (text == BotLabels.LogsPrev &&
+            account.Role == UserRole.Admin &&
+            session.LogPeriod is StaffAuditLogPeriod prevPeriod &&
+            session.LogPage > 0)
+        {
+            await SendLogsPageAsync(chatId, account, session, prevPeriod, session.LogPage - 1, cancellationToken);
+            return true;
+        }
+
+        if (text == BotLabels.LogsChangePeriod && account.Role == UserRole.Admin)
+        {
+            await SendLogsFilterAsync(chatId, account, session, cancellationToken);
+            return true;
+        }
+
+        if (text == BotLabels.Broadcast && account.Role == UserRole.Admin)
+        {
+            session.Mode = UserSessionMode.AwaitingBroadcast;
+            session.Nav = UserNavigationContext.Admin;
+            await SendScreenAsync(
+                session,
+                chatId,
+                "📢 Напишіть повідомлення для *всіх працівників* одним текстом:",
+                BotKeyboards.CancelOnly(),
+                ParseMode.Markdown,
+                cancellationToken);
+            return true;
+        }
+
+        if (text == BotLabels.Claim && session.TargetOrderId is Guid claimOrderId)
+        {
+            await ClaimOrderAsync(chatId, account, session, claimOrderId, cancellationToken);
+            return true;
+        }
+
+        if (text == BotLabels.Complete && session.TargetOrderId is Guid completeOrderId)
+        {
+            await UpdateStatusAsync(
+                chatId,
+                account,
+                session,
+                completeOrderId,
+                nameof(OrderStatus.Completed),
+                cancellationToken);
+            return true;
+        }
+
+        if (text == BotLabels.ChangeShare &&
+            account.Role == UserRole.Admin &&
+            session.TargetEmployeeId is Guid shareTargetId)
+        {
+            session.Mode = UserSessionMode.AwaitingEmployeeShare;
+            await SendScreenAsync(
+                session,
+                chatId,
+                "✏️ Введіть нову долю працівника (0–100):",
+                BotKeyboards.CancelOnly(),
+                ParseMode.None,
+                cancellationToken);
+            return true;
+        }
+
+        if (account.Role == UserRole.Admin &&
+            session.TargetEmployeeId is Guid toggleEmployeeId &&
+            (text == BotLabels.EnableAccept || text == BotLabels.DisableAccept))
+        {
+            var employees = await staffService.GetEmployeesAsync(cancellationToken);
+            var employee = employees.FirstOrDefault(item => item.UserId == toggleEmployeeId);
+            if (employee is not null)
+            {
+                var enable = text == BotLabels.EnableAccept;
+                var result = await staffService.SetEmployeeAcceptAsync(
+                    account.UserId,
+                    toggleEmployeeId,
+                    enable,
+                    cancellationToken);
+                await SendEphemeralAsync(session, chatId, result.Message, null, null, cancellationToken);
+                await ShowEmployeeAsync(chatId, account, toggleEmployeeId, cancellationToken);
+            }
+
+            return true;
+        }
+
+        if (text.StartsWith("🆕 №", StringComparison.Ordinal) &&
+            BotLabels.TryParseOrderShortId(text, out var availableShortId))
+        {
+            var orders = await staffService.GetAvailableOrdersAsync(account.UserId, cancellationToken);
+            var order = orders.FirstOrDefault(item =>
+                item.ShortId.Equals(availableShortId, StringComparison.OrdinalIgnoreCase));
+            if (order is not null)
+            {
+                await ClaimOrderAsync(chatId, account, session, order.Id, cancellationToken);
+            }
+
+            return true;
+        }
+
+        if (text.StartsWith("📋 №", StringComparison.Ordinal) &&
+            BotLabels.TryParseOrderShortId(text, out var myShortId))
+        {
+            var orders = await staffService.GetMyOrdersAsync(account.UserId, cancellationToken);
+            var order = orders.FirstOrDefault(item =>
+                item.ShortId.Equals(myShortId, StringComparison.OrdinalIgnoreCase));
+            if (order is not null)
+            {
+                await ShowOrderAsync(chatId, account, session, order.Id, cancellationToken);
+            }
+
+            return true;
+        }
+
+        if (account.Role == UserRole.Admin &&
+            (text.StartsWith("🟢 ", StringComparison.Ordinal) || text.StartsWith("🔴 ", StringComparison.Ordinal)))
+        {
+            var employees = await staffService.GetEmployeesAsync(cancellationToken);
+            var employee = employees.FirstOrDefault(item => BotLabels.EmployeeLabel(item) == text);
+            if (employee is not null)
+            {
+                await ShowEmployeeAsync(chatId, account, employee.UserId, cancellationToken);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private async Task HandleBackAsync(
+        long chatId,
+        TelegramAccountDto account,
+        UserSession session,
+        CancellationToken cancellationToken)
+    {
+        switch (session.Nav)
+        {
+            case UserNavigationContext.EmployeeDetail:
+                session.TargetEmployeeId = null;
+                await SendEmployeesAsync(chatId, account, session, cancellationToken);
+                break;
+            case UserNavigationContext.Employees:
+                await SendAdminMenuAsync(chatId, account, session, cancellationToken);
+                break;
+            case UserNavigationContext.LogsFilter:
+            case UserNavigationContext.Logs:
+                await SendAdminMenuAsync(chatId, account, session, cancellationToken);
+                break;
+            case UserNavigationContext.OrderDetail:
+                session.TargetOrderId = null;
+                if (session.ReturnNav == UserNavigationContext.MyOrders)
+                {
+                    await SendMyOrdersAsync(chatId, account, session, cancellationToken);
+                }
+                else
+                {
+                    await SendAvailableOrdersAsync(chatId, account, session, cancellationToken);
+                }
+
+                break;
+            default:
+                await SendMainMenuAsync(chatId, account, session, cancellationToken);
+                break;
+        }
     }
 
     private async Task HandleContactAsync(
         long chatId,
         long telegramUserId,
+        Message userMessage,
         Contact contact,
         CancellationToken cancellationToken)
     {
+        var session = sessions.GetOrCreate(telegramUserId);
+        BindSessionContext(session, telegramUserId);
+
         if (contact.UserId != telegramUserId)
         {
-            await botClient.SendMessage(
+            await SendScreenAsync(
+                session,
                 chatId,
                 "❌ Надішліть *свій* контакт, а не чужий.",
-                parseMode: ParseMode.Markdown,
-                cancellationToken: cancellationToken);
+                BotKeyboards.LoginContact(),
+                ParseMode.Markdown,
+                cancellationToken);
+            await DeleteUserMessageAsync(userMessage, cancellationToken);
             return;
         }
 
         var phone = contact.PhoneNumber;
         if (string.IsNullOrWhiteSpace(phone))
         {
-            await botClient.SendMessage(chatId, "Не вдалося отримати номер.", cancellationToken: cancellationToken);
+            await SendScreenAsync(
+                session,
+                chatId,
+                "Не вдалося отримати номер.",
+                BotKeyboards.LoginContact(),
+                ParseMode.None,
+                cancellationToken);
+            await DeleteUserMessageAsync(userMessage, cancellationToken);
             return;
         }
 
         var result = await staffService.LinkByContactAsync(telegramUserId, chatId, phone, cancellationToken);
-        await botClient.SendMessage(
+
+        if (result.Success && result.Account is not null)
+        {
+            ResetSession(session);
+            BindSessionContext(session, telegramUserId, result.Account);
+            await SendEphemeralAsync(
+                session,
+                chatId,
+                result.Message,
+                new ReplyKeyboardRemove(),
+                ParseMode.Markdown,
+                cancellationToken);
+            await SendMainMenuAsync(chatId, result.Account, session, cancellationToken);
+            await DeleteUserMessageAsync(userMessage, cancellationToken);
+            return;
+        }
+
+        await SendScreenAsync(
+            session,
             chatId,
             result.Message,
-            parseMode: ParseMode.Markdown,
-            replyMarkup: result.Success && result.Account is not null
-                ? BotKeyboards.MainMenu(result.Account.Role)
-                : BotKeyboards.LoginContact(),
-            cancellationToken: cancellationToken);
+            BotKeyboards.LoginContact(),
+            ParseMode.Markdown,
+            cancellationToken);
+        await DeleteUserMessageAsync(userMessage, cancellationToken);
     }
 
     private async Task HandleCallbackAsync(CallbackQuery query, CancellationToken cancellationToken)
@@ -165,11 +471,20 @@ public sealed class BotUpdateHandler(
         }
 
         await staffRepository.TouchLastSeenAsync(telegramUserId, cancellationToken);
+        var session = sessions.GetOrCreate(telegramUserId);
+        BindSessionContext(session, telegramUserId, account);
         var data = query.Data ?? string.Empty;
 
         try
         {
-            await RouteCallbackAsync(chatId, account, data, cancellationToken);
+            if (data.StartsWith("c:", StringComparison.Ordinal) &&
+                BotCallbacks.TryParseGuid(data[2..], out var orderId))
+            {
+                var pushMessageId = query.Message.MessageId;
+                await ClaimOrderAsync(chatId, account, session, orderId, cancellationToken);
+                await screenMessenger.DeleteMessageAfterResponseAsync(chatId, pushMessageId);
+            }
+
             await botClient.AnswerCallbackQuery(query.Id, cancellationToken: cancellationToken);
         }
         catch (Exception ex)
@@ -179,319 +494,300 @@ public sealed class BotUpdateHandler(
         }
     }
 
-    private async Task RouteCallbackAsync(
-        long chatId,
-        TelegramAccountDto account,
-        string data,
-        CancellationToken cancellationToken)
-    {
-        if (data == BotCallbacks.MenuHome)
-        {
-            sessions.Clear(account.TelegramUserId);
-            await SendMainMenuAsync(chatId, account, cancellationToken);
-            return;
-        }
-
-        if (data == BotCallbacks.MenuAvailable)
-        {
-            await SendAvailableOrdersAsync(chatId, account, cancellationToken);
-            return;
-        }
-
-        if (data == BotCallbacks.MenuMyOrders)
-        {
-            await SendMyOrdersAsync(chatId, account, cancellationToken);
-            return;
-        }
-
-        if (data == BotCallbacks.MenuStats)
-        {
-            await SendStatsAsync(chatId, account, cancellationToken);
-            return;
-        }
-
-        if (data == BotCallbacks.MenuLogs && account.Role == UserRole.Admin)
-        {
-            await SendLogsAsync(chatId, cancellationToken);
-            return;
-        }
-
-        if (data == BotCallbacks.MenuEmployees && account.Role == UserRole.Admin)
-        {
-            await SendEmployeesAsync(chatId, account, cancellationToken);
-            return;
-        }
-
-        if (data == BotCallbacks.MenuBroadcast && account.Role == UserRole.Admin)
-        {
-            var session = sessions.GetOrCreate(account.TelegramUserId);
-            session.Mode = UserSessionMode.AwaitingBroadcast;
-            await botClient.SendMessage(
-                chatId,
-                "📢 Напишіть повідомлення для *всіх працівників* одним текстом:",
-                parseMode: ParseMode.Markdown,
-                cancellationToken: cancellationToken);
-            return;
-        }
-
-        if (data.StartsWith("c:", StringComparison.Ordinal))
-        {
-            var orderIdText = data[2..];
-            if (BotCallbacks.TryParseGuid(orderIdText, out var orderId))
-            {
-                await ClaimOrderAsync(chatId, account, orderId, cancellationToken);
-            }
-
-            return;
-        }
-
-        if (data.StartsWith("o:", StringComparison.Ordinal))
-        {
-            var orderIdText = data[2..];
-            if (BotCallbacks.TryParseGuid(orderIdText, out var orderId))
-            {
-                await ShowOrderAsync(chatId, account, orderId, cancellationToken);
-            }
-
-            return;
-        }
-
-        if (data.StartsWith("s:", StringComparison.Ordinal))
-        {
-            var parts = data.Split(':');
-            if (parts.Length == 3 &&
-                BotCallbacks.TryParseGuid(parts[1], out var orderId) &&
-                int.TryParse(parts[2], out var code))
-            {
-                var status = code switch
-                {
-                    0 => nameof(OrderStatus.PendingConfirmation),
-                    1 => nameof(OrderStatus.Confirmed),
-                    2 => nameof(OrderStatus.Completed),
-                    _ => string.Empty,
-                };
-
-                if (!string.IsNullOrEmpty(status))
-                {
-                    await UpdateStatusAsync(chatId, account, orderId, status, cancellationToken);
-                }
-            }
-
-            return;
-        }
-
-        if (data.StartsWith("e:", StringComparison.Ordinal) && account.Role == UserRole.Admin)
-        {
-            var userIdText = data[2..];
-            if (BotCallbacks.TryParseGuid(userIdText, out var employeeId))
-            {
-                await ShowEmployeeAsync(chatId, account, employeeId, cancellationToken);
-            }
-
-            return;
-        }
-
-        if (data.StartsWith("es:", StringComparison.Ordinal) && account.Role == UserRole.Admin)
-        {
-            var userIdText = data[3..];
-            if (BotCallbacks.TryParseGuid(userIdText, out var employeeId))
-            {
-                var session = sessions.GetOrCreate(account.TelegramUserId);
-                session.Mode = UserSessionMode.AwaitingEmployeeShare;
-                session.TargetEmployeeId = employeeId;
-                await botClient.SendMessage(
-                    chatId,
-                    "✏️ Введіть нову долю працівника (0–100):",
-                    cancellationToken: cancellationToken);
-            }
-
-            return;
-        }
-
-        if (data.StartsWith("et:", StringComparison.Ordinal) && account.Role == UserRole.Admin)
-        {
-            var userIdText = data[3..];
-            if (BotCallbacks.TryParseGuid(userIdText, out var employeeId))
-            {
-                var employees = await staffService.GetEmployeesAsync(cancellationToken);
-                var employee = employees.FirstOrDefault(item => item.UserId == employeeId);
-                if (employee is null)
-                {
-                    return;
-                }
-
-                var enable = !(employee.CanAcceptOrders && employee.SharePercent > 0);
-                var result = await staffService.SetEmployeeAcceptAsync(account.UserId, employeeId, enable, cancellationToken);
-                await botClient.SendMessage(chatId, result.Message, cancellationToken: cancellationToken);
-                await ShowEmployeeAsync(chatId, account, employeeId, cancellationToken);
-            }
-        }
-    }
-
     private async Task ClaimOrderAsync(
         long chatId,
         TelegramAccountDto account,
+        UserSession session,
         Guid orderId,
         CancellationToken cancellationToken)
     {
         var result = await staffService.ClaimOrderAsync(account.UserId, orderId, cancellationToken);
-        await botClient.SendMessage(
-            chatId,
-            result.Message,
-            parseMode: ParseMode.Markdown,
-            replyMarkup: result.Success && result.Order is not null
-                ? BotKeyboards.OrderActions(result.Order, account.Role, account.UserId, true)
-                : BotKeyboards.MainMenu(account.Role),
-            cancellationToken: cancellationToken);
 
         if (result.Success && result.Order is not null)
         {
-            await botClient.SendMessage(
+            session.Nav = UserNavigationContext.OrderDetail;
+            session.ReturnNav = UserNavigationContext.AvailableOrders;
+            session.TargetOrderId = orderId;
+
+            var text = $"{result.Message}\n\n{BotMessages.OrderCard(result.Order)}";
+            await SendScreenAsync(
+                session,
                 chatId,
-                BotMessages.OrderCard(result.Order),
-                parseMode: ParseMode.Markdown,
-                replyMarkup: BotKeyboards.OrderActions(result.Order, account.Role, account.UserId, true),
-                cancellationToken: cancellationToken);
+                text,
+                BotKeyboards.OrderDetailReply(result.Order, true),
+                ParseMode.Markdown,
+                cancellationToken);
+            return;
         }
+
+        await SendEphemeralAsync(session, chatId, result.Message, null, ParseMode.Markdown, cancellationToken);
+        await SendAvailableOrdersAsync(chatId, account, session, cancellationToken);
     }
 
     private async Task ShowOrderAsync(
         long chatId,
         TelegramAccountDto account,
+        UserSession session,
         Guid orderId,
         CancellationToken cancellationToken)
     {
         var order = await staffService.GetOrderDetailsAsync(account.UserId, orderId, cancellationToken);
         if (order is null)
         {
-            await botClient.SendMessage(chatId, "Замовлення недоступне.", cancellationToken: cancellationToken);
+            await SendScreenAsync(
+                session,
+                chatId,
+                "Замовлення недоступне.",
+                BotKeyboards.BackReply(),
+                ParseMode.None,
+                cancellationToken);
             return;
         }
 
         var assignment = await staffRepository.GetOrderAssignmentAsync(orderId, cancellationToken);
         var isAssignee = assignment?.EmployeeUserId == account.UserId;
 
-        await botClient.SendMessage(
+        session.ReturnNav = session.Nav == UserNavigationContext.MyOrders
+            ? UserNavigationContext.MyOrders
+            : UserNavigationContext.AvailableOrders;
+        session.Nav = UserNavigationContext.OrderDetail;
+        session.TargetOrderId = orderId;
+
+        await SendScreenAsync(
+            session,
             chatId,
             BotMessages.OrderCard(order),
-            parseMode: ParseMode.Markdown,
-            replyMarkup: BotKeyboards.OrderActions(order, account.Role, account.UserId, isAssignee),
-            cancellationToken: cancellationToken);
+            BotKeyboards.OrderDetailReply(order, isAssignee),
+            ParseMode.Markdown,
+            cancellationToken);
     }
 
     private async Task UpdateStatusAsync(
         long chatId,
         TelegramAccountDto account,
+        UserSession session,
         Guid orderId,
         string status,
         CancellationToken cancellationToken)
     {
         var result = await staffService.UpdateOrderStatusAsync(account.UserId, orderId, status, cancellationToken);
-        await botClient.SendMessage(
-            chatId,
-            result.Message,
-            cancellationToken: cancellationToken);
 
         if (result.Order is not null)
         {
             var assignment = await staffRepository.GetOrderAssignmentAsync(orderId, cancellationToken);
             var isAssignee = assignment?.EmployeeUserId == account.UserId;
-            await botClient.SendMessage(
+            session.TargetOrderId = orderId;
+
+            var text = $"{result.Message}\n\n{BotMessages.OrderCard(result.Order)}";
+            await SendScreenAsync(
+                session,
                 chatId,
-                BotMessages.OrderCard(result.Order),
-                parseMode: ParseMode.Markdown,
-                replyMarkup: BotKeyboards.OrderActions(result.Order, account.Role, account.UserId, isAssignee),
-                cancellationToken: cancellationToken);
+                text,
+                BotKeyboards.OrderDetailReply(result.Order, isAssignee),
+                ParseMode.Markdown,
+                cancellationToken);
+            return;
         }
+
+        await SendEphemeralAsync(session, chatId, result.Message, null, null, cancellationToken);
+        await SendMyOrdersAsync(chatId, account, session, cancellationToken);
     }
 
-    private async Task SendUnauthorizedAsync(long chatId, CancellationToken cancellationToken) =>
-        await botClient.SendMessage(
+    private async Task SendUnauthorizedAsync(long chatId, long telegramUserId, CancellationToken cancellationToken)
+    {
+        var session = sessions.GetOrCreate(telegramUserId);
+        BindSessionContext(session, telegramUserId);
+        await SendScreenAsync(
+            session,
             chatId,
             BotMessages.WelcomeUnauthorized(),
-            parseMode: ParseMode.Markdown,
-            replyMarkup: BotKeyboards.LoginContact(),
-            cancellationToken: cancellationToken);
+            BotKeyboards.LoginContact(),
+            ParseMode.Markdown,
+            cancellationToken);
+    }
 
-    private async Task SendMainMenuAsync(long chatId, TelegramAccountDto account, CancellationToken cancellationToken) =>
-        await botClient.SendMessage(
+    private async Task SendMainMenuAsync(
+        long chatId,
+        TelegramAccountDto account,
+        UserSession session,
+        CancellationToken cancellationToken)
+    {
+        ResetSession(session);
+        BindSessionContext(session, account.TelegramUserId, account);
+        await SendScreenAsync(
+            session,
             chatId,
             BotMessages.MainMenu(account),
-            parseMode: ParseMode.Markdown,
-            replyMarkup: BotKeyboards.MainMenu(account.Role),
-            cancellationToken: cancellationToken);
+            BotKeyboards.MainMenuReply(account.Role),
+            ParseMode.Markdown,
+            cancellationToken);
+    }
 
-    private async Task SendAvailableOrdersAsync(long chatId, TelegramAccountDto account, CancellationToken cancellationToken)
+    private async Task SendAvailableOrdersAsync(
+        long chatId,
+        TelegramAccountDto account,
+        UserSession session,
+        CancellationToken cancellationToken)
     {
+        session.Nav = UserNavigationContext.AvailableOrders;
+        session.TargetOrderId = null;
+        session.TargetEmployeeId = null;
+
         var orders = await staffService.GetAvailableOrdersAsync(account.UserId, cancellationToken);
         var text = orders.Count == 0
             ? BotMessages.EmptyList("Немає доступних замовлень 🎉")
             : "🆕 *Доступні замовлення*\n\nОберіть, щоб одразу взяти:";
 
-        await botClient.SendMessage(
+        await SendScreenAsync(
+            session,
             chatId,
             text,
-            parseMode: ParseMode.Markdown,
-            replyMarkup: BotKeyboards.AvailableOrders(orders),
-            cancellationToken: cancellationToken);
+            orders.Count == 0 ? BotKeyboards.BackReply() : BotKeyboards.AvailableOrdersReply(orders),
+            ParseMode.Markdown,
+            cancellationToken);
     }
 
-    private async Task SendMyOrdersAsync(long chatId, TelegramAccountDto account, CancellationToken cancellationToken)
+    private async Task SendMyOrdersAsync(
+        long chatId,
+        TelegramAccountDto account,
+        UserSession session,
+        CancellationToken cancellationToken)
     {
+        session.Nav = UserNavigationContext.MyOrders;
+        session.TargetOrderId = null;
+        session.TargetEmployeeId = null;
+
         var orders = await staffService.GetMyOrdersAsync(account.UserId, cancellationToken);
         var text = orders.Count == 0
             ? BotMessages.EmptyList("Активних замовлень немає")
             : "📋 *Ваші активні замовлення*";
 
-        await botClient.SendMessage(
+        await SendScreenAsync(
+            session,
             chatId,
             text,
-            parseMode: ParseMode.Markdown,
-            replyMarkup: BotKeyboards.MyOrders(orders),
-            cancellationToken: cancellationToken);
+            orders.Count == 0 ? BotKeyboards.BackReply() : BotKeyboards.MyOrdersReply(orders),
+            ParseMode.Markdown,
+            cancellationToken);
     }
 
-    private async Task SendStatsAsync(long chatId, TelegramAccountDto account, CancellationToken cancellationToken)
+    private async Task SendStatsAsync(
+        long chatId,
+        TelegramAccountDto account,
+        UserSession session,
+        CancellationToken cancellationToken)
     {
-        if (account.Role == UserRole.Admin)
-        {
-            await botClient.SendMessage(
-                chatId,
-                "📊 Статистика зарплат доступна для працівників. Перегляньте *Логи* або *Працівників*.",
-                parseMode: ParseMode.Markdown,
-                replyMarkup: BotKeyboards.BackToMenu(),
-                cancellationToken: cancellationToken);
-            return;
-        }
+        session.Nav = UserNavigationContext.Stats;
+        session.TargetOrderId = null;
+        session.TargetEmployeeId = null;
+
         var stats = await staffService.GetEmployeeStatsAsync(account.UserId, cancellationToken);
-        await botClient.SendMessage(
+        await SendScreenAsync(
+            session,
             chatId,
             BotMessages.Stats(stats),
-            parseMode: ParseMode.Markdown,
-            replyMarkup: BotKeyboards.BackToMenu(),
-            cancellationToken: cancellationToken);
+            BotKeyboards.BackReply(),
+            ParseMode.Markdown,
+            cancellationToken);
     }
 
-    private async Task SendLogsAsync(long chatId, CancellationToken cancellationToken)
+    private async Task SendAdminMenuAsync(
+        long chatId,
+        TelegramAccountDto account,
+        UserSession session,
+        CancellationToken cancellationToken)
     {
-        var logs = await staffService.GetAuditLogsAsync(20, cancellationToken);
-        await botClient.SendMessage(
+        session.Nav = UserNavigationContext.Admin;
+        session.Mode = UserSessionMode.None;
+        session.TargetOrderId = null;
+        session.TargetEmployeeId = null;
+        BindSessionContext(session, account.TelegramUserId, account);
+
+        await SendScreenAsync(
+            session,
             chatId,
-            BotMessages.AuditLogs(logs),
-            parseMode: ParseMode.Markdown,
-            replyMarkup: BotKeyboards.BackToMenu(),
-            cancellationToken: cancellationToken);
+            "⚙️ *Адмін-панель*\n\nОберіть розділ нижче 👇",
+            BotKeyboards.AdminMenuReply(),
+            ParseMode.Markdown,
+            cancellationToken);
     }
 
-    private async Task SendEmployeesAsync(long chatId, TelegramAccountDto account, CancellationToken cancellationToken)
+    private async Task SendLogsFilterAsync(
+        long chatId,
+        TelegramAccountDto account,
+        UserSession session,
+        CancellationToken cancellationToken)
     {
+        session.Nav = UserNavigationContext.LogsFilter;
+        session.LogPeriod = null;
+        session.LogPage = 0;
+        session.TargetOrderId = null;
+        session.TargetEmployeeId = null;
+
+        await SendScreenAsync(
+            session,
+            chatId,
+            "📜 *Журнал подій*\n\nОберіть період:",
+            BotKeyboards.LogsFilterReply(),
+            ParseMode.Markdown,
+            cancellationToken);
+    }
+
+    private async Task SendLogsPageAsync(
+        long chatId,
+        TelegramAccountDto account,
+        UserSession session,
+        StaffAuditLogPeriod period,
+        int page,
+        CancellationToken cancellationToken)
+    {
+        session.Nav = UserNavigationContext.Logs;
+        session.LogPeriod = period;
+        session.LogPage = page;
+        session.TargetOrderId = null;
+        session.TargetEmployeeId = null;
+
+        var logsPage = await staffService.GetAuditLogsPageAsync(
+            period,
+            page,
+            BotLabels.LogsPageSize,
+            cancellationToken);
+
+        if (logsPage.TotalPages > 0 && page >= logsPage.TotalPages)
+        {
+            await SendLogsPageAsync(chatId, account, session, period, logsPage.TotalPages - 1, cancellationToken);
+            return;
+        }
+
+        session.LogPage = logsPage.Page;
+
+        await SendScreenAsync(
+            session,
+            chatId,
+            BotMessages.AuditLogsPage(logsPage),
+            BotKeyboards.LogsPageReply(logsPage.HasPreviousPage, logsPage.HasNextPage),
+            ParseMode.Markdown,
+            cancellationToken);
+    }
+
+    private async Task SendEmployeesAsync(
+        long chatId,
+        TelegramAccountDto account,
+        UserSession session,
+        CancellationToken cancellationToken)
+    {
+        session.Nav = UserNavigationContext.Employees;
+        session.TargetOrderId = null;
+        session.TargetEmployeeId = null;
+
         var employees = await staffService.GetEmployeesAsync(cancellationToken);
-        await botClient.SendMessage(
+        await SendScreenAsync(
+            session,
             chatId,
             BotMessages.Employees(employees),
-            parseMode: ParseMode.Markdown,
-            replyMarkup: BotKeyboards.Employees(employees),
-            cancellationToken: cancellationToken);
+            BotKeyboards.EmployeesReply(employees),
+            ParseMode.Markdown,
+            cancellationToken);
     }
 
     private async Task ShowEmployeeAsync(
@@ -500,19 +796,105 @@ public sealed class BotUpdateHandler(
         Guid employeeId,
         CancellationToken cancellationToken)
     {
+        var session = sessions.GetOrCreate(account.TelegramUserId);
         var employees = await staffService.GetEmployeesAsync(cancellationToken);
         var employee = employees.FirstOrDefault(item => item.UserId == employeeId);
         if (employee is null)
         {
-            await botClient.SendMessage(chatId, "Працівника не знайдено.", cancellationToken: cancellationToken);
+            await SendScreenAsync(
+                session,
+                chatId,
+                "Працівника не знайдено.",
+                BotKeyboards.BackReply(),
+                ParseMode.None,
+                cancellationToken);
             return;
         }
 
-        await botClient.SendMessage(
+        session.Nav = UserNavigationContext.EmployeeDetail;
+        session.TargetEmployeeId = employeeId;
+        session.TargetOrderId = null;
+        session.Mode = UserSessionMode.None;
+
+        await SendScreenAsync(
+            session,
             chatId,
             BotMessages.EmployeeDetails(employee),
-            parseMode: ParseMode.Markdown,
-            replyMarkup: BotKeyboards.EmployeeAdmin(employee),
-            cancellationToken: cancellationToken);
+            BotKeyboards.EmployeeAdminReply(employee),
+            ParseMode.Markdown,
+            cancellationToken);
     }
+
+    private Task<Message> SendScreenAsync(
+        UserSession session,
+        long chatId,
+        string text,
+        ReplyMarkup? replyMarkup,
+        ParseMode parseMode,
+        CancellationToken cancellationToken)
+    {
+        var telegramUserId = session.ActiveTelegramUserId
+            ?? throw new InvalidOperationException("Telegram user id is not bound to the session.");
+
+        return screenMessenger.SendScreenAsync(
+            session,
+            chatId,
+            telegramUserId,
+            session.ActivePersistedScreenMessageId,
+            text,
+            replyMarkup,
+            parseMode,
+            cancellationToken);
+    }
+
+    private Task<Message> SendEphemeralAsync(
+        UserSession session,
+        long chatId,
+        string text,
+        ReplyMarkup? replyMarkup,
+        ParseMode? parseMode,
+        CancellationToken cancellationToken)
+    {
+        var telegramUserId = session.ActiveTelegramUserId
+            ?? throw new InvalidOperationException("Telegram user id is not bound to the session.");
+
+        return screenMessenger.SendEphemeralAsync(
+            session,
+            chatId,
+            telegramUserId,
+            text,
+            replyMarkup,
+            parseMode,
+            cancellationToken);
+    }
+
+    private Task DeleteUserMessageAsync(Message? userMessage, CancellationToken cancellationToken) =>
+        screenMessenger.DeleteUserMessageAsync(userMessage, cancellationToken);
+
+    private static void BindSessionContext(
+        UserSession session,
+        long telegramUserId,
+        TelegramAccountDto? account = null)
+    {
+        session.ActiveTelegramUserId = telegramUserId;
+
+        if (account is not null)
+        {
+            session.ActivePersistedScreenMessageId = account.LastBotScreenMessageId;
+        }
+    }
+
+    private static void ResetSession(UserSession session)
+    {
+        session.Mode = UserSessionMode.None;
+        session.Nav = UserNavigationContext.Main;
+        session.ReturnNav = UserNavigationContext.Main;
+        session.TargetEmployeeId = null;
+        session.TargetOrderId = null;
+        session.LogPeriod = null;
+        session.LogPage = 0;
+    }
+
+    private static bool IsCancel(string text) =>
+        text.Equals(BotKeyboards.CancelLabel, StringComparison.Ordinal);
 }

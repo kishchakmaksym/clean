@@ -5,4 +5,4 @@ Disallow: /profile
 Disallow: /admin
 Disallow: /orders
 
-Sitemap: https://smartclean.uz.ua/sitemap.xml
+Sitemap: https://smartclean.com.ua/sitemap.xml

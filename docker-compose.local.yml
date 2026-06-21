@@ -1,0 +1,17 @@
+# Локальний запуск поверх docker-compose.yml:
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build
+
+services:
+  api:
+    environment:
+      Frontend__AllowedOrigins__0: http://localhost:8080
+      Frontend__AllowedOrigins__1: http://127.0.0.1:8080
+      Monobank__RedirectUrl: http://localhost:8080/profile/orders?paid=1
+      AllowedHosts: "*"
+
+  frontend:
+    ports:
+      - "8080:80"
+    build:
+      args:
+        VITE_SITE_URL: http://localhost:8080

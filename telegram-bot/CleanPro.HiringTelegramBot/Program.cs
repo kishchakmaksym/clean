@@ -24,5 +24,5 @@ builder.Services.AddHostedService<HiringPollingService>();
 builder.Services.AddHostedService<HiringOutboxWorker>();
 
 var host = builder.Build();
-await host.Services.InitializeDatabaseAsync();
+await host.Services.InitializeDatabaseAsync(applyMigrations: false);
 await host.RunAsync();

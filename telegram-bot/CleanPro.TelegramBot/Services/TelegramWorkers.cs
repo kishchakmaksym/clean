@@ -149,9 +149,7 @@ public sealed class TelegramOutboxWorker(
                 account.ChatId,
                 BotMessages.NewOrderAlert(dto),
                 parseMode: ParseMode.Markdown,
-                replyMarkup: new InlineKeyboardMarkup([
-                    [InlineKeyboardButton.WithCallbackData("✅ Прийняти", BotCallbacks.Claim(dto.Id))],
-                ]),
+                replyMarkup: BotKeyboards.NewOrderClaimInline(dto.Id),
                 cancellationToken: cancellationToken);
 
             await staffRepository.SaveOrderNotificationAsync(

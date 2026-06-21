@@ -26,6 +26,11 @@ public interface ITelegramStaffRepository
 
     Task TouchLastSeenAsync(long telegramUserId, CancellationToken cancellationToken = default);
 
+    Task UpdateLastBotScreenMessageIdAsync(
+        long telegramUserId,
+        int? messageId,
+        CancellationToken cancellationToken = default);
+
     Task<EmployeeProfileDto?> GetEmployeeProfileAsync(
         Guid userId,
         CancellationToken cancellationToken = default);
@@ -59,6 +64,13 @@ public interface ITelegramStaffRepository
 
     Task<IReadOnlyList<StaffAuditLogDto>> GetRecentAuditLogsAsync(
         int limit,
+        CancellationToken cancellationToken = default);
+
+    Task<(IReadOnlyList<StaffAuditLogDto> Items, int TotalCount)> GetAuditLogsPageAsync(
+        DateTime? fromUtcInclusive,
+        DateTime? toUtcExclusive,
+        int skip,
+        int take,
         CancellationToken cancellationToken = default);
 
     Task EnqueueOutboxAsync(

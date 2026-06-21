@@ -1,0 +1,119 @@
+name: smartclean
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smartclean}
+      POSTGRES_USER: ${POSTGRES_USER:-smartclean}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-smartclean} -d ${POSTGRES_DB:-smartclean}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  api:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.api
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      Database__Provider: PostgreSQL
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-smartclean};Username=${POSTGRES_USER:-smartclean};Password=${POSTGRES_PASSWORD}
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - internal
+    expose:
+      - "8080"
+
+  bot-staff:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.bot
+      args:
+        BOT_PROJECT: CleanPro.TelegramBot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      Database__Provider: PostgreSQL
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-smartclean};Username=${POSTGRES_USER:-smartclean};Password=${POSTGRES_PASSWORD}
+      DOTNET_ENVIRONMENT: Production
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - internal
+
+  bot-support:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.bot
+      args:
+        BOT_PROJECT: CleanPro.SupportTelegramBot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      Database__Provider: PostgreSQL
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-smartclean};Username=${POSTGRES_USER:-smartclean};Password=${POSTGRES_PASSWORD}
+      DOTNET_ENVIRONMENT: Production
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - internal
+
+  bot-hiring:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.bot
+      args:
+        BOT_PROJECT: CleanPro.HiringTelegramBot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      Database__Provider: PostgreSQL
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-smartclean};Username=${POSTGRES_USER:-smartclean};Password=${POSTGRES_PASSWORD}
+      DOTNET_ENVIRONMENT: Production
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - internal
+
+  frontend:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.frontend
+      args:
+        VITE_SITE_URL: ${VITE_SITE_URL:-https://smartclean.com.ua}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "80:80"
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  postgres_data:

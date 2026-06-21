@@ -1,0 +1,36 @@
+# syntax=docker/dockerfile:1
+
+ARG BOT_PROJECT=CleanPro.TelegramBot
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+ARG BOT_PROJECT
+WORKDIR /src
+
+COPY backend/LearnCSharp.Domain/LearnCSharp.Domain.csproj backend/LearnCSharp.Domain/
+COPY backend/LearnCSharp.Application/LearnCSharp.Application.csproj backend/LearnCSharp.Application/
+COPY backend/LearnCSharp.Infrastructure/LearnCSharp.Infrastructure.csproj backend/LearnCSharp.Infrastructure/
+COPY telegram-bot/${BOT_PROJECT}/${BOT_PROJECT}.csproj telegram-bot/${BOT_PROJECT}/
+
+RUN dotnet restore telegram-bot/${BOT_PROJECT}/${BOT_PROJECT}.csproj
+
+COPY backend/ backend/
+COPY telegram-bot/${BOT_PROJECT}/ telegram-bot/${BOT_PROJECT}/
+
+RUN dotnet publish telegram-bot/${BOT_PROJECT}/${BOT_PROJECT}.csproj \
+    -c Release \
+    -o /app/publish \
+    /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+ARG BOT_PROJECT
+ENV BOT_PROJECT_NAME=${BOT_PROJECT}
+WORKDIR /app
+
+RUN groupadd -r appuser && useradd -r -g appuser -d /app appuser \
+    && chown -R appuser:appuser /app
+
+USER appuser
+
+COPY --from=build --chown=appuser:appuser /app/publish ./
+
+ENTRYPOINT ["sh", "-c", "exec dotnet \"${BOT_PROJECT_NAME}.dll\""]

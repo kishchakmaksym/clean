@@ -4,153 +4,60 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace CleanPro.TelegramBot.UI;
 
-public static class BotKeyboards
+public static class BotLabels
 {
-    public static ReplyKeyboardMarkup LoginContact() =>
-        new([
-            [KeyboardButton.WithRequestContact("📱 Надіслати мій номер")],
-        ])
-        {
-            ResizeKeyboard = true,
-            OneTimeKeyboard = true,
-        };
+    public const string Available = "🆕 Доступні замовлення";
+    public const string MyOrders = "📋 Мої замовлення";
+    public const string Stats = "📊 Моя статистика";
+    public const string Admin = "⚙️ Адмін-панель";
+    public const string Employees = "👥 Керування працівниками";
+    public const string Logs = "📜 Журнал подій";
+    public const string Broadcast = "📢 Розсилка працівникам";
+    public const string Back = "◀️ Назад";
+    public const string Claim = "✅ Прийняти";
+    public const string Complete = "🏁 Виконано";
+    public const string ChangeShare = "✏️ Змінити долю";
+    public const string EnableAccept = "🟢 Увімкнути прийом";
+    public const string DisableAccept = "🔴 Вимкнути прийом";
 
-    public static InlineKeyboardMarkup MainMenu(UserRole role)
+    public const string LogsToday = "📅 Сьогодні";
+    public const string LogsYesterday = "📅 Вчора";
+    public const string Logs7Days = "📅 7 днів";
+    public const string LogsMonth = "📅 Місяць";
+    public const string LogsNext = "⏭ Наступні 10";
+    public const string LogsPrev = "⏮ Попередні 10";
+    public const string LogsChangePeriod = "🗓 Змінити період";
+
+    public const int LogsPageSize = 10;
+
+    public static string AvailableOrderLabel(StaffOrderDto order) =>
+        $"🆕 №{order.ShortId} · {Trim(order.ServiceTitle, 24)}";
+
+    public static string MyOrderLabel(StaffOrderDto order) =>
+        $"📋 №{order.ShortId} · {StatusEmoji(order.Status)}";
+
+    public static string EmployeeLabel(EmployeeListItemDto employee) =>
+        $"{(employee.CanAcceptOrders && employee.SharePercent > 0 ? "🟢" : "🔴")} {Trim(employee.Name, 28)}";
+
+    public static bool TryParseOrderShortId(string text, out string shortId)
     {
-        var rows = new List<IEnumerable<InlineKeyboardButton>>
+        shortId = string.Empty;
+        if (string.IsNullOrWhiteSpace(text))
         {
-            new[] { InlineKeyboardButton.WithCallbackData("🆕 Доступні", BotCallbacks.MenuAvailable) },
-            new[] { InlineKeyboardButton.WithCallbackData("📋 Мої замовлення", BotCallbacks.MenuMyOrders) },
-            new[] { InlineKeyboardButton.WithCallbackData("📊 Статистика", BotCallbacks.MenuStats) },
-        };
-
-        if (role == UserRole.Admin)
-        {
-            rows.Add(new[] { InlineKeyboardButton.WithCallbackData("👥 Працівники", BotCallbacks.MenuEmployees) });
-            rows.Add(new[] { InlineKeyboardButton.WithCallbackData("📜 Логи", BotCallbacks.MenuLogs) });
-            rows.Add(new[] { InlineKeyboardButton.WithCallbackData("📢 Розсилка", BotCallbacks.MenuBroadcast) });
+            return false;
         }
 
-        return new InlineKeyboardMarkup(rows);
-    }
-
-    public static InlineKeyboardMarkup AvailableOrders(IReadOnlyList<StaffOrderDto> orders)
-    {
-        if (orders.Count == 0)
+        var markerIndex = text.IndexOf('№');
+        if (markerIndex < 0)
         {
-            return BackToMenu();
+            return false;
         }
 
-        var rows = orders
-            .Take(8)
-            .Select(order => new[]
-            {
-                InlineKeyboardButton.WithCallbackData(
-                    $"🆕 №{order.ShortId} · {Trim(order.ServiceTitle, 24)}",
-                    BotCallbacks.Claim(order.Id)),
-            })
-            .ToList<IEnumerable<InlineKeyboardButton>>();
-
-        rows.Add([InlineKeyboardButton.WithCallbackData("🏠 Меню", BotCallbacks.MenuHome)]);
-        return new InlineKeyboardMarkup(rows);
+        var rest = text[(markerIndex + 1)..].TrimStart();
+        var endIndex = rest.IndexOf('·');
+        shortId = (endIndex >= 0 ? rest[..endIndex] : rest).Trim();
+        return shortId.Length >= 8;
     }
-
-    public static InlineKeyboardMarkup MyOrders(IReadOnlyList<StaffOrderDto> orders)
-    {
-        if (orders.Count == 0)
-        {
-            return BackToMenu();
-        }
-
-        var rows = orders
-            .Take(10)
-            .Select(order => new[]
-            {
-                InlineKeyboardButton.WithCallbackData(
-                    $"📋 №{order.ShortId} · {StatusEmoji(order.Status)}",
-                    BotCallbacks.OpenOrder(order.Id)),
-            })
-            .ToList<IEnumerable<InlineKeyboardButton>>();
-
-        rows.Add([InlineKeyboardButton.WithCallbackData("🏠 Меню", BotCallbacks.MenuHome)]);
-        return new InlineKeyboardMarkup(rows);
-    }
-
-    public static InlineKeyboardMarkup OrderActions(
-        StaffOrderDto order,
-        UserRole role,
-        Guid actorUserId,
-        bool isAssignee)
-    {
-        var rows = new List<IEnumerable<InlineKeyboardButton>>();
-
-        if (order.Status == nameof(OrderStatus.PendingConfirmation) && string.IsNullOrWhiteSpace(order.AssigneeName))
-        {
-            rows.Add([InlineKeyboardButton.WithCallbackData("✅ Прийняти", BotCallbacks.Claim(order.Id))]);
-        }
-
-        if (order.Status == nameof(OrderStatus.Confirmed) && (role == UserRole.Admin || isAssignee))
-        {
-            rows.Add([
-                InlineKeyboardButton.WithCallbackData("🏁 Виконано", BotCallbacks.SetStatus(order.Id, 2)),
-            ]);
-        }
-
-        if (role == UserRole.Admin)
-        {
-            if (order.Status == nameof(OrderStatus.Confirmed))
-            {
-                rows.Add([
-                    InlineKeyboardButton.WithCallbackData("↩️ На очікування", BotCallbacks.SetStatus(order.Id, 0)),
-                ]);
-            }
-
-            if (order.Status == nameof(OrderStatus.Completed))
-            {
-                rows.Add([
-                    InlineKeyboardButton.WithCallbackData("↩️ На підтверджені", BotCallbacks.SetStatus(order.Id, 1)),
-                ]);
-            }
-        }
-
-        rows.Add([InlineKeyboardButton.WithCallbackData("🏠 Меню", BotCallbacks.MenuHome)]);
-        return new InlineKeyboardMarkup(rows);
-    }
-
-    public static InlineKeyboardMarkup Employees(IReadOnlyList<EmployeeListItemDto> employees)
-    {
-        var rows = employees
-            .Take(12)
-            .Select(employee => new[]
-            {
-                InlineKeyboardButton.WithCallbackData(
-                    $"{(employee.CanAcceptOrders && employee.SharePercent > 0 ? "🟢" : "🔴")} {Trim(employee.Name, 28)}",
-                    BotCallbacks.Employee(employee.UserId)),
-            })
-            .ToList<IEnumerable<InlineKeyboardButton>>();
-
-        rows.Add([InlineKeyboardButton.WithCallbackData("🏠 Меню", BotCallbacks.MenuHome)]);
-        return new InlineKeyboardMarkup(rows);
-    }
-
-    public static InlineKeyboardMarkup EmployeeAdmin(EmployeeListItemDto employee)
-    {
-        var toggleLabel = employee.CanAcceptOrders && employee.SharePercent > 0
-            ? "🔴 Вимкнути прийом"
-            : "🟢 Увімкнути прийом";
-
-        return new InlineKeyboardMarkup([
-            [InlineKeyboardButton.WithCallbackData("✏️ Змінити долю", BotCallbacks.EmployeeShare(employee.UserId))],
-            [InlineKeyboardButton.WithCallbackData(toggleLabel, BotCallbacks.EmployeeToggle(employee.UserId))],
-            [InlineKeyboardButton.WithCallbackData("👥 Назад", BotCallbacks.MenuEmployees)],
-            [InlineKeyboardButton.WithCallbackData("🏠 Меню", BotCallbacks.MenuHome)],
-        ]);
-    }
-
-    public static InlineKeyboardMarkup BackToMenu() =>
-        new([
-            [InlineKeyboardButton.WithCallbackData("🏠 Меню", BotCallbacks.MenuHome)],
-        ]);
 
     private static string StatusEmoji(string status) => status switch
     {
@@ -164,12 +71,179 @@ public static class BotKeyboards
         value.Length <= max ? value : value[..(max - 1)] + "…";
 }
 
+public static class BotKeyboards
+{
+    public const string CancelLabel = "❌ Відмінити";
+
+    public static ReplyKeyboardMarkup LoginContact() =>
+        new([
+            [KeyboardButton.WithRequestContact("📱 Надіслати мій номер")],
+        ])
+        {
+            ResizeKeyboard = true,
+            OneTimeKeyboard = true,
+        };
+
+    public static ReplyKeyboardMarkup CancelOnly() =>
+        new([
+            [CancelLabel],
+            [BotLabels.Back],
+        ])
+        {
+            ResizeKeyboard = true,
+        };
+
+    public static ReplyKeyboardMarkup MainMenuReply(UserRole role)
+    {
+        var rows = new List<KeyboardButton[]>
+        {
+            new[] { new KeyboardButton(BotLabels.Available) },
+            new[] { new KeyboardButton(BotLabels.MyOrders) },
+            new[] { new KeyboardButton(BotLabels.Stats) },
+        };
+
+        if (role == UserRole.Admin)
+        {
+            rows.Add(new[] { new KeyboardButton(BotLabels.Admin) });
+        }
+
+        return new ReplyKeyboardMarkup(rows) { ResizeKeyboard = true };
+    }
+
+    public static ReplyKeyboardMarkup AdminMenuReply() =>
+        new([
+            [new(BotLabels.Employees)],
+            [new(BotLabels.Logs)],
+            [new(BotLabels.Broadcast)],
+            [new(BotLabels.Back)],
+        ])
+        {
+            ResizeKeyboard = true,
+        };
+
+    public static ReplyKeyboardMarkup BackReply() =>
+        new([
+            [new(BotLabels.Back)],
+        ])
+        {
+            ResizeKeyboard = true,
+        };
+
+    public static ReplyKeyboardMarkup AvailableOrdersReply(IReadOnlyList<StaffOrderDto> orders)
+    {
+        var rows = orders
+            .Take(8)
+            .Select(order => new[] { new KeyboardButton(BotLabels.AvailableOrderLabel(order)) })
+            .ToList<KeyboardButton[]>();
+
+        rows.Add([new(BotLabels.Back)]);
+        return new ReplyKeyboardMarkup(rows) { ResizeKeyboard = true };
+    }
+
+    public static ReplyKeyboardMarkup MyOrdersReply(IReadOnlyList<StaffOrderDto> orders)
+    {
+        var rows = orders
+            .Take(10)
+            .Select(order => new[] { new KeyboardButton(BotLabels.MyOrderLabel(order)) })
+            .ToList<KeyboardButton[]>();
+
+        rows.Add([new(BotLabels.Back)]);
+        return new ReplyKeyboardMarkup(rows) { ResizeKeyboard = true };
+    }
+
+    public static ReplyKeyboardMarkup EmployeesReply(IReadOnlyList<EmployeeListItemDto> employees)
+    {
+        var rows = employees
+            .Take(12)
+            .Select(employee => new[] { new KeyboardButton(BotLabels.EmployeeLabel(employee)) })
+            .ToList<KeyboardButton[]>();
+
+        rows.Add([new(BotLabels.Back)]);
+        return new ReplyKeyboardMarkup(rows) { ResizeKeyboard = true };
+    }
+
+    public static ReplyKeyboardMarkup EmployeeAdminReply(EmployeeListItemDto employee)
+    {
+        var toggleLabel = employee.CanAcceptOrders && employee.SharePercent > 0
+            ? BotLabels.DisableAccept
+            : BotLabels.EnableAccept;
+
+        return new ReplyKeyboardMarkup([
+            [new(BotLabels.ChangeShare)],
+            [new(toggleLabel)],
+            [new(BotLabels.Back)],
+        ])
+        {
+            ResizeKeyboard = true,
+        };
+    }
+
+    public static ReplyKeyboardMarkup LogsFilterReply() =>
+        new([
+            [new(BotLabels.LogsToday)],
+            [new(BotLabels.LogsYesterday)],
+            [new(BotLabels.Logs7Days)],
+            [new(BotLabels.LogsMonth)],
+            [new(BotLabels.Back)],
+        ])
+        {
+            ResizeKeyboard = true,
+        };
+
+    public static ReplyKeyboardMarkup LogsPageReply(bool hasPrevious, bool hasNext)
+    {
+        var rows = new List<KeyboardButton[]>();
+
+        if (hasPrevious && hasNext)
+        {
+            rows.Add([new(BotLabels.LogsPrev), new(BotLabels.LogsNext)]);
+        }
+        else if (hasPrevious)
+        {
+            rows.Add([new(BotLabels.LogsPrev)]);
+        }
+        else if (hasNext)
+        {
+            rows.Add([new(BotLabels.LogsNext)]);
+        }
+
+        rows.Add([new(BotLabels.LogsChangePeriod)]);
+        rows.Add([new(BotLabels.Back)]);
+        return new ReplyKeyboardMarkup(rows) { ResizeKeyboard = true };
+    }
+
+    public static ReplyKeyboardMarkup OrderDetailReply(StaffOrderDto order, bool isAssignee)
+    {
+        var rows = new List<KeyboardButton[]>();
+
+        if (order.Status == nameof(OrderStatus.PendingConfirmation) && string.IsNullOrWhiteSpace(order.AssigneeName))
+        {
+            rows.Add([new(BotLabels.Claim)]);
+        }
+
+        if (order.Status == nameof(OrderStatus.Confirmed) && isAssignee)
+        {
+            rows.Add([new(BotLabels.Complete)]);
+        }
+
+        rows.Add([new(BotLabels.Back)]);
+        return new ReplyKeyboardMarkup(rows) { ResizeKeyboard = true };
+    }
+
+    /// <summary>Inline-кнопка лише для push-повідомлень про нове замовлення.</summary>
+    public static InlineKeyboardMarkup NewOrderClaimInline(Guid orderId) =>
+        new([
+            [InlineKeyboardButton.WithCallbackData(BotLabels.Claim, BotCallbacks.Claim(orderId))],
+        ]);
+}
+
 public static class BotCallbacks
 {
     public const string MenuHome = "m:home";
     public const string MenuAvailable = "m:avail";
     public const string MenuMyOrders = "m:mine";
     public const string MenuStats = "m:stats";
+    public const string MenuAdmin = "m:admin";
     public const string MenuLogs = "m:logs";
     public const string MenuEmployees = "m:emps";
     public const string MenuBroadcast = "m:bc";

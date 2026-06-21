@@ -13,6 +13,8 @@ public sealed class TelegramAccountDto
     public long TelegramUserId { get; init; }
 
     public long ChatId { get; init; }
+
+    public int? LastBotScreenMessageId { get; init; }
 }
 
 public sealed class EmployeeProfileDto

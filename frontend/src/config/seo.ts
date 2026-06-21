@@ -31,7 +31,7 @@ export function getSiteUrl(): string {
         return window.location.origin;
     }
 
-    return "https://smartclean.uz.ua";
+    return "https://smartclean.com.ua";
 }
 
 export function getCanonicalUrl(path: string): string {

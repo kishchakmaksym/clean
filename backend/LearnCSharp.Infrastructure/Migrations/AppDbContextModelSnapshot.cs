@@ -508,6 +508,9 @@ namespace LearnCSharp.Infrastructure.Migrations
                     b.Property<DateTime?>("LastSeenAtUtc")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("LastBotScreenMessageId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("LinkedAtUtc")
                         .HasColumnType("TEXT");
 

@@ -1,0 +1,40 @@
+# Git & IDE
+.git
+.gitignore
+.idea
+.vscode
+**/.idea
+**/.vscode
+
+# Secrets
+.env
+.env.*
+!.env.example
+!.env.local.example
+
+# Build artifacts
+**/bin
+**/obj
+frontend/node_modules
+frontend/dist
+
+# Local databases
+**/*.db
+**/*.db-shm
+**/*.db-wal
+
+# Logs & temp
+**/*.log
+logs
+tmp
+temp
+
+# Docker / deploy notes (not needed in image context)
+docker-compose.override.yml
+deploy/ssl
+agent-transcripts
+.cursor
+
+# Docs / misc
+**/*.md
+!deploy/**

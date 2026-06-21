@@ -6,7 +6,7 @@ import type { ReviewDto } from "../../api/types";
 import "./HomeReviewsCarousel.css";
 
 const MAX_HOME_REVIEWS = 5;
-const AUTO_ADVANCE_MS = 1000;
+const AUTO_ADVANCE_MS = 2000;
 
 function CarouselChevron({ direction }: { direction: "prev" | "next" }) {
     return (
@@ -136,7 +136,6 @@ export default function HomeReviewsCarousel() {
             <section className="home-reviews" aria-label="Відгуки клієнтів">
                 <div className="hero-panel home-reviews-panel">
                     <div className="home-reviews-head">
-                        <span className="badge hero-badge">Відгуки</span>
                         <h2 className="home-reviews-title">Що кажуть клієнти</h2>
                     </div>
                     <p className="home-reviews-empty">Завантаження відгуків…</p>
@@ -153,25 +152,13 @@ export default function HomeReviewsCarousel() {
         <section className="home-reviews" aria-label="Відгуки клієнтів">
             <div className="hero-panel home-reviews-panel">
                 <div className="home-reviews-head">
-                    <span className="badge hero-badge">Відгуки</span>
                     <h2 className="home-reviews-title">Що кажуть клієнти</h2>
                     <p className="home-reviews-lead">
                         Останні відгуки — оберіть стрілками або зачекайте, вони змінюються автоматично.
                     </p>
                 </div>
 
-                <div className="home-reviews-stage">
-                    {total > 1 ? (
-                        <button
-                            type="button"
-                            className="home-reviews-arrow home-reviews-arrow--prev"
-                            onClick={goToPrev}
-                            aria-label="Попередній відгук"
-                        >
-                            <CarouselChevron direction="prev" />
-                        </button>
-                    ) : null}
-
+                <div className="home-reviews-carousel">
                     <div className="home-reviews-collage" aria-live="polite">
                         {reviews.map((review, slideIndex) => {
                             const offset = getSlideOffset(slideIndex, activeIndex, total);
@@ -190,14 +177,24 @@ export default function HomeReviewsCarousel() {
                     </div>
 
                     {total > 1 ? (
-                        <button
-                            type="button"
-                            className="home-reviews-arrow home-reviews-arrow--next"
-                            onClick={goToNext}
-                            aria-label="Наступний відгук"
-                        >
-                            <CarouselChevron direction="next" />
-                        </button>
+                        <div className="home-reviews-nav">
+                            <button
+                                type="button"
+                                className="home-reviews-arrow home-reviews-arrow--prev"
+                                onClick={goToPrev}
+                                aria-label="Попередній відгук"
+                            >
+                                <CarouselChevron direction="prev" />
+                            </button>
+                            <button
+                                type="button"
+                                className="home-reviews-arrow home-reviews-arrow--next"
+                                onClick={goToNext}
+                                aria-label="Наступний відгук"
+                            >
+                                <CarouselChevron direction="next" />
+                            </button>
+                        </div>
                     ) : null}
                 </div>
 

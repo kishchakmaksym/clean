@@ -18,7 +18,7 @@ type ProfileAdminPaymentPanelProps = {
     variant?: "sidebar" | "admin-panel";
 };
 
-type StatusFilter = "pending" | "paid" | "deleted" | "all";
+type StatusFilter = "pending" | "paid" | "deleted";
 
 // Backend зберігає суму в копійках (int32) — ~20 млн ₴ технічний максимум.
 const MAX_INVOICE_AMOUNT = 20_000_000;
@@ -80,10 +80,6 @@ function isPendingInvoice(invoice: AdminPaymentInvoiceDto) {
 
 function isDeletedInvoice(invoice: AdminPaymentInvoiceDto) {
     return invoice.isDeleted && !invoice.isPaid;
-}
-
-function isVisibleInAllTab(invoice: AdminPaymentInvoiceDto) {
-    return !invoice.isDeleted;
 }
 
 function getStatusLabel(invoice: AdminPaymentInvoiceDto) {
@@ -275,13 +271,12 @@ export default function ProfileAdminPaymentPanel({
             return invoices.filter(isDeletedInvoice);
         }
 
-        return invoices.filter(isVisibleInAllTab);
+        return [];
     }, [invoices, statusFilter]);
 
     const pendingCount = useMemo(() => invoices.filter(isPendingInvoice).length, [invoices]);
     const paidCount = useMemo(() => invoices.filter((invoice) => invoice.isPaid).length, [invoices]);
     const deletedCount = useMemo(() => invoices.filter(isDeletedInvoice).length, [invoices]);
-    const allCount = useMemo(() => invoices.filter(isVisibleInAllTab).length, [invoices]);
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -536,15 +531,6 @@ export default function ProfileAdminPaymentPanel({
                 <button
                     type="button"
                     role="tab"
-                    aria-selected={statusFilter === "all"}
-                    className={`profile-admin-payment-filter${statusFilter === "all" ? " profile-admin-payment-filter--active" : ""}`}
-                    onClick={() => setStatusFilter("all")}
-                >
-                    Усі ({allCount})
-                </button>
-                <button
-                    type="button"
-                    role="tab"
                     aria-selected={statusFilter === "deleted"}
                     className={`profile-admin-payment-filter${statusFilter === "deleted" ? " profile-admin-payment-filter--active" : ""}`}
                     onClick={() => setStatusFilter("deleted")}
@@ -557,11 +543,9 @@ export default function ProfileAdminPaymentPanel({
                 <p className="profile-admin-payment-empty">Завантажуємо рахунки…</p>
             ) : filteredInvoices.length === 0 ? (
                 <p className="profile-admin-payment-empty">
-                    {statusFilter === "all"
-                        ? "Ще немає створених рахунків."
-                        : statusFilter === "deleted"
-                          ? "Немає видалених рахунків."
-                          : "Немає рахунків у цій категорії."}
+                    {statusFilter === "deleted"
+                        ? "Немає видалених рахунків."
+                        : "Немає рахунків у цій категорії."}
                 </p>
             ) : (
                 <div className="profile-admin-invoice-list">

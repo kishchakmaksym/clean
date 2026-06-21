@@ -353,95 +353,99 @@ export default function BeforeAfterSlider() {
       </div>
 
       <div className="ba-slider-stage">
-        <button
-          type="button"
-          className="ba-stage-arrow ba-stage-arrow--prev"
-          onClick={goToPrev}
-          aria-label="Попередній приклад"
-        >
-          ‹
-        </button>
+        <div className="ba-slider-carousel">
+          <div ref={viewportRef} className="ba-carousel-viewport">
+            <div
+              ref={trackRef}
+              className={`ba-carousel-track${transitionEnabled ? "" : " ba-carousel-track--instant"}`}
+              style={{ "--ba-index": trackIndex } as CSSProperties}
+              onTransitionEnd={handleTrackTransitionEnd}
+            >
+              {extendedSlides.map((item, index) => {
+                const isActive = index === trackIndex;
 
-        <div ref={viewportRef} className="ba-carousel-viewport">
-          <div
-            ref={trackRef}
-            className={`ba-carousel-track${transitionEnabled ? "" : " ba-carousel-track--instant"}`}
-            style={{ "--ba-index": trackIndex } as CSSProperties}
-            onTransitionEnd={handleTrackTransitionEnd}
-          >
-            {extendedSlides.map((item, index) => {
-              const isActive = index === trackIndex;
-
-              return (
-                <div
-                  key={`${item.id}-${index}`}
-                  className={`ba-slide${isActive ? " ba-slide--active" : ""}`}
-                  aria-hidden={!isActive}
-                >
+                return (
                   <div
-                    ref={isActive ? sliderRef : undefined}
-                    className={`ba-slider${isActive && isDragging ? " ba-slider--dragging" : ""}`}
-                    onPointerDown={isActive ? handlePointerDown : undefined}
-                    onPointerMove={isActive ? handlePointerMove : undefined}
-                    onPointerUp={isActive ? handlePointerUp : undefined}
-                    onPointerCancel={isActive ? handlePointerUp : undefined}
+                    key={`${item.id}-${index}`}
+                    className={`ba-slide${isActive ? " ba-slide--active" : ""}`}
+                    aria-hidden={!isActive}
                   >
-                    <img
-                      className="ba-photo ba-photo--after"
-                      src={item.after}
-                      alt={`${item.label} після прибирання`}
-                      draggable={false}
-                      loading={isActive ? "eager" : "lazy"}
-                    />
+                    <div
+                      ref={isActive ? sliderRef : undefined}
+                      className={`ba-slider${isActive && isDragging ? " ba-slider--dragging" : ""}`}
+                      onPointerDown={isActive ? handlePointerDown : undefined}
+                      onPointerMove={isActive ? handlePointerMove : undefined}
+                      onPointerUp={isActive ? handlePointerUp : undefined}
+                      onPointerCancel={isActive ? handlePointerUp : undefined}
+                    >
+                      <img
+                        className="ba-photo ba-photo--after"
+                        src={item.after}
+                        alt={`${item.label} після прибирання`}
+                        draggable={false}
+                        loading={isActive ? "eager" : "lazy"}
+                      />
 
-                    <img
-                      ref={isActive ? beforeImgRef : undefined}
-                      className="ba-photo ba-photo--before"
-                      src={item.before}
-                      alt={`${item.label} до прибирання`}
-                      draggable={false}
-                      loading={isActive ? "eager" : "lazy"}
-                    />
+                      <img
+                        ref={isActive ? beforeImgRef : undefined}
+                        className="ba-photo ba-photo--before"
+                        src={item.before}
+                        alt={`${item.label} до прибирання`}
+                        draggable={false}
+                        loading={isActive ? "eager" : "lazy"}
+                      />
 
-                    {isActive ? (
-                      <>
-                        <span className="ba-label ba-label--before">До</span>
+                      {isActive ? (
+                        <>
+                          <span className="ba-label ba-label--before">До</span>
 
-                        <span className="ba-label ba-label--after">Після</span>
+                          <span className="ba-label ba-label--after">Після</span>
 
-                        <div ref={dividerRef} className="ba-divider">
-                          <span className="ba-handle" />
-                        </div>
+                          <div ref={dividerRef} className="ba-divider">
+                            <span className="ba-handle" />
+                          </div>
 
-                        <input
-                          className="ba-range"
-                          type="range"
-                          min={0}
-                          max={100}
-                          step={0.1}
-                          value={position}
-                          onChange={(event) =>
-                            applyPosition(Number(event.target.value), true)
-                          }
-                          aria-label="Порівняння до і після прибирання"
-                        />
-                      </>
-                    ) : null}
+                          <input
+                            className="ba-range"
+                            type="range"
+                            min={0}
+                            max={100}
+                            step={0.1}
+                            value={position}
+                            onChange={(event) =>
+                              applyPosition(Number(event.target.value), true)
+                            }
+                            aria-label="Порівняння до і після прибирання"
+                          />
+                        </>
+                      ) : null}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="ba-slider-nav">
+            <button
+              type="button"
+              className="ba-stage-arrow ba-stage-arrow--prev"
+              onClick={goToPrev}
+              aria-label="Попередній приклад"
+            >
+              ‹
+            </button>
+
+            <button
+              type="button"
+              className="ba-stage-arrow ba-stage-arrow--next"
+              onClick={goToNext}
+              aria-label="Наступний приклад"
+            >
+              ›
+            </button>
           </div>
         </div>
-
-        <button
-          type="button"
-          className="ba-stage-arrow ba-stage-arrow--next"
-          onClick={goToNext}
-          aria-label="Наступний приклад"
-        >
-          ›
-        </button>
       </div>
 
       <p className="ba-slider-hint">

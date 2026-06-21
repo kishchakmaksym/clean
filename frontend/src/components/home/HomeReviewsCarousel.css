@@ -23,7 +23,7 @@
 }
 
 .home-reviews-title {
-    margin: 0.75rem 0 0;
+    margin: 0;
     font-size: clamp(1.35rem, 2vw + 0.75rem, 1.85rem);
     line-height: 1.12;
     letter-spacing: -0.03em;
@@ -46,17 +46,28 @@
     padding: 1.5rem 1rem;
 }
 
-.home-reviews-stage {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.75rem;
+.home-reviews-carousel {
+    position: relative;
+    width: 100%;
+    padding-inline: 3.25rem;
+}
+
+.home-reviews-nav {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.home-reviews-nav .home-reviews-arrow {
+    pointer-events: auto;
 }
 
 .home-reviews-arrow {
+    position: absolute;
+    top: 50%;
+    z-index: 4;
     display: grid;
     place-items: center;
-    flex-shrink: 0;
     border: 1px solid rgba(var(--primary-rgb), 0.22);
     background: #fff;
     color: var(--primary);
@@ -66,10 +77,19 @@
     padding: 0;
     border-radius: 50%;
     box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12);
+    transform: translateY(-50%);
     transition:
         background 0.15s ease,
         border-color 0.15s ease,
-        transform 0.15s ease;
+        box-shadow 0.15s ease;
+}
+
+.home-reviews-arrow--prev {
+    left: 0;
+}
+
+.home-reviews-arrow--next {
+    right: 0;
 }
 
 .home-reviews-arrow-icon {
@@ -90,7 +110,9 @@
 
 .home-reviews-collage {
     position: relative;
+    width: 100%;
     min-height: 9.75rem;
+    overflow: hidden;
     display: grid;
     place-items: center;
     perspective: 900px;
@@ -245,13 +267,30 @@
 }
 
 @media (max-width: 36rem) {
-    .home-reviews-stage {
-        grid-template-columns: minmax(0, 1fr);
+    .home-reviews-carousel {
+        display: grid;
         gap: 0.65rem;
+        padding-inline: 0;
+    }
+
+    .home-reviews-nav {
+        position: static;
+        display: flex;
+        justify-content: center;
+        gap: 0.75rem;
+        pointer-events: auto;
     }
 
     .home-reviews-arrow {
-        display: none;
+        position: static;
+        transform: none;
+        display: grid;
+    }
+
+    .home-reviews-arrow--prev,
+    .home-reviews-arrow--next {
+        left: auto;
+        right: auto;
     }
 
     .home-reviews-collage {

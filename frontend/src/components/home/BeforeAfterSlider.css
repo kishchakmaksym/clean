@@ -29,24 +29,36 @@
 }
 
 .ba-stage-arrow {
+    position: absolute;
+    top: 50%;
+    z-index: 4;
     display: grid;
     place-items: center;
-    flex-shrink: 0;
     border: 1px solid rgba(var(--primary-rgb), 0.22);
     background: #fff;
     color: var(--primary);
     cursor: pointer;
     width: 2.5rem;
     height: 2.5rem;
+    padding: 0;
     border-radius: 50%;
     font-size: 1.65rem;
     font-weight: 400;
     line-height: 1;
     box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12);
+    transform: translateY(-50%);
     transition:
         background 0.15s ease,
         border-color 0.15s ease,
-        transform 0.15s ease;
+        box-shadow 0.15s ease;
+}
+
+.ba-stage-arrow--prev {
+    left: 0;
+}
+
+.ba-stage-arrow--next {
+    right: 0;
 }
 
 .ba-stage-arrow:hover {
@@ -55,10 +67,23 @@
 }
 
 .ba-slider-stage {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.75rem;
+    width: 100%;
+}
+
+.ba-slider-carousel {
+    position: relative;
+    width: 100%;
+    padding-inline: 3.25rem;
+}
+
+.ba-slider-nav {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.ba-slider-nav .ba-stage-arrow {
+    pointer-events: auto;
 }
 
 .ba-carousel-viewport {
@@ -284,19 +309,58 @@
         white-space: normal;
     }
 
-    .ba-slider-stage {
-        grid-template-columns: auto minmax(0, 1fr) auto;
-        gap: 0.45rem;
+    .ba-slider-carousel {
+        display: grid;
+        gap: 0.65rem;
+        padding-inline: 0;
+    }
+
+    .ba-slider-nav {
+        position: static;
+        display: flex;
+        justify-content: center;
+        gap: 0.75rem;
+        pointer-events: auto;
     }
 
     .ba-stage-arrow {
+        position: static;
+        transform: none;
         width: 2.75rem;
         height: 2.75rem;
         font-size: 1.35rem;
+        background: #fff;
+        box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+    }
+
+    .ba-stage-arrow--prev,
+    .ba-stage-arrow--next {
+        left: auto;
+        right: auto;
     }
 
     .ba-slider {
         aspect-ratio: 4 / 3;
+        min-height: 0;
+    }
+
+    .ba-label {
+        top: 0.65rem;
+        padding: 0.28rem 0.55rem;
+        font-size: 0.625rem;
+    }
+
+    .ba-label--before {
+        left: 0.65rem;
+    }
+
+    .ba-label--after {
+        right: 0.65rem;
+    }
+
+    .ba-handle {
+        width: 2.35rem;
+        height: 2.35rem;
     }
 }
 

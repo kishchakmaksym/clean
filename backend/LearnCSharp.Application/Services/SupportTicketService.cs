@@ -387,7 +387,7 @@ public sealed class SupportTicketService(
             return new SupportTelegramLinkResultDto
             {
                 Success = false,
-                Message = "Цей номер не знайдено в системі CleanPro.",
+                Message = "Цей номер не знайдено в системі Smart Clean.",
             };
         }
 

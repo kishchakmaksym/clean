@@ -1,0 +1,17 @@
+{
+  "name": "Smart Clean — клінінг в Ужгороді",
+  "short_name": "Smart Clean",
+  "description": "Професійне прибирання квартир, будинків та офісів в Ужгороді, Минаї та Сторожниці.",
+  "lang": "uk",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0e1419",
+  "theme_color": "#0e1419",
+  "icons": [
+    {
+      "src": "/logo.gif",
+      "sizes": "512x512",
+      "type": "image/gif"
+    }
+  ]
+}

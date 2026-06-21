@@ -31,7 +31,7 @@ public sealed class TelegramStaffService(
         if (user is null)
         {
             return FailLink(
-                "Цей номер не знайдено в системі CleanPro. Зверніться до адміністратора.");
+                "Цей номер не знайдено в системі Smart Clean. Зверніться до адміністратора.");
         }
 
         if (user.Role is not (UserRole.Admin or UserRole.Employee))

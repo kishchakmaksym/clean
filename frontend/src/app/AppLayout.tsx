@@ -120,7 +120,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     >
                         <img
                             src="/logo.gif"
-                            alt=""
+                            alt="Smart Clean — клінінг в Ужгороді"
                             className="header-logo-img"
                             draggable={false}
                             onContextMenu={(event) => event.preventDefault()}
@@ -224,7 +224,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                         >
                             <img
                                 src="/logo.gif"
-                                alt=""
+                                alt="Smart Clean — клінінг в Ужгороді"
                                 className="footer-logo-img"
                                 draggable={false}
                                 onContextMenu={(event) => event.preventDefault()}
@@ -273,7 +273,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 </div>
 
                 <div className="footer-bottom">
-                    <p>© {new Date().getFullYear()} CleanPro. Усі права захищені.</p>
+                    <p>© {new Date().getFullYear()} Smart Clean. Усі права захищені.</p>
                 </div>
             </footer>
 

@@ -249,7 +249,8 @@ textarea:-webkit-autofill:focus {
     justify-content: flex-end;
 }
 
-.section h2 {
+.section h2,
+.section-head h1 {
     margin: 0.5rem 0 0;
     font-size: var(--text-h2);
     letter-spacing: -0.03em;

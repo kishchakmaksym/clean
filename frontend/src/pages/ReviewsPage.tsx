@@ -159,8 +159,9 @@ export default function ReviewsPage() {
                 </ModalPortal>
             ) : null}
 
-            <div className="section-head">                <span className="badge">Відгуки</span>
-                <h2>Що кажуть клієнти</h2>
+            <div className="section-head">
+                <span className="badge">Відгуки</span>
+                <h1>Що кажуть клієнти</h1>
                 <p>Реальні враження від наших клієнтів.</p>
             </div>
 

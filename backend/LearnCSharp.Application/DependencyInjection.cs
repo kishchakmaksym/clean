@@ -22,13 +22,13 @@ public static class DependencyInjection
         services.AddHttpClient("Nominatim", client =>
         {
             client.BaseAddress = new Uri("https://nominatim.openstreetmap.org/");
-            client.DefaultRequestHeaders.Add("User-Agent", "CleanPro/1.0 (address autocomplete; contact@cleanpro.local)");
+            client.DefaultRequestHeaders.Add("User-Agent", "SmartClean/1.0 (address autocomplete)");
             client.DefaultRequestHeaders.Add("Accept-Language", "uk,en");
         });
         services.AddHttpClient("Photon", client =>
         {
             client.BaseAddress = new Uri("https://photon.komoot.io/");
-            client.DefaultRequestHeaders.Add("User-Agent", "CleanPro/1.0 (address autocomplete; contact@cleanpro.local)");
+            client.DefaultRequestHeaders.Add("User-Agent", "SmartClean/1.0 (address autocomplete)");
         });
         services.AddScoped<AdminSeeder>();
         return services;

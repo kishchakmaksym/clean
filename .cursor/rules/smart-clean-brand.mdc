@@ -1,0 +1,20 @@
+---
+description: Бренд проєкту — назва компанії та SEO
+alwaysApply: true
+---
+
+# Smart Clean — бренд проєкту
+
+**Офіційна назва компанії та сайту: Smart Clean.** Жодних інших назв у user-facing тексті.
+
+## Правила
+
+- У title, meta, footer, повідомленнях користувачам, Telegram-ботах, оплатах — **завжди «Smart Clean»**
+- **Не використовувати** CleanPro, clean pro, SmartClean (без пробілу) у тексті для користувачів
+- SEO-конфіг: `frontend/src/config/seo.ts` — `SITE_NAME = "Smart Clean"`
+- Внутрішні ключі localStorage (`cleanpro_user` тощо) та імена C#-проєктів можна не змінювати — це не user-facing
+
+## SEO
+
+- Публічний URL задається через `VITE_SITE_URL` у `frontend/.env`
+- Meta-теги та JSON-LD керуються через `frontend/src/components/seo/RouteSeo.tsx`

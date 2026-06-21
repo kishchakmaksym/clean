@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 
+import RouteSeo from "./components/seo/RouteSeo";
 import AppLayout from "./app/AppLayout";
 import ScrollToTop from "./app/ScrollToTop";
 import { AuthProvider } from "./auth/AuthContext";
@@ -21,6 +22,7 @@ function App() {
     return (
         <BrowserRouter>
             <ScrollToTop />
+            <RouteSeo />
             <AuthProvider>
                 <AppLayout>
                     <Routes>

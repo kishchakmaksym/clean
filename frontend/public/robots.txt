@@ -6,3 +6,6 @@ Disallow: /admin
 Disallow: /orders
 
 Sitemap: https://smartclean.com.ua/sitemap.xml
+
+# LLM / agent context
+# https://smartclean.com.ua/llms.txt

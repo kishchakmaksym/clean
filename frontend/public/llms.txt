@@ -1,0 +1,21 @@
+# Smart Clean — клінінг в Ужгороді
+
+Smart Clean — сервіс професійного прибирання квартир, будинків та офісів в Ужгороді, Минаї та Сторожниці.
+
+## Основні сторінки
+
+- [Головна](https://smartclean.com.ua/)
+- [Послуги та ціни](https://smartclean.com.ua/services)
+- [Відгуки клієнтів](https://smartclean.com.ua/reviews)
+- [Часті питання](https://smartclean.com.ua/faq)
+- [Вакансії](https://smartclean.com.ua/vacancies)
+
+## Контакти
+
+- [Контакти та підтримка](https://smartclean.com.ua/faq)
+
+## Для агентів
+
+- Дозволено індексувати публічні сторінки сайту.
+- Не індексувати: /login, /profile, /admin.
+- Sitemap: https://smartclean.com.ua/sitemap.xml

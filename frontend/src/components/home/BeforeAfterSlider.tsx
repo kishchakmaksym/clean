@@ -25,9 +25,9 @@ const COMPARISONS: ComparisonPair[] = [
   {
     id: "room-1",
 
-    before: "/1.png",
+    before: "/1.webp",
 
-    after: "/2.png",
+    after: "/2.webp",
 
     label: "Кімната",
   },
@@ -35,9 +35,9 @@ const COMPARISONS: ComparisonPair[] = [
   {
     id: "room-2",
 
-    before: "/3.png",
+    before: "/3.webp",
 
-    after: "/4.png",
+    after: "/4.webp",
 
     label: "Житлова зона",
   },
@@ -45,9 +45,9 @@ const COMPARISONS: ComparisonPair[] = [
   {
     id: "bedroom",
 
-    before: "/5.png",
+    before: "/5.webp",
 
-    after: "/6.png",
+    after: "/6.webp",
 
     label: "Спальня",
   },
@@ -55,9 +55,9 @@ const COMPARISONS: ComparisonPair[] = [
   {
     id: "kitchen",
 
-    before: "/7.png",
+    before: "/7.webp",
 
-    after: "/8.png",
+    after: "/8.webp",
 
     label: "Кухня",
   },
@@ -65,9 +65,9 @@ const COMPARISONS: ComparisonPair[] = [
   {
     id: "bathroom",
 
-    before: "/9.png",
+    before: "/9.webp",
 
-    after: "/10.png",
+    after: "/10.webp",
 
     label: "Ванна",
   },
@@ -384,6 +384,9 @@ export default function BeforeAfterSlider() {
                         alt={`${item.label} після прибирання`}
                         draggable={false}
                         loading={isActive ? "eager" : "lazy"}
+                        decoding="async"
+                        width={1280}
+                        height={720}
                       />
 
                       <img
@@ -393,6 +396,9 @@ export default function BeforeAfterSlider() {
                         alt={`${item.label} до прибирання`}
                         draggable={false}
                         loading={isActive ? "eager" : "lazy"}
+                        decoding="async"
+                        width={1280}
+                        height={720}
                       />
 
                       {isActive ? (

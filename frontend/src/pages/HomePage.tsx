@@ -1,8 +1,7 @@
-﻿import "./HomePage.css";
+﻿import { lazy, Suspense } from "react";
+import "./HomePage.css";
 import { Link } from "react-router-dom";
 
-import BeforeAfterSlider from "../components/home/BeforeAfterSlider";
-import HomeReviewsCarousel from "../components/home/HomeReviewsCarousel";
 import CountUpMetric, { MetricRange } from "../components/home/CountUpMetric";
 import { HomeIcon, type HomeIconName } from "../components/home/HomeIcons";
 import ReviewCountMetric from "../components/home/ReviewCountMetric";
@@ -11,7 +10,11 @@ import ProcessSteps from "../components/home/ProcessSteps";
 import RevealItem from "../components/home/RevealItem";
 import TypewriterText from "../components/home/TypewriterText";
 import { useHomeScrollReveal } from "../hooks/useHomeScrollReveal";
+import { useInView } from "../hooks/useInView";
 import { useReviewStats } from "../hooks/useReviewStats";
+
+const BeforeAfterSlider = lazy(() => import("../components/home/BeforeAfterSlider"));
+const HomeReviewsCarousel = lazy(() => import("../components/home/HomeReviewsCarousel"));
 
 const highlights: { icon: HomeIconName; title: string; text: string }[] = [
     {
@@ -72,6 +75,44 @@ const steps: { icon: HomeIconName; title: string; text: string }[] = [
     },
 ];
 
+function LazySectionFallback({ label }: { label: string }) {
+    return <div className="home-lazy-placeholder" role="status" aria-label={label} />;
+}
+
+function LazyBeforeAfterSection() {
+    const { ref, isInView } = useInView<HTMLElement>({ rootMargin: "240px 0px" });
+
+    return (
+        <section ref={ref} className="home-result" aria-label="Результат прибирання">
+            <div className="hero-panel home-result-panel">
+                {isInView ? (
+                    <Suspense fallback={<LazySectionFallback label="Завантаження прикладів" />}>
+                        <BeforeAfterSlider />
+                    </Suspense>
+                ) : (
+                    <LazySectionFallback label="Приклади прибирання" />
+                )}
+            </div>
+        </section>
+    );
+}
+
+function LazyReviewsSection() {
+    const { ref, isInView } = useInView<HTMLElement>({ rootMargin: "240px 0px" });
+
+    return (
+        <section ref={ref} aria-label="Відгуки клієнтів">
+            {isInView ? (
+                <Suspense fallback={<LazySectionFallback label="Завантаження відгуків" />}>
+                    <HomeReviewsCarousel />
+                </Suspense>
+            ) : (
+                <LazySectionFallback label="Відгуки клієнтів" />
+            )}
+        </section>
+    );
+}
+
 export default function HomePage() {
     const { homeRef } = useHomeScrollReveal();
     const reviewStats = useReviewStats();
@@ -88,12 +129,12 @@ export default function HomePage() {
                                     Професійний клінінг
                                 </span>
 
-                                <p className="hero-headline">
+                                <h1 className="hero-headline">
                                     Чистий дім без стресу
                                     <span className="hero-title-accent">
                                         <TypewriterText text="і зайвих турбот" />
                                     </span>
-                                </p>
+                                </h1>
 
                                 <p className="hero-text">
                                     Прибираємо квартири, будинки та офіси. Приїжджаємо в зручний час,
@@ -119,9 +160,9 @@ export default function HomePage() {
                     <div className="hero-panel hero-process home-panel-reveal-top home-panel-reveal-top--right">
                         <div className="hero-intro">
                             <span className="badge hero-badge">Процес</span>
-                            <h1 className="hero-process-eyebrow">
+                            <p className="hero-process-eyebrow">
                                 Клінінг в Ужгороді, Минаї та Сторожниці
-                            </h1>
+                            </p>
 
                             <div className="hero-process-body">
                                 <h2 className="hero-process-title">Як ми працюємо</h2>
@@ -188,13 +229,8 @@ export default function HomePage() {
                 </div>
             </section>
 
-            <section className="home-result" aria-label="Результат прибирання">
-                <div className="hero-panel home-result-panel">
-                    <BeforeAfterSlider />
-                </div>
-            </section>
-
-            <HomeReviewsCarousel />
+            <LazyBeforeAfterSection />
+            <LazyReviewsSection />
         </div>
     );
 }

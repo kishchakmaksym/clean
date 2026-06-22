@@ -5,6 +5,10 @@
     --reveal-progress-bottom: 0;
 }
 
+.home-lazy-placeholder {
+    min-height: clamp(18rem, 42vw, 28rem);
+}
+
 /* ── Hero ── */
 .hero {
     width: 100%;

@@ -217,3 +217,4 @@ C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Api\bin\Debug\net10.0\N
 C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Api\bin\Debug\net10.0\Npgsql.EntityFrameworkCore.PostgreSQL.dll
 C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Api\bin\Debug\net10.0\LearnCSharp.Infrastructure.Postgres.dll
 C:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Api\bin\Debug\net10.0\LearnCSharp.Infrastructure.Postgres.pdb
+c:\Users\kashchei94\Desktop\CleanPro\backend\LearnCSharp.Api\bin\Debug\net10.0\appsettings.Production.json

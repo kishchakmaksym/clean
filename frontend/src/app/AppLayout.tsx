@@ -122,6 +122,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
                             src="/logo.gif"
                             alt="Smart Clean — клінінг в Ужгороді"
                             className="header-logo-img"
+                            width={40}
+                            height={40}
+                            fetchPriority="high"
+                            decoding="async"
                             draggable={false}
                             onContextMenu={(event) => event.preventDefault()}
                         />

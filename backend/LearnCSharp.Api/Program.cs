@@ -54,17 +54,8 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-else
-{
-    app.UseHsts();
-}
 
 app.UseForwardedHeaders();
-
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
 
 app.UseCors("Frontend");
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));

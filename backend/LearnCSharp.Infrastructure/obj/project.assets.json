@@ -4318,11 +4318,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
+      "projectUniqueName": "C:\\Users\\kashchei94\\Desktop\\ПРОЕКТИ\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
       "projectName": "LearnCSharp.Infrastructure",
-      "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
+      "projectPath": "C:\\Users\\kashchei94\\Desktop\\ПРОЕКТИ\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
       "packagesPath": "C:\\Users\\kashchei94\\.nuget\\packages\\",
-      "outputPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\obj\\",
+      "outputPath": "C:\\Users\\kashchei94\\Desktop\\ПРОЕКТИ\\CleanPro\\backend\\LearnCSharp.Infrastructure\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -4345,11 +4345,11 @@
           "framework": "net10.0",
           "targetAlias": "net10.0",
           "projectReferences": {
-            "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj": {
-              "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj"
+            "C:\\Users\\kashchei94\\Desktop\\ПРОЕКТИ\\CleanPro\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj": {
+              "projectPath": "C:\\Users\\kashchei94\\Desktop\\ПРОЕКТИ\\CleanPro\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj"
             },
-            "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj": {
-              "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj"
+            "C:\\Users\\kashchei94\\Desktop\\ПРОЕКТИ\\CleanPro\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj": {
+              "projectPath": "C:\\Users\\kashchei94\\Desktop\\ПРОЕКТИ\\CleanPro\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj"
             }
           }
         }

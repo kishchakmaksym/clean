@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj": {}
+    "C:\\Users\\kashchei94\\Desktop\\ПРОЕКТИ\\CleanPro\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj": {}
   },
   "projects": {
-    "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj": {
+    "C:\\Users\\kashchei94\\Desktop\\ПРОЕКТИ\\CleanPro\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj",
+        "projectUniqueName": "C:\\Users\\kashchei94\\Desktop\\ПРОЕКТИ\\CleanPro\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj",
         "projectName": "LearnCSharp.Domain",
-        "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj",
+        "projectPath": "C:\\Users\\kashchei94\\Desktop\\ПРОЕКТИ\\CleanPro\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj",
         "packagesPath": "C:\\Users\\kashchei94\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Domain\\obj\\",
+        "outputPath": "C:\\Users\\kashchei94\\Desktop\\ПРОЕКТИ\\CleanPro\\backend\\LearnCSharp.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

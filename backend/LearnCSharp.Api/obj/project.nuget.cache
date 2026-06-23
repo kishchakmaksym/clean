@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "wTCEGL9FqUQ=",
+  "dgSpecHash": "SKmq5Z0E5p4=",
   "success": true,
-  "projectFilePath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Api\\LearnCSharp.Api.csproj",
+  "projectFilePath": "C:\\Users\\kashchei94\\Desktop\\ПРОЕКТИ\\CleanPro\\backend\\LearnCSharp.Api\\LearnCSharp.Api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\kashchei94\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\kashchei94\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
@@ -57,9 +57,9 @@
       "code": "NU1903",
       "level": "Warning",
       "message": "Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q",
-      "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Api\\LearnCSharp.Api.csproj",
+      "projectPath": "C:\\Users\\kashchei94\\Desktop\\ПРОЕКТИ\\CleanPro\\backend\\LearnCSharp.Api\\LearnCSharp.Api.csproj",
       "warningLevel": 1,
-      "filePath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Api\\LearnCSharp.Api.csproj",
+      "filePath": "C:\\Users\\kashchei94\\Desktop\\ПРОЕКТИ\\CleanPro\\backend\\LearnCSharp.Api\\LearnCSharp.Api.csproj",
       "libraryId": "SQLitePCLRaw.lib.e_sqlite3",
       "targetGraphs": [
         "net10.0"

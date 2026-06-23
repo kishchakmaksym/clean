@@ -10,6 +10,7 @@ import {
 } from "../api/payments";
 import { formatUkrainianDateTime } from "../utils/dateTime";
 import ModalPortal from "../components/ModalPortal";
+import InvoiceQrCode from "../components/payments/InvoiceQrCode";
 import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 import "./ReviewsPage.css";
 
@@ -47,10 +48,6 @@ function formatPrice(amountKopiyky: number) {
         currency: "UAH",
         maximumFractionDigits: 0,
     }).format(amountKopiyky / 100);
-}
-
-function buildQrCodeUrl(pageUrl: string) {
-    return `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(pageUrl)}`;
 }
 
 function parseLabels(raw: string): string[] {
@@ -195,7 +192,7 @@ function AdminInvoiceCard({
                 <a
                     href={invoice.pageUrl}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="secondary-button compact profile-admin-invoice-open"
                 >
                     Відкрити
@@ -204,12 +201,7 @@ function AdminInvoiceCard({
 
             {showQr ? (
                 <div className="profile-admin-invoice-qr-wrap">
-                    <img
-                        src={buildQrCodeUrl(invoice.pageUrl)}
-                        width={160}
-                        height={160}
-                        alt={`QR-код для ${invoice.label}`}
-                    />
+                    <InvoiceQrCode pageUrl={invoice.pageUrl} label={invoice.label} />
                 </div>
             ) : null}
         </article>

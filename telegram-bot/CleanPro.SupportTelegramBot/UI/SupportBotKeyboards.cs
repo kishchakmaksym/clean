@@ -41,7 +41,7 @@ internal static class SupportBotKeyboards
     public static ReplyKeyboardMarkup LoginContact() =>
         new(
             [
-                [KeyboardButton.WithRequestContact("📱 Надіслати номер телефону")],
+                [KeyboardButton.WithRequestContact("📱 Поділитися номером")],
             ])
         {
             ResizeKeyboard = true,

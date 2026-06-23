@@ -31,7 +31,7 @@ public static class BotLabels
     public const int LogsPageSize = 10;
 
     public static string AvailableOrderLabel(StaffOrderDto order) =>
-        $"🆕 №{order.ShortId} · {Trim(order.ServiceTitle, 24)}";
+        $"🆕 {Trim(GetOrderMenuTitle(order), 28)} · {FormatKyivTime(order.CreatedAtUtc)}";
 
     public static string MyOrderLabel(StaffOrderDto order) =>
         $"📋 №{order.ShortId} · {StatusEmoji(order.Status)}";
@@ -69,6 +69,20 @@ public static class BotLabels
 
     private static string Trim(string value, int max) =>
         value.Length <= max ? value : value[..(max - 1)] + "…";
+
+    private static string GetOrderMenuTitle(StaffOrderDto order) =>
+        order.OrderType.Equals("custom", StringComparison.OrdinalIgnoreCase)
+            ? "Кастомне прибирання"
+            : order.ServiceTitle;
+
+    private static string FormatKyivTime(DateTime utc)
+    {
+        var kyivZone = TimeZoneInfo.FindSystemTimeZoneById(
+            OperatingSystem.IsWindows() ? "FLE Standard Time" : "Europe/Kyiv");
+
+        return TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), kyivZone)
+            .ToString("dd.MM HH:mm");
+    }
 }
 
 public static class BotKeyboards

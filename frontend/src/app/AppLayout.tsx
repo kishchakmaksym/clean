@@ -267,9 +267,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
                     <div className="footer-contact">
                         <p className="footer-contact-label">Контакти</p>
-                        <a href={supportContacts.phoneHref} className="footer-link">
-                            {supportContacts.phoneDisplay}
-                        </a>
                         <a href={supportContacts.emailHref} className="footer-link">
                             {supportContacts.email}
                         </a>

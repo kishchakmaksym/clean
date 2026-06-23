@@ -173,18 +173,6 @@
 }
 
 .services-tabs--subscription .services-tabs-indicator {
-    left: calc(100% / var(--tab-count) * 2 - var(--tab-slant));
-    width: calc(100% / var(--tab-count) + var(--tab-slant) * 2);
-    clip-path: polygon(
-        var(--tab-slant) 0,
-        calc(100% - var(--tab-slant)) 0,
-        100% 100%,
-        0 100%
-    );
-    border-radius: 0;
-}
-
-.services-tabs--business .services-tabs-indicator {
     left: calc(100% / var(--tab-count) * 3 - var(--tab-slant));
     width: calc(100% / var(--tab-count) + var(--tab-slant));
     clip-path: polygon(
@@ -194,6 +182,18 @@
         var(--tab-slant) 100%
     );
     border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+}
+
+.services-tabs--business .services-tabs-indicator {
+    left: calc(100% / var(--tab-count) * 2 - var(--tab-slant));
+    width: calc(100% / var(--tab-count) + var(--tab-slant) * 2);
+    clip-path: polygon(
+        var(--tab-slant) 0,
+        calc(100% - var(--tab-slant)) 0,
+        100% 100%,
+        0 100%
+    );
+    border-radius: 0;
 }
 
 .services-tab {
@@ -232,6 +232,34 @@
 
 .services-tab--active:hover {
     color: #fff;
+}
+
+.services-tab--disabled {
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 0.18rem;
+    color: rgba(100, 116, 139, 0.72);
+    cursor: not-allowed;
+}
+
+.services-tab--disabled:hover {
+    color: rgba(100, 116, 139, 0.72);
+}
+
+.services-tab-soon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.1rem 0.42rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.58rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--primary);
+    background: rgba(var(--primary-rgb), 0.1);
+    border: 1px solid rgba(var(--primary-rgb), 0.18);
 }
 
 .services-panel-lead {
@@ -561,7 +589,7 @@
 
 .services-org-checks {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.45rem;
 }
 
@@ -697,6 +725,25 @@
     font-size: 0.8125rem;
     line-height: 1.35;
     color: var(--text);
+}
+
+.services-extra-copy--stack {
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.2rem;
+}
+
+.services-extra-copy--stack span:first-child {
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.services-extra-copy--stack span:last-child:not(:first-child) {
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--muted);
 }
 
 .services-field--area {

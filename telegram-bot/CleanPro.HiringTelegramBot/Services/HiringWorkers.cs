@@ -1,5 +1,6 @@
 using CleanPro.HiringTelegramBot.Options;
 using LearnCSharp.Application.Interfaces;
+using LearnCSharp.Application.Validation;
 using LearnCSharp.Domain.Entities;
 using LearnCSharp.Domain.Enums;
 using Microsoft.Extensions.Options;
@@ -7,6 +8,7 @@ using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace CleanPro.HiringTelegramBot.Services;
 
@@ -57,41 +59,113 @@ public sealed class HiringPollingService(
 
 public sealed class HiringBotHandler(
     ITelegramBotClient botClient,
-    IOptions<HiringTelegramBotOptions> options,
+    IServiceScopeFactory scopeFactory,
     ILogger<HiringBotHandler> logger)
 {
     public async Task HandleUpdateAsync(Update update, CancellationToken cancellationToken)
     {
-        if (update.Message?.Text is not { } text || update.Message.Chat is null)
+        if (update.Message is not { } message)
         {
             return;
         }
 
-        if (!text.StartsWith("/start", StringComparison.OrdinalIgnoreCase))
+        var chatId = message.Chat.Id;
+        var telegramUserId = message.From?.Id ?? chatId;
+
+        if (message.Contact is not null)
+        {
+            await HandleContactAsync(chatId, telegramUserId, message.Contact, cancellationToken);
+            return;
+        }
+
+        if (message.Text?.Trim().StartsWith("/start", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            await SendLoginPromptAsync(chatId, cancellationToken);
+            return;
+        }
+
+        await botClient.SendMessage(
+            chatId,
+            "Цей бот показує заявки на вакансії тільки адміністраторам. Натисніть /start і поділіться номером.",
+            replyMarkup: LoginContactKeyboard(),
+            cancellationToken: cancellationToken);
+    }
+
+    private async Task HandleContactAsync(
+        long chatId,
+        long telegramUserId,
+        Contact contact,
+        CancellationToken cancellationToken)
+    {
+        if (contact.UserId != telegramUserId)
         {
             await botClient.SendMessage(
-                update.Message.Chat.Id,
-                "Цей бот лише для сповіщень про нові заявки прибиральниць.\n\nНадішліть /start, щоб дізнатися ваш chat id для налаштування.",
+                chatId,
+                "Надішліть саме свій контакт через кнопку нижче.",
+                replyMarkup: LoginContactKeyboard(),
                 cancellationToken: cancellationToken);
             return;
         }
 
-        var chatId = update.Message.Chat.Id;
-        var configuredIds = options.Value.GetNotifyChatIds();
-        var isConfigured = configuredIds.Contains(chatId);
+        if (!AuthValidator.TryNormalizePhone(contact.PhoneNumber ?? string.Empty, out var normalizedPhone))
+        {
+            await botClient.SendMessage(
+                chatId,
+                "Не вдалося прочитати номер телефону з Telegram. Спробуйте ще раз через кнопку.",
+                replyMarkup: LoginContactKeyboard(),
+                cancellationToken: cancellationToken);
+            return;
+        }
+
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var users = scope.ServiceProvider.GetRequiredService<IUserRepository>();
+        var staffRepository = scope.ServiceProvider.GetRequiredService<ITelegramStaffRepository>();
+
+        var user = await users.FindByPhoneAsync(normalizedPhone, cancellationToken);
+        if (user is null || user.Role != UserRole.Admin)
+        {
+            await botClient.SendMessage(
+                chatId,
+                "Цей номер не має доступу адміністратора Smart Clean.",
+                replyMarkup: LoginContactKeyboard(),
+                cancellationToken: cancellationToken);
+            return;
+        }
+
+        await staffRepository.LinkAccountAsync(
+            user.Id,
+            telegramUserId,
+            chatId,
+            normalizedPhone,
+            cancellationToken);
 
         await botClient.SendMessage(
             chatId,
-            "🧹 *Smart Clean — вакансії*\n\n" +
-            $"Ваш chat id: `{chatId}`\n\n" +
-            (isConfigured
-                ? "✅ Цей чат уже в списку отримувачів нових заявок."
-                : "Додайте цей chat id у `HiringTelegramBot:NotifyChatIds` у appsettings бота."),
-            parseMode: ParseMode.Markdown,
+            "✅ Доступ відкрито. Нові заявки на вакансії приходитимуть у цей чат.",
+            replyMarkup: new ReplyKeyboardRemove(),
             cancellationToken: cancellationToken);
 
-        logger.LogInformation("Hiring bot /start from chat {ChatId}, configured={Configured}", chatId, isConfigured);
+        logger.LogInformation("Hiring bot linked admin {UserId} to chat {ChatId}", user.Id, chatId);
     }
+
+    private async Task SendLoginPromptAsync(long chatId, CancellationToken cancellationToken)
+    {
+        await botClient.SendMessage(
+            chatId,
+            "Бот вакансій Smart Clean.\n\nПоділіться номером телефону. Якщо номер належить адміністратору, бот підключить сповіщення про нові заявки.",
+            replyMarkup: LoginContactKeyboard(),
+            cancellationToken: cancellationToken);
+    }
+
+    private static ReplyKeyboardMarkup LoginContactKeyboard() =>
+        new(
+            [
+                [KeyboardButton.WithRequestContact("📱 Поділитися номером")],
+            ])
+        {
+            ResizeKeyboard = true,
+            OneTimeKeyboard = true,
+        };
 }
 
 public sealed class HiringOutboxWorker(
@@ -113,7 +187,8 @@ public sealed class HiringOutboxWorker(
             {
                 await using var scope = scopeFactory.CreateAsyncScope();
                 var repository = scope.ServiceProvider.GetRequiredService<IJobApplicationRepository>();
-                var chatIds = options.Value.GetNotifyChatIds();
+                var staffRepository = scope.ServiceProvider.GetRequiredService<ITelegramStaffRepository>();
+                var chatIds = await GetAdminChatIdsAsync(staffRepository, stoppingToken);
 
                 var batch = await repository.GetPendingOutboxAsync(20, stoppingToken);
                 foreach (var item in batch)
@@ -131,6 +206,18 @@ public sealed class HiringOutboxWorker(
         }
     }
 
+    private static async Task<IReadOnlyList<long>> GetAdminChatIdsAsync(
+        ITelegramStaffRepository staffRepository,
+        CancellationToken cancellationToken)
+    {
+        var accounts = await staffRepository.GetStaffAccountsAsync(cancellationToken);
+        return accounts
+            .Where(account => account.Role == UserRole.Admin)
+            .Select(account => account.ChatId)
+            .Distinct()
+            .ToList();
+    }
+
     private async Task ProcessOutboxItemAsync(
         IJobApplicationRepository repository,
         HiringOutboxMessage item,
@@ -139,7 +226,7 @@ public sealed class HiringOutboxWorker(
     {
         if (chatIds.Count == 0)
         {
-            logger.LogWarning("Hiring bot: no NotifyChatIds configured, skipping application {ApplicationId}", item.ApplicationId);
+            logger.LogWarning("Hiring bot: no linked admin chats, skipping application {ApplicationId}", item.ApplicationId);
             return;
         }
 
@@ -158,7 +245,6 @@ public sealed class HiringOutboxWorker(
                 await botClient.SendMessage(
                     chatId,
                     text,
-                    parseMode: ParseMode.Markdown,
                     cancellationToken: cancellationToken);
             }
             catch (Exception ex)
@@ -176,15 +262,12 @@ public sealed class HiringOutboxWorker(
         var shortId = application.Id.ToString()[..8].ToUpperInvariant();
 
         return
-            "🆕 *Нова заявка — прибиральниця*\n\n" +
-            $"*Ім'я:* {EscapeMarkdown(application.FullName)}\n" +
-            $"*Телефон:* {EscapeMarkdown(application.Phone)}\n" +
-            $"*Вік:* {EscapeMarkdown(ageLine)}\n\n" +
-            $"*Досвід:*\n{EscapeMarkdown(experience)}\n\n" +
-            $"*Про себе:*\n{EscapeMarkdown(about)}\n\n" +
-            $"ID: `{shortId}`";
+            "🆕 Нова заявка — прибиральниця\n\n" +
+            $"Ім'я: {application.FullName}\n" +
+            $"Телефон: {application.Phone}\n" +
+            $"Вік: {ageLine}\n\n" +
+            $"Досвід:\n{experience}\n\n" +
+            $"Про себе:\n{about}\n\n" +
+            $"ID: {shortId}";
     }
-
-    private static string EscapeMarkdown(string value) =>
-        value.Replace("_", "\\_", StringComparison.Ordinal).Replace("*", "\\*", StringComparison.Ordinal);
 }

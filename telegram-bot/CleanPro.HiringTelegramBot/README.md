@@ -1,6 +1,6 @@
 # CleanPro Hiring Telegram Bot
 
-Окремий бот **тільки для заявок на вакансію прибиральниці** (не плутати з ботами підтримки та замовлень).
+Окремий бот тільки для заявок на вакансію прибиральниці.
 
 ## Налаштування
 
@@ -10,14 +10,14 @@
 ```json
 {
   "HiringTelegramBot": {
-    "BotToken": "YOUR_HIRING_BOT_TOKEN",
-    "NotifyChatIds": "123456789"
+    "BotToken": "YOUR_HIRING_BOT_TOKEN"
   }
 }
 ```
 
-3. Щоб дізнатися chat id: напишіть боту `/start` — він відповість вашим id.
-4. Переконайтесь, що `ConnectionStrings:DefaultConnection` вказує на ту саму SQLite БД, що й API.
+3. Переконайтесь, що `ConnectionStrings:DefaultConnection` вказує на ту саму SQLite БД, що й API.
+4. Запустіть бота й напишіть `/start`.
+5. Поділіться номером через кнопку. Якщо номер належить користувачу з роллю `Admin`, бот прив'яже Telegram chat id і надсилатиме сюди нові заявки.
 
 ## Запуск
 
@@ -26,4 +26,4 @@ cd telegram-bot/CleanPro.HiringTelegramBot
 dotnet run
 ```
 
-Після запуску API + бота нові заявки з `/vacancies` надходитимуть у Telegram і з'являтимуться в адмінці: `/admin?tab=vacancies`.
+Після запуску API + бота нові заявки з `/vacancies` надходитимуть у Telegram усім прив'язаним адміністраторам і з'являтимуться в адмінці: `/admin?tab=vacancies`.

@@ -4,7 +4,6 @@ using LearnCSharp.Application.Interfaces;
 using LearnCSharp.Domain.Enums;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace CleanPro.SupportTelegramBot.Services;
@@ -38,11 +37,6 @@ public sealed class SupportBotHandler(
 
     private async Task HandleMessageAsync(Message message, CancellationToken cancellationToken)
     {
-        if (message.Chat is null)
-        {
-            return;
-        }
-
         var chatId = message.Chat.Id;
         var telegramUserId = message.From?.Id ?? chatId;
 
@@ -56,7 +50,22 @@ public sealed class SupportBotHandler(
         var supportRepository = scope.ServiceProvider.GetRequiredService<ISupportTicketRepository>();
         var supportService = scope.ServiceProvider.GetRequiredService<ISupportTicketService>();
 
+        var text = message.Text?.Trim() ?? string.Empty;
         var account = await supportRepository.FindSupportAccountByTelegramUserIdAsync(telegramUserId, cancellationToken);
+
+        if (text.Equals("/start", StringComparison.OrdinalIgnoreCase))
+        {
+            sessions.Clear(telegramUserId);
+            if (account is null)
+            {
+                await SendLoginPromptAsync(chatId, cancellationToken);
+                return;
+            }
+
+            await SendMainMenuAsync(chatId, account.User.Name, cancellationToken);
+            return;
+        }
+
         if (account is null)
         {
             await SendLoginPromptAsync(chatId, cancellationToken);
@@ -64,15 +73,6 @@ public sealed class SupportBotHandler(
         }
 
         var session = sessions.GetOrCreate(telegramUserId);
-        var text = message.Text?.Trim() ?? string.Empty;
-
-        if (text.Equals("/start", StringComparison.OrdinalIgnoreCase))
-        {
-            sessions.Clear(telegramUserId);
-            await SendMainMenuAsync(chatId, account.User.Name, cancellationToken);
-            return;
-        }
-
         if (session.Mode == SupportSessionMode.AwaitingReply && session.ActiveTicketId is Guid ticketId)
         {
             if (string.IsNullOrWhiteSpace(text))
@@ -105,7 +105,7 @@ public sealed class SupportBotHandler(
 
         await botClient.SendMessage(
             chatId,
-            "Оберіть звернення в меню або натисніть /tickets",
+            "Оберіть звернення в меню або натисніть /tickets.",
             replyMarkup: SupportBotKeyboards.MainMenu(),
             cancellationToken: cancellationToken);
     }
@@ -120,7 +120,8 @@ public sealed class SupportBotHandler(
         {
             await botClient.SendMessage(
                 chatId,
-                "❌ Надішліть свій контакт, а не чужий.",
+                "Надішліть саме свій контакт через кнопку нижче.",
+                replyMarkup: SupportBotKeyboards.LoginContact(),
                 cancellationToken: cancellationToken);
             return;
         }
@@ -134,11 +135,23 @@ public sealed class SupportBotHandler(
             contact.PhoneNumber ?? string.Empty,
             cancellationToken);
 
+        if (!result.Success)
+        {
+            await botClient.SendMessage(
+                chatId,
+                "Цей номер не має доступу адміністратора Smart Clean.",
+                replyMarkup: SupportBotKeyboards.LoginContact(),
+                cancellationToken: cancellationToken);
+            return;
+        }
+
         await botClient.SendMessage(
             chatId,
-            result.Message,
-            replyMarkup: result.Success ? SupportBotKeyboards.MainMenu() : SupportBotKeyboards.LoginContact(),
+            "✅ Доступ відкрито. Тепер тут будуть звернення з підтримки Smart Clean.",
+            replyMarkup: new ReplyKeyboardRemove(),
             cancellationToken: cancellationToken);
+
+        await SendTicketsAsync(chatId, result.AdminUserId!.Value, cancellationToken);
     }
 
     private async Task HandleCallbackAsync(CallbackQuery query, CancellationToken cancellationToken)
@@ -203,8 +216,7 @@ public sealed class SupportBotHandler(
     {
         await botClient.SendMessage(
             chatId,
-            "🛟 *Бот підтримки Smart Clean*\n\nУвійдіть номером телефону адміністратора.",
-            parseMode: ParseMode.Markdown,
+            "Бот підтримки Smart Clean.\n\nПоділіться номером телефону. Якщо номер належить адміністратору, відкриється меню підтримки.",
             replyMarkup: SupportBotKeyboards.LoginContact(),
             cancellationToken: cancellationToken);
     }
@@ -233,7 +245,7 @@ public sealed class SupportBotHandler(
         {
             await botClient.SendMessage(
                 chatId,
-                "Немає відкритих звернень 🎉",
+                "Відкритих звернень поки немає.",
                 replyMarkup: SupportBotKeyboards.MainMenu(),
                 cancellationToken: cancellationToken);
             return;
@@ -271,22 +283,20 @@ public sealed class SupportBotHandler(
         var recent = thread.Messages.TakeLast(6).ToList();
         var body = string.Join(
             "\n\n",
-            recent.Select(message =>
-                $"*{message.SenderName}*: {message.Body}"));
+            recent.Select(message => $"{message.SenderName}: {message.Body}"));
 
         var header =
-            $"*{ticket.CustomerName}* · ID `{ticket.UserDisplayId}`\n" +
+            $"{ticket.CustomerName} · ID {ticket.UserDisplayId}\n" +
             $"{ticket.CustomerPhone}\n" +
-            $"_{ticket.Subject ?? "Звернення"}_\n\n" +
+            $"{ticket.Subject ?? "Звернення"}\n\n" +
             body +
-            "\n\n✍️ Напишіть відповідь наступним повідомленням.";
+            "\n\nНапишіть відповідь наступним повідомленням.";
 
         var canClose = ticket.Status != SupportTicketStatus.Closed.ToString();
 
         await botClient.SendMessage(
             chatId,
             header,
-            parseMode: ParseMode.Markdown,
             replyMarkup: SupportBotKeyboards.TicketActions(ticketId, canClose),
             cancellationToken: cancellationToken);
     }

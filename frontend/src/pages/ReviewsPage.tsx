@@ -159,15 +159,13 @@ export default function ReviewsPage() {
                 </ModalPortal>
             ) : null}
 
-            <div className="section-head">
-                <span className="badge">Відгуки</span>
-                <h1>Що кажуть клієнти</h1>
-                <p>Реальні враження від наших клієнтів.</p>
-            </div>
-
             <section className="reviews-form-card">
-                <h3 className="reviews-form-title">Залишити відгук</h3>
-                <p className="reviews-form-lead">Поділіться враженням — це допомагає іншим обрати нас.</p>
+                <div className="reviews-form-head">
+                    <div>
+                        <h3 className="reviews-form-title">Залишити відгук</h3>
+                        <p className="reviews-form-lead">Поділіться враженням — це допомагає іншим обрати нас.</p>
+                    </div>
+                </div>
 
                 {isEmployee ? (
                     <p className="review-employee-hint">
@@ -189,7 +187,7 @@ export default function ReviewsPage() {
                             </p>
                         ) : null}
 
-                        <label>
+                        <label className="reviews-name-field">
                             <span>Ім&apos;я</span>
                             <input value={user!.name} readOnly aria-readonly="true" />
                         </label>
@@ -212,7 +210,7 @@ export default function ReviewsPage() {
                             </div>
                         </div>
 
-                        <label>
+                        <label className="reviews-text-field">
                             <span>Ваш відгук</span>
                             <textarea
                                 value={text}

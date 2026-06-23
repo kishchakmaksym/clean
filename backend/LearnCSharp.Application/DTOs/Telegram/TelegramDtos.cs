@@ -100,6 +100,8 @@ public sealed class StaffOrderDto
 
     public required string ServiceTitle { get; init; }
 
+    public required string OrderType { get; init; }
+
     public required string CustomerName { get; init; }
 
     public required string CustomerPhone { get; init; }

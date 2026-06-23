@@ -524,16 +524,6 @@
     color: var(--text);
 }
 
-@media (hover: hover) {
-    .hero-step:hover .hero-step-body {
-        opacity: 0.92;
-    }
-
-    .hero-step--active:hover .hero-step-body {
-        opacity: 1;
-    }
-}
-
 /* ── Result (before / after) ── */
 .home-result {
     width: 100%;

@@ -271,7 +271,7 @@ export function buildCustomOrganizationalNote(options: {
     pollutionLevel: string;
     hasPets: boolean;
     ownSupplies: boolean;
-    needLadder: boolean;
+    ownVacuum: boolean;
     cleanersCount: string;
 }) {
     const propertyLabel =
@@ -284,8 +284,8 @@ export function buildCustomOrganizationalNote(options: {
         `Тип житла: ${propertyLabel}`,
         `Ступінь забруднення: ${pollutionLabel}`,
         `Домашні тварини: ${options.hasPets ? "так" : "ні"}`,
-        `Власні засоби: ${options.ownSupplies ? "потрібні" : "наші"}`,
-        `Драбина: ${options.needLadder ? "потрібна" : "не потрібна"}`,
+        `Клієнт просить прибирати його засобами: ${options.ownSupplies ? "так" : "ні"}`,
+        `У клієнта є власний пилосос: ${options.ownVacuum ? "так, можна їхати без пилососа" : "ні"}`,
         `Прибиральників: ${options.cleanersCount || "1"}`,
     ].join(". ");
 }

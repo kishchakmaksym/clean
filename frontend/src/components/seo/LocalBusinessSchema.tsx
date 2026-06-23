@@ -31,7 +31,6 @@ export default function LocalBusinessSchema() {
                 description: SITE_DESCRIPTION,
                 url: siteUrl,
                 image: getCanonicalUrl("/logo.gif"),
-                telephone: supportContacts.phoneHref.replace("tel:", ""),
                 email: supportContacts.email,
                 priceRange: "$$",
                 areaServed: SERVICE_AREAS.map((city) => ({

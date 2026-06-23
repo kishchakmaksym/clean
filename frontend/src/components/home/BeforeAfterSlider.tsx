@@ -75,20 +75,26 @@ const COMPARISONS: ComparisonPair[] = [
 
 const SLIDE_COUNT = COMPARISONS.length;
 
+const MIN_TRACK_INDEX = 0;
+
+const MAX_TRACK_INDEX = SLIDE_COUNT + 1;
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
 function getLogicalIndex(trackIndex: number) {
-  if (trackIndex <= 0) {
+  const safeTrackIndex = clamp(trackIndex, MIN_TRACK_INDEX, MAX_TRACK_INDEX);
+
+  if (safeTrackIndex <= 0) {
     return SLIDE_COUNT - 1;
   }
 
-  if (trackIndex >= SLIDE_COUNT + 1) {
+  if (safeTrackIndex >= MAX_TRACK_INDEX) {
     return 0;
   }
 
-  return trackIndex - 1;
+  return safeTrackIndex - 1;
 }
 
 export default function BeforeAfterSlider() {
@@ -314,7 +320,7 @@ export default function BeforeAfterSlider() {
   const goToPair = (nextIndex: number) => {
     const clampedIndex = clamp(nextIndex, 0, SLIDE_COUNT - 1);
 
-    setTrackIndex(clampedIndex + 1);
+    setTrackIndex(clamp(clampedIndex + 1, MIN_TRACK_INDEX, MAX_TRACK_INDEX));
 
     resetSliderPosition();
   };
@@ -324,7 +330,7 @@ export default function BeforeAfterSlider() {
       return;
     }
 
-    setTrackIndex((current) => current - 1);
+    setTrackIndex((current) => clamp(current - 1, MIN_TRACK_INDEX, MAX_TRACK_INDEX));
 
     resetSliderPosition();
   };
@@ -334,7 +340,7 @@ export default function BeforeAfterSlider() {
       return;
     }
 
-    setTrackIndex((current) => current + 1);
+    setTrackIndex((current) => clamp(current + 1, MIN_TRACK_INDEX, MAX_TRACK_INDEX));
 
     resetSliderPosition();
   };

@@ -40,7 +40,7 @@ import "./ServicesPage.css";
 type ServiceTab = "fixed" | "custom" | "subscription" | "business";
 
 function parseServiceTab(value: string | null): ServiceTab {
-    if (value === "custom" || value === "subscription" || value === "business") {
+    if (value === "custom" || value === "business") {
         return value;
     }
 
@@ -630,6 +630,75 @@ function AdditionalServicesSection({
     );
 }
 
+type OrganizationalChecksProps = {
+    hasPets: boolean;
+    ownSupplies: boolean;
+    ownVacuum: boolean;
+    onHasPetsChange: (value: boolean) => void;
+    onOwnSuppliesChange: (value: boolean) => void;
+    onOwnVacuumChange: (value: boolean) => void;
+};
+
+function OrganizationalChecks({
+    hasPets,
+    ownSupplies,
+    ownVacuum,
+    onHasPetsChange,
+    onOwnSuppliesChange,
+    onOwnVacuumChange,
+}: OrganizationalChecksProps) {
+    return (
+        <div className="services-org-checks">
+            <label className="services-extra-option services-extra-option--inline">
+                <input
+                    type="checkbox"
+                    checked={hasPets}
+                    onChange={(event) => onHasPetsChange(event.target.checked)}
+                />
+                <span className="services-extra-copy services-extra-copy--stack">
+                    <span>Є домашні тварини</span>
+                </span>
+            </label>
+            <label className="services-extra-option services-extra-option--inline">
+                <input
+                    type="checkbox"
+                    checked={ownSupplies}
+                    onChange={(event) => onOwnSuppliesChange(event.target.checked)}
+                />
+                <span className="services-extra-copy services-extra-copy--stack">
+                    <span>Клієнт хоче власні засоби</span>
+                    <span>Позначте, якщо прибиральниці мають користуватися засобами клієнта.</span>
+                </span>
+            </label>
+            <label className="services-extra-option services-extra-option--inline">
+                <input
+                    type="checkbox"
+                    checked={ownVacuum}
+                    onChange={(event) => onOwnVacuumChange(event.target.checked)}
+                />
+                <span className="services-extra-copy services-extra-copy--stack">
+                    <span>Є власний пилосос</span>
+                    <span>Якщо так, майстрині можуть приїхати без нашого пилососа.</span>
+                </span>
+            </label>
+        </div>
+    );
+}
+
+function buildOrderPreferenceNote(options: {
+    hasPets: boolean;
+    ownSupplies: boolean;
+    ownVacuum: boolean;
+}) {
+    return [
+        `Домашні тварини: ${options.hasPets ? "так" : "ні"}`,
+        `Клієнт просить прибирати його засобами: ${options.ownSupplies ? "так" : "ні"}`,
+        `У клієнта є власний пилосос: ${
+            options.ownVacuum ? "так, можна їхати без пилососа" : "ні"
+        }`,
+    ].join(". ");
+}
+
 function estimateFixedOrder(
     service: Pick<
         FixedServiceCategory,
@@ -873,6 +942,9 @@ export default function ServicesPage() {
     const [fixedArea, setFixedArea] = useState("55");
     const [fixedSelectedAddons, setFixedSelectedAddons] = useState<string[]>([]);
     const [fixedExtraQuantities, setFixedExtraQuantities] = useState<Record<string, number>>({});
+    const [fixedHasPets, setFixedHasPets] = useState(false);
+    const [fixedOwnSupplies, setFixedOwnSupplies] = useState(false);
+    const [fixedOwnVacuum, setFixedOwnVacuum] = useState(false);
     const [fixedNotes, setFixedNotes] = useState("");
 
     const [cleaningType, setCleaningType] = useState<(typeof customCleaningTypes)[number]["id"]>("regular");
@@ -883,7 +955,7 @@ export default function ServicesPage() {
     const [pollutionLevel, setPollutionLevel] = useState<(typeof pollutionLevelOptions)[number]["id"]>("light");
     const [hasPets, setHasPets] = useState(false);
     const [ownSupplies, setOwnSupplies] = useState(false);
-    const [needLadder, setNeedLadder] = useState(false);
+    const [ownVacuum, setOwnVacuum] = useState(false);
     const [cleanersCount, setCleanersCount] = useState("1");
 
     const [subscriptionVisitDays, setSubscriptionVisitDays] = useState<number[]>([]);
@@ -1158,6 +1230,9 @@ export default function ServicesPage() {
         setFixedArea("55");
         setFixedSelectedAddons([]);
         setFixedExtraQuantities({});
+        setFixedHasPets(false);
+        setFixedOwnSupplies(false);
+        setFixedOwnVacuum(false);
         setFixedNotes("");
         setPaymentError("");
         setPaymentMethod("card");
@@ -1243,6 +1318,12 @@ export default function ServicesPage() {
             .filter((item) => !item.defaultSelected && fixedSelectedAddons.includes(item.id))
             .map((item) => item.label);
         const selectedCustomExtraLabels = getSelectedCustomExtraLabels(fixedExtraQuantities);
+        const organizationalNote = buildOrderPreferenceNote({
+            hasPets: fixedHasPets,
+            ownSupplies: fixedOwnSupplies,
+            ownVacuum: fixedOwnVacuum,
+        });
+        const combinedNotes = [organizationalNote, fixedNotes.trim()].filter(Boolean).join("\n\n");
 
         const orderPayload = {
             userId: user.id,
@@ -1253,7 +1334,7 @@ export default function ServicesPage() {
             selectedAddons: [...selectedPackageAddonLabels, ...selectedCustomExtraLabels],
             timeSlot: selectedTimeSlot,
             timeSlotLabel: getCleaningTimeSlotLabel(selectedTimeSlot),
-            notes: fixedNotes.trim() || undefined,
+            notes: combinedNotes || undefined,
             ...addressFields,
             paymentMethod,
             totalAmount: fixedEstimate.total,
@@ -1352,7 +1433,7 @@ export default function ServicesPage() {
             pollutionLevel,
             hasPets,
             ownSupplies,
-            needLadder,
+            ownVacuum,
             cleanersCount,
         });
 
@@ -1458,7 +1539,7 @@ export default function ServicesPage() {
         setCheckoutError("");
     }
 
-    function switchTab(tab: ServiceTab) {
+    function switchTab(tab: Exclude<ServiceTab, "subscription">) {
         setSearchParams((current) => {
             const next = new URLSearchParams(current);
             next.set("tab", tab);
@@ -1536,18 +1617,6 @@ export default function ServicesPage() {
                     <button
                         type="button"
                         role="tab"
-                        id="services-tab-subscription"
-                        aria-selected={activeTab === "subscription"}
-                        aria-controls="services-panel-subscription"
-                        className={`services-tab${activeTab === "subscription" ? " services-tab--active" : ""}`}
-                        onClick={() => switchTab("subscription")}
-                    >
-                        <span className="services-tab-label services-tab-label--full">Прибирання по підписці</span>
-                        <span className="services-tab-label services-tab-label--short">Підписка</span>
-                    </button>
-                    <button
-                        type="button"
-                        role="tab"
                         id="services-tab-business"
                         aria-selected={activeTab === "business"}
                         aria-controls="services-panel-business"
@@ -1556,6 +1625,22 @@ export default function ServicesPage() {
                     >
                         <span className="services-tab-label services-tab-label--full">Для бізнесу</span>
                         <span className="services-tab-label services-tab-label--short">Бізнес</span>
+                    </button>
+                    <button
+                        type="button"
+                        role="tab"
+                        id="services-tab-subscription"
+                        aria-label="Прибирання по підписці наразі недоступне"
+                        aria-selected={false}
+                        aria-disabled="true"
+                        aria-controls="services-panel-subscription"
+                        className="services-tab services-tab--disabled"
+                        disabled
+                        title="Прибирання по підписці скоро буде доступне"
+                    >
+                        <span className="services-tab-label services-tab-label--full">Прибирання по підписці</span>
+                        <span className="services-tab-label services-tab-label--short">Підписка</span>
+                        <span className="services-tab-soon">Скоро</span>
                     </button>
                 </div>
             </div>
@@ -1676,6 +1761,18 @@ export default function ServicesPage() {
                                             ) : null}
                                         </div>
                                     </div>
+
+                                    <fieldset className="services-extras services-extras--org">
+                                        <legend>Організаційні опції</legend>
+                                        <OrganizationalChecks
+                                            hasPets={fixedHasPets}
+                                            ownSupplies={fixedOwnSupplies}
+                                            ownVacuum={fixedOwnVacuum}
+                                            onHasPetsChange={setFixedHasPets}
+                                            onOwnSuppliesChange={setFixedOwnSupplies}
+                                            onOwnVacuumChange={setFixedOwnVacuum}
+                                        />
+                                    </fieldset>
 
                                     <AdditionalServicesSection
                                         quantities={fixedExtraQuantities}
@@ -1961,38 +2058,14 @@ export default function ServicesPage() {
                                         />
                                     </label>
                                 </div>
-                                <div className="services-org-checks">
-                                    <label className="services-extra-option services-extra-option--inline">
-                                        <input
-                                            type="checkbox"
-                                            checked={hasPets}
-                                            onChange={(event) => setHasPets(event.target.checked)}
-                                        />
-                                        <span className="services-extra-copy">
-                                            <span>Є домашні тварини</span>
-                                        </span>
-                                    </label>
-                                    <label className="services-extra-option services-extra-option--inline">
-                                        <input
-                                            type="checkbox"
-                                            checked={ownSupplies}
-                                            onChange={(event) => setOwnSupplies(event.target.checked)}
-                                        />
-                                        <span className="services-extra-copy">
-                                            <span>Потрібні власні засоби</span>
-                                        </span>
-                                    </label>
-                                    <label className="services-extra-option services-extra-option--inline">
-                                        <input
-                                            type="checkbox"
-                                            checked={needLadder}
-                                            onChange={(event) => setNeedLadder(event.target.checked)}
-                                        />
-                                        <span className="services-extra-copy">
-                                            <span>Потрібна драбина</span>
-                                        </span>
-                                    </label>
-                                </div>
+                                <OrganizationalChecks
+                                    hasPets={hasPets}
+                                    ownSupplies={ownSupplies}
+                                    ownVacuum={ownVacuum}
+                                    onHasPetsChange={setHasPets}
+                                    onOwnSuppliesChange={setOwnSupplies}
+                                    onOwnVacuumChange={setOwnVacuum}
+                                />
                             </fieldset>
 
                             <AdditionalServicesSection
@@ -2281,7 +2354,7 @@ export default function ServicesPage() {
                             </ul>
 
                             <a
-                                href={supportContacts.phoneHref}
+                                href={supportContacts.emailHref}
                                 className={`primary-button services-custom-cta${
                                     !subscriptionEstimate.isReady ||
                                     !subscriptionEstimate.meetsMinimumPerVisit

@@ -230,6 +230,7 @@ public sealed class TelegramOutboxWorker(
             ShortId = order.Id.ToString()[..8].ToUpperInvariant(),
             Status = order.Status.ToString(),
             ServiceTitle = order.ServiceTitle,
+            OrderType = order.OrderType,
             CustomerName = order.User?.Name ?? "Клієнт",
             CustomerPhone = order.User?.Phone ?? "—",
             Address = order.Address,

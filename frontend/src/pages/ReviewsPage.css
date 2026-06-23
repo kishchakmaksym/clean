@@ -19,7 +19,7 @@
 
 .reviews-form-card,
 .reviews-list-card {
-    padding: clamp(1rem, 2.5vw, 1.35rem);
+    padding: clamp(1rem, 2vw, 1.2rem);
     border-radius: 1.1rem;
     background: var(--panel-bg);
     border: 1px solid rgba(var(--primary-rgb), 0.22);
@@ -27,9 +27,25 @@
     min-width: 0;
 }
 
+.reviews-form-card {
+    max-width: 54rem;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.reviews-form-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.85rem;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
 .reviews-form-title,
 .reviews-list-title {
-    margin: 0 0 0.85rem;
+    margin: 0;
     font-size: 1.125rem;
     font-weight: 800;
     letter-spacing: -0.02em;
@@ -37,7 +53,7 @@
 }
 
 .reviews-form-lead {
-    margin: 0.35rem 0 1rem;
+    margin: 0.35rem 0 0;
     font-size: 0.875rem;
     color: var(--muted);
     line-height: 1.5;
@@ -45,7 +61,9 @@
 
 .reviews-form {
     display: grid;
-    gap: 1rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.75rem;
+    align-items: end;
 }
 
 .reviews-form label {
@@ -63,8 +81,8 @@
 .reviews-form input,
 .reviews-form textarea {
     width: 100%;
-    padding: 0.85rem 1rem;
-    border-radius: 0.85rem;
+    padding: 0.72rem 0.85rem;
+    border-radius: 0.72rem;
     border: 1px solid rgba(15, 23, 42, 0.14);
     background: #fff;
     font-size: 1rem;
@@ -81,8 +99,8 @@
 
 .reviews-form textarea {
     resize: none;
-    min-height: 6.5rem;
-    max-height: 6.5rem;
+    min-height: 4.75rem;
+    max-height: 4.75rem;
     line-height: 1.5;
     overflow-y: auto;
 }
@@ -96,6 +114,7 @@
 .reviews-stars-field {
     display: grid;
     gap: 0.45rem;
+    align-self: stretch;
 }
 
 .reviews-stars {
@@ -105,12 +124,12 @@
 }
 
 .reviews-star {
-    width: 2.65rem;
-    height: 2.65rem;
+    width: 2.2rem;
+    height: 2.2rem;
     border: 1px solid rgba(15, 23, 42, 0.1);
-    border-radius: 0.75rem;
+    border-radius: 0.68rem;
     background: #fff;
-    font-size: 1.35rem;
+    font-size: 1.1rem;
     line-height: 1;
     color: #cbd5e1;
     cursor: pointer;
@@ -139,7 +158,17 @@
 
 .reviews-submit {
     justify-self: start;
-    min-width: 11rem;
+    min-width: 10rem;
+    min-height: 2.75rem;
+    align-self: end;
+}
+
+.reviews-name-field {
+    min-width: 0;
+}
+
+.reviews-text-field {
+    grid-column: 1 / -1;
 }
 
 .review-guest-hint {
@@ -284,6 +313,7 @@
 .reviews-alert {
     margin: 0;
     list-style: none;
+    grid-column: 1 / -1;
 }
 
 .review-errors,
@@ -447,6 +477,20 @@
 }
 
 @media (max-width: 40rem) {
+    .reviews-form-head {
+        padding-bottom: 0.65rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .reviews-form {
+        grid-template-columns: 1fr;
+    }
+
+    .reviews-submit {
+        width: 100%;
+        justify-self: stretch;
+    }
+
     .review-card-head {
         flex-direction: column;
     }

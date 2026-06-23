@@ -308,15 +308,13 @@ public sealed class BotUpdateHandler(
             return true;
         }
 
-        if (text.StartsWith("🆕 №", StringComparison.Ordinal) &&
-            BotLabels.TryParseOrderShortId(text, out var availableShortId))
+        if (text.StartsWith("🆕 ", StringComparison.Ordinal))
         {
             var orders = await staffService.GetAvailableOrdersAsync(account.UserId, cancellationToken);
-            var order = orders.FirstOrDefault(item =>
-                item.ShortId.Equals(availableShortId, StringComparison.OrdinalIgnoreCase));
+            var order = orders.FirstOrDefault(item => BotLabels.AvailableOrderLabel(item) == text);
             if (order is not null)
             {
-                await ClaimOrderAsync(chatId, account, session, order.Id, cancellationToken);
+                await ShowOrderAsync(chatId, account, session, order.Id, cancellationToken);
             }
 
             return true;
@@ -636,7 +634,7 @@ public sealed class BotUpdateHandler(
         var orders = await staffService.GetAvailableOrdersAsync(account.UserId, cancellationToken);
         var text = orders.Count == 0
             ? BotMessages.EmptyList("Немає доступних замовлень 🎉")
-            : "🆕 *Доступні замовлення*\n\nОберіть, щоб одразу взяти:";
+            : "🆕 *Доступні замовлення*\n\nОберіть замовлення, щоб переглянути всі деталі:";
 
         await SendScreenAsync(
             session,

@@ -15,6 +15,7 @@ public sealed class BotScreenMessenger(
 {
     private const int OldMessageCleanupDelayMs = 180;
     private const int UserMessageCleanupDelayMs = 120;
+    private static readonly bool DeleteMessages = false;
 
     public async Task<Message> SendScreenAsync(
         UserSession session,
@@ -152,6 +153,11 @@ public sealed class BotScreenMessenger(
 
     private void ScheduleMessageDeletion(long chatId, IReadOnlyCollection<int> messageIds, int delayMs)
     {
+        if (!DeleteMessages)
+        {
+            return;
+        }
+
         if (messageIds.Count == 0)
         {
             return;

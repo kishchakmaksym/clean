@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "tMckzkmghgQ=",
+  "dgSpecHash": "ytUQMw/KKCw=",
   "success": true,
-  "projectFilePath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
+  "projectFilePath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\kashchei94\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\kashchei94\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
@@ -72,9 +72,9 @@
       "code": "NU1903",
       "level": "Warning",
       "message": "Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q",
-      "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
+      "projectPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
       "warningLevel": 1,
-      "filePath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
+      "filePath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
       "libraryId": "SQLitePCLRaw.lib.e_sqlite3",
       "targetGraphs": [
         "net10.0"
@@ -84,9 +84,9 @@
       "code": "NU1903",
       "level": "Warning",
       "message": "Package 'System.Security.Cryptography.Xml' 9.0.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-37gx-xxp4-5rgx",
-      "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
+      "projectPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
       "warningLevel": 1,
-      "filePath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
+      "filePath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
       "libraryId": "System.Security.Cryptography.Xml",
       "targetGraphs": [
         "net10.0"
@@ -96,9 +96,9 @@
       "code": "NU1903",
       "level": "Warning",
       "message": "Package 'System.Security.Cryptography.Xml' 9.0.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-w3x6-4m5h-cxqf",
-      "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
+      "projectPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
       "warningLevel": 1,
-      "filePath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
+      "filePath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
       "libraryId": "System.Security.Cryptography.Xml",
       "targetGraphs": [
         "net10.0"

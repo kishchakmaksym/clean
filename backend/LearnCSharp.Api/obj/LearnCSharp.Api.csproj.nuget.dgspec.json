@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Api\\LearnCSharp.Api.csproj": {}
+    "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Api\\LearnCSharp.Api.csproj": {}
   },
   "projects": {
-    "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Api\\LearnCSharp.Api.csproj": {
+    "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Api\\LearnCSharp.Api.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Api\\LearnCSharp.Api.csproj",
+        "projectUniqueName": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Api\\LearnCSharp.Api.csproj",
         "projectName": "LearnCSharp.Api",
-        "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Api\\LearnCSharp.Api.csproj",
+        "projectPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Api\\LearnCSharp.Api.csproj",
         "packagesPath": "C:\\Users\\kashchei94\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Api\\obj\\",
+        "outputPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Api\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -34,14 +34,14 @@
             "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj": {
-                "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj"
+              "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj": {
+                "projectPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj"
               },
-              "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure.Postgres\\LearnCSharp.Infrastructure.Postgres.csproj": {
-                "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure.Postgres\\LearnCSharp.Infrastructure.Postgres.csproj"
+              "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure.Postgres\\LearnCSharp.Infrastructure.Postgres.csproj": {
+                "projectPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure.Postgres\\LearnCSharp.Infrastructure.Postgres.csproj"
               },
-              "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj": {
-                "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj"
+              "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj": {
+                "projectPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj"
               }
             }
           }
@@ -511,14 +511,14 @@
         }
       }
     },
-    "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj": {
+    "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj",
+        "projectUniqueName": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj",
         "projectName": "LearnCSharp.Application",
-        "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj",
+        "projectPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj",
         "packagesPath": "C:\\Users\\kashchei94\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Application\\obj\\",
+        "outputPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Application\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -541,8 +541,8 @@
             "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj": {
-                "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj"
+              "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj": {
+                "projectPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj"
               }
             }
           }
@@ -883,14 +883,14 @@
         }
       }
     },
-    "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj": {
+    "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj",
+        "projectUniqueName": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj",
         "projectName": "LearnCSharp.Domain",
-        "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj",
+        "projectPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj",
         "packagesPath": "C:\\Users\\kashchei94\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Domain\\obj\\",
+        "outputPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -1225,14 +1225,14 @@
         }
       }
     },
-    "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure.Postgres\\LearnCSharp.Infrastructure.Postgres.csproj": {
+    "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure.Postgres\\LearnCSharp.Infrastructure.Postgres.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure.Postgres\\LearnCSharp.Infrastructure.Postgres.csproj",
+        "projectUniqueName": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure.Postgres\\LearnCSharp.Infrastructure.Postgres.csproj",
         "projectName": "LearnCSharp.Infrastructure.Postgres",
-        "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure.Postgres\\LearnCSharp.Infrastructure.Postgres.csproj",
+        "projectPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure.Postgres\\LearnCSharp.Infrastructure.Postgres.csproj",
         "packagesPath": "C:\\Users\\kashchei94\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure.Postgres\\obj\\",
+        "outputPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure.Postgres\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -1255,8 +1255,8 @@
             "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj": {
-                "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj"
+              "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj": {
+                "projectPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj"
               }
             }
           }
@@ -1591,14 +1591,14 @@
         }
       }
     },
-    "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj": {
+    "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
+        "projectUniqueName": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
         "projectName": "LearnCSharp.Infrastructure",
-        "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
+        "projectPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure\\LearnCSharp.Infrastructure.csproj",
         "packagesPath": "C:\\Users\\kashchei94\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Infrastructure\\obj\\",
+        "outputPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Infrastructure\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -1621,11 +1621,11 @@
             "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj": {
-                "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj"
+              "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj": {
+                "projectPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Application\\LearnCSharp.Application.csproj"
               },
-              "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj": {
-                "projectPath": "c:\\Users\\kashchei94\\Desktop\\CleanPro\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj"
+              "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj": {
+                "projectPath": "c:\\Users\\kashchei94\\Documents\\smart-clean\\backend\\LearnCSharp.Domain\\LearnCSharp.Domain.csproj"
               }
             }
           }
